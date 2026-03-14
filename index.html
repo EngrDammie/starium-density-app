@@ -498,9 +498,7 @@
 
         footer:hover::after { opacity: 1; }
 
-        .bot-hidden {
-            display: none !important;
-        }
+        .bot-hidden { display: none !important; }
 
         @media (max-width: 400px) {
             .machine-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
@@ -895,9 +893,14 @@
         modal.style.opacity = '0';
         modal.style.visibility = 'hidden';
 
-
         // ===== EVENT LISTENERS =====
-        
+        weightInput.addEventListener('focus', () => {
+            weightInput.value = '';
+            resultsDiv.innerHTML = '';
+            currentDensity = null;
+            clearAutoRemarks();
+        });
+
         // Toggle Level 9 / BOT mode elements
         function updateModeVisibility() {
             const isBotMode = modeSelect.value === 'bot';
@@ -908,21 +911,12 @@
                 document.getElementById('level9-remarks')
             ];
             level9Elements.forEach(el => {
-                if (el) {
-                    el.classList.toggle('bot-hidden', isBotMode);
-                }
+                if (el) el.classList.toggle('bot-hidden', isBotMode);
             });
         }
         
-        // Initialize visibility on load
+        // Initialize on load
         updateModeVisibility();
-        
-        weightInput.addEventListener('focus', () => {
-            weightInput.value = '';
-            resultsDiv.innerHTML = '';
-            currentDensity = null;
-            clearAutoRemarks();
-        });
 
         modeSelect.addEventListener('change', () => {
             weightInput.value = '';
