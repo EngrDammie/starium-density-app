@@ -6,6 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Starium Rafa Quality Control Tool</title>
     <style>
+        /* ===== CONFIGURABLE CONSTANTS ===== */
+        :root {
+            --DENSITY_TOO_LOW: 0.200;
+            --DENSITY_TOO_HIGH: 0.310;
+            --LEVEL9_DIVISOR: 1580;
+            --BOT_DIVISOR: 1680;
+            --BOT_NORMAL_MAX: 0.240;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -30,15 +39,8 @@
         }
 
         @keyframes slideDown {
-            from {
-                transform: translateY(-100%);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         h1 {
@@ -54,6 +56,7 @@
             justify-content: center;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
 
         .mode-selector label {
@@ -73,19 +76,9 @@
             transition: all 0.3s ease;
         }
 
-        .mode-selector select {
-            cursor: pointer;
-        }
-
-        .mode-selector input[type="text"] {
-            cursor: text;
-            width: 140px;
-            /* Keeps the input box from getting too wide */
-        }
-
-        .mode-selector input[type="text"]::placeholder {
-            color: #888;
-        }
+        .mode-selector select { cursor: pointer; }
+        .mode-selector input[type="text"] { width: 140px; }
+        .mode-selector input[type="text"]::placeholder { color: #888; }
 
         .mode-selector select:hover,
         .mode-selector input[type="text"]:focus {
@@ -99,23 +92,20 @@
             align-items: center;
             gap: 20px;
             flex-wrap: wrap;
-            /* Helps stack them neatly on very small mobile screens */
         }
 
-        /* Styling for the locked dropdown */
         .mode-selector select:disabled {
             background-color: #1a1a1a;
             color: #888;
             border-color: #555;
             cursor: not-allowed;
             box-shadow: none;
-            /* Prevents the glow effect on hover */
         }
 
         main {
             flex: 1;
             padding: 20px;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             width: 100%;
         }
@@ -129,52 +119,66 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        .input-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .input-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            flex: 1;
+            min-width: 200px;
         }
 
         .input-group label {
             color: #00BCD4;
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem;
         }
 
-        .input-group input {
+        .input-group input,
+        .input-group select,
+        .input-group textarea {
             background-color: #2d2d2d;
             color: #ffffff;
             border: 2px solid #00BCD4;
-            padding: 15px;
-            font-size: 1.2rem;
+            padding: 12px;
+            font-size: 1rem;
             border-radius: 8px;
             outline: none;
             transition: all 0.3s ease;
         }
 
-        .input-group input:focus {
+        .input-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .input-group input:focus,
+        .input-group select:focus,
+        .input-group textarea:focus {
             box-shadow: 0 0 15px rgba(0, 188, 212, 0.6);
             border-color: #00E676;
         }
 
-        .input-group input::placeholder {
-            color: #666;
+        .input-group input::placeholder { color: #666; }
+
+        .input-group select {
+            cursor: pointer;
         }
 
-        .results-area {
-            margin-top: 20px;
-        }
+        .grade-a { border-color: #00E676 !important; }
+        .grade-u { border-color: #FF1744 !important; }
+
+        .results-area { margin-top: 20px; }
 
         .density-display {
             text-align: center;
@@ -182,6 +186,7 @@
             background: linear-gradient(145deg, #1E1E1E, #252525);
             border-radius: 15px;
             border: 1px solid #333;
+            margin-bottom: 20px;
         }
 
         .density-value {
@@ -190,20 +195,24 @@
             color: #ffffff;
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
             animation: sparkle 2s ease-in-out infinite;
+            transition: all 0.3s ease;
+        }
+
+        .density-value.too-low,
+        .density-value.too-high {
+            animation: alertPulse 1s ease-in-out infinite;
+            color: #FF1744;
+            text-shadow: 0 0 30px rgba(255, 23, 68, 0.8);
         }
 
         @keyframes sparkle {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 255, 255, 0.5); transform: scale(1); }
+            50% { text-shadow: 0 0 40px rgba(255, 255, 255, 1), 0 0 60px rgba(0, 188, 212, 0.5); transform: scale(1.02); }
+        }
 
-            0%,
-            100% {
-                text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-                transform: scale(1);
-            }
-
-            50% {
-                text-shadow: 0 0 40px rgba(255, 255, 255, 1), 0 0 60px rgba(0, 188, 212, 0.5);
-                transform: scale(1.02);
-            }
+        @keyframes alertPulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(255, 23, 68, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 50px rgba(255, 23, 68, 1); transform: scale(1.05); }
         }
 
         .density-label {
@@ -214,27 +223,35 @@
 
         .machine-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 15px;
-            margin-top: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
         }
 
         .machine-btn {
             background: linear-gradient(145deg, #1E1E1E, #2d2d2d);
             color: #ffffff;
             border: 2px solid #00BCD4;
-            padding: 15px 10px;
+            padding: 12px 8px;
             border-radius: 10px;
             cursor: pointer;
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: bold;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .machine-btn:hover {
             transform: translateY(-5px);
             box-shadow: 0 10px 25px rgba(0, 188, 212, 0.4);
             background: linear-gradient(145deg, #2d2d2d, #3d3d3d);
+        }
+
+        .machine-btn.selected {
+            background: linear-gradient(145deg, #00E676, #00C853);
+            border-color: #00E676;
+            box-shadow: 0 0 25px rgba(0, 230, 118, 0.7);
+            color: #121212;
         }
 
         .machine-btn.highlighted {
@@ -245,27 +262,31 @@
             animation: glow 1.5s ease-in-out infinite;
         }
 
-        @keyframes glow {
-
-            0%,
-            100% {
-                box-shadow: 0 0 25px rgba(0, 230, 118, 0.7);
-            }
-
-            50% {
-                box-shadow: 0 0 40px rgba(0, 230, 118, 1);
-            }
+        .machine-btn.highlighted.selected {
+            animation: glow 1.5s ease-in-out infinite;
         }
 
-        .machine-btn.highlighted:hover {
-            transform: translateY(-5px);
-            background: linear-gradient(145deg, #00FF80, #00E676);
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 25px rgba(0, 230, 118, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(0, 230, 118, 1); }
         }
 
         .machine-btn.dimmed {
             opacity: 0.25;
             border-color: #444;
-            pointer-events: none;
+        }
+
+        .machine-btn.override {
+            border-color: #FF9800;
+            box-shadow: 0 0 15px rgba(255, 152, 0, 0.5);
+        }
+
+        .machine-btn.override::after {
+            content: '⚠️';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            font-size: 0.8rem;
         }
 
         .bot-result {
@@ -279,18 +300,6 @@
         .bot-result.too-high {
             background: linear-gradient(145deg, #FF1744, #D50000);
             animation: alertPulse 1s ease-in-out infinite;
-        }
-
-        @keyframes alertPulse {
-
-            0%,
-            100% {
-                box-shadow: 0 0 20px rgba(255, 23, 68, 0.5);
-            }
-
-            50% {
-                box-shadow: 0 0 40px rgba(255, 23, 68, 0.8);
-            }
         }
 
         .bot-result.normal {
@@ -341,40 +350,61 @@
             transition: opacity 0.3s ease, visibility 0.3s ease;
         }
 
-        .modal-overlay.active {
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
+        .modal-overlay.active { opacity: 1 !important; visibility: visible !important; }
 
         .modal {
             background: linear-gradient(145deg, #1E1E1E, #2d2d2d);
-            padding: 40px;
+            padding: 30px;
             border-radius: 20px;
             border: 2px solid #00BCD4;
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
             box-shadow: 0 20px 60px rgba(0, 188, 212, 0.3);
         }
 
         .modal h2 {
             color: #00BCD4;
-            margin-bottom: 25px;
-            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
         }
 
-        .modal-info {
-            margin: 20px 0;
-        }
+        .modal-info { margin: 15px 0; text-align: left; }
 
         .modal-info p {
-            margin: 15px 0;
-            font-size: 1.1rem;
+            margin: 12px 0;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .modal-info span {
             color: #00BCD4;
             font-weight: bold;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 188, 212, 0.1);
+            border-radius: 10px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #00BCD4;
+        }
+
+        .checkbox-container label {
+            color: #ffffff;
+            font-weight: bold;
+            cursor: pointer;
         }
 
         .modal-close {
@@ -395,6 +425,24 @@
             transform: scale(1.05);
         }
 
+        .override-btn {
+            background-color: #FF9800;
+            color: #121212;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .override-btn:hover {
+            background-color: #FFB74D;
+            transform: scale(1.05);
+        }
+
         .error-message {
             background: linear-gradient(145deg, #FF1744, #D50000);
             color: #ffffff;
@@ -409,19 +457,9 @@
         }
 
         @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
-            }
-
-            25% {
-                transform: translateX(-5px);
-            }
-
-            75% {
-                transform: translateX(5px);
-            }
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         footer {
@@ -432,39 +470,25 @@
             position: relative;
         }
 
-        footer p {
-            color: #666;
-            font-size: 0.9rem;
-            cursor: default;
-            transition: all 0.3s ease;
-        }
-
-        footer:hover p {
-            opacity: 0;
-        }
+        footer p { color: #666; font-size: 0.9rem; cursor: default; transition: all 0.3s ease; }
+        footer:hover p { opacity: 0; }
 
         footer::before {
             content: "© 2026 Dammie Optimus Solutions. All rights reserved.";
             position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
+            top: 20px; left: 0; right: 0;
             color: #666;
             font-size: 0.9rem;
             transition: all 0.3s ease;
             pointer-events: none;
         }
 
-        footer:hover::before {
-            opacity: 0;
-        }
+        footer:hover::before { opacity: 0; }
 
         footer::after {
             content: "WhatsApp Dammie Optimus Solutions on 07053331253";
             position: absolute;
-            top: 20px;
-            left: 0;
-            right: 0;
+            top: 20px; left: 0; right: 0;
             color: #00BCD4;
             font-size: 0.9rem;
             opacity: 0;
@@ -472,20 +496,12 @@
             pointer-events: none;
         }
 
-        footer:hover::after {
-            opacity: 1;
-        }
+        footer:hover::after { opacity: 1; }
 
         @media (max-width: 400px) {
-            .machine-grid {
-                grid-template-columns: repeat(6, 1fr);
-                gap: 5px;
-            }
-
-            .machine-btn {
-                padding: 8px 2px;
-                font-size: 0.7rem;
-            }
+            .machine-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
+            .machine-btn { padding: 8px 2px; font-size: 0.7rem; }
+            .input-row { flex-direction: column; }
         }
     </style>
 </head>
@@ -510,7 +526,6 @@
                 </select>
             </div>
 
-            <!-- NEW: Team Selection -->
             <div class="mode-selector">
                 <label for="team">Team:</label>
                 <select id="team">
@@ -521,7 +536,6 @@
                 </select>
             </div>
 
-            <!-- NEW: QC Staff Name -->
             <div class="mode-selector">
                 <label for="qc-name">Name:</label>
                 <input type="text" id="qc-name" placeholder="Enter Name" autocomplete="off">
@@ -531,9 +545,44 @@
 
     <main>
         <div class="control-box">
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="weight">Powder Weight (g)</label>
+                    <input type="number" id="weight" placeholder="Enter powder weight in grams" step="any">
+                </div>
+                <div class="input-group">
+                    <label for="buggy-number">Buggy Number</label>
+                    <input type="text" id="buggy-number" placeholder="e.g., B001" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="silo-machine">Silo/Machine Numbers</label>
+                    <input type="text" id="silo-machine" placeholder="e.g., 1,2,3 or leave empty" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="input-row">
+                <div class="input-group">
+                    <label for="appearance">Appearance</label>
+                    <select id="appearance" class="grade-a">
+                        <option value="A" selected>Acceptable</option>
+                        <option value="U">Unacceptable</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="fragrance">Fragrance</label>
+                    <select id="fragrance" class="grade-a">
+                        <option value="A" selected>Acceptable</option>
+                        <option value="U">Unacceptable</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="input-group">
-                <label for="weight">Powder Weight (g)</label>
-                <input type="number" id="weight" placeholder="Enter powder weight in grams" step="any">
+                <label for="remarks">Remarks</label>
+                <textarea id="remarks" placeholder="Enter additional remarks..."></textarea>
             </div>
         </div>
 
@@ -550,15 +599,28 @@
                 <p>Density Range: <span id="modal-range"></span></p>
                 <p>Carton Content: <span id="modal-carton"></span></p>
             </div>
+            <div class="checkbox-container">
+                <input type="checkbox" id="modal-machine-select">
+                <label for="modal-machine-select">Select for powder collection</label>
+            </div>
+            <button class="override-btn" id="override-btn" style="display: none;">⚠️ Override & Select</button>
             <button class="modal-close" id="modal-close">Close</button>
         </div>
     </div>
 
-    <footer>
-        <p>&nbsp;</p>
-    </footer>
+    <footer><p>&nbsp;</p></footer>
 
     <script>
+        // ===== CONFIGURABLE CONSTANTS =====
+        const CONFIG = {
+            DENSITY_TOO_LOW: 0.200,
+            DENSITY_TOO_HIGH: 0.310,
+            LEVEL9_DIVISOR: 1580,
+            BOT_DIVISOR: 1680,
+            BOT_NORMAL_MAX: 0.240
+        };
+
+        // ===== MACHINE DATA =====
         const machineData = [
             { id: 1, gram: 125, min: 0.200, max: 0.270 },
             { id: 2, gram: 85, min: 0.240, max: 0.300 },
@@ -601,6 +663,30 @@
             26: '3B', 27: '3B', 28: '3B', 29: '3B', 30: '3B'
         };
 
+        // ===== STATE =====
+        let currentDensity = null;
+        let selectedMachines = new Set();
+        let overrideMachines = new Set();
+        let currentModalMachineId = null;
+
+        // ===== DOM ELEMENTS =====
+        const modeSelect = document.getElementById('mode');
+        const shiftSelect = document.getElementById('shift');
+        const teamSelect = document.getElementById('team');
+        const qcNameInput = document.getElementById('qc-name');
+        const weightInput = document.getElementById('weight');
+        const buggyInput = document.getElementById('buggy-number');
+        const siloMachineInput = document.getElementById('silo-machine');
+        const appearanceSelect = document.getElementById('appearance');
+        const fragranceSelect = document.getElementById('fragrance');
+        const remarksTextarea = document.getElementById('remarks');
+        const resultsDiv = document.getElementById('results');
+        const modal = document.getElementById('modal');
+        const modalClose = document.getElementById('modal-close');
+        const modalMachineSelect = document.getElementById('modal-machine-select');
+        const overrideBtn = document.getElementById('override-btn');
+
+        // ===== UTILITY FUNCTIONS =====
         function getCartonContent(gram) {
             switch (gram) {
                 case 22: return '162 pieces (27 strings × 6 pcs)';
@@ -612,59 +698,183 @@
             }
         }
 
-        const modeSelect = document.getElementById('mode');
-        const shiftSelect = document.getElementById('shift');
+        function isDensityTooLow(density) {
+            return density < CONFIG.DENSITY_TOO_LOW;
+        }
 
-        // Function to determine and set the current shift
+        function isDensityTooHigh(density) {
+            return density > CONFIG.DENSITY_TOO_HIGH;
+        }
+
+        function isDensityOutOfRange(density) {
+            return isDensityTooLow(density) || isDensityTooHigh(density);
+        }
+
+        // ===== REMARKS AUTO-FILL =====
+        function updateRemarks() {
+            let remarks = [];
+            const buggy = buggyInput.value.trim();
+            const siloMachines = siloMachineInput.value.trim();
+            const appearance = appearanceSelect.value;
+            const fragrance = fragranceSelect.value;
+
+            // Density-related remarks
+            if (currentDensity !== null) {
+                if (isDensityTooLow(currentDensity)) {
+                    remarks.push(`Density too LOW (${currentDensity} g/mL)`);
+                } else if (isDensityTooHigh(currentDensity)) {
+                    remarks.push(`Density too HIGH (${currentDensity} g/mL)`);
+                }
+            }
+
+            // Override remarks
+            if (overrideMachines.size > 0) {
+                overrideMachines.forEach(machineId => {
+                    remarks.push(`Machine ${machineId} was overridden to receive powder density of ${currentDensity} g/mL`);
+                });
+            }
+
+            // Machine selection remarks
+            if (selectedMachines.size > 0) {
+                const machineList = Array.from(selectedMachines).sort((a, b) => a - b).join(', ');
+                if (selectedMachines.size === 1) {
+                    remarks.push(`Buggy ${buggy || 'N/A'} assigned to Machine ${machineList}`);
+                } else {
+                    remarks.push(`Buggy ${buggy || 'N/A'} shared across Machines ${machineList} for dilution`);
+                }
+            }
+
+            // Appearance remarks
+            if (appearance === 'U') {
+                remarks.push('Appearance: Unacceptable');
+            }
+
+            // Fragrance remarks
+            if (fragrance === 'U') {
+                remarks.push('Fragrance: Unacceptable');
+            }
+
+            // Preserve user-added content (content after auto-generated remarks)
+            const currentUserContent = remarksTextarea.value.split('\n').filter(line => {
+                const lower = line.toLowerCase();
+                return !lower.includes('density too') && 
+                       !lower.includes('was overridden') &&
+                       !lower.includes('assigned to machine') &&
+                       !lower.includes('shared across machines') &&
+                       !lower.includes('appearance:') &&
+                       !lower.includes('fragrance:');
+            }).join('\n').trim();
+
+            // Build new remarks
+            let newRemarks = remarks.join('\n');
+            if (currentUserContent) {
+                newRemarks += '\n' + currentUserContent;
+            }
+
+            remarksTextarea.value = newRemarks;
+        }
+
+        function clearAutoRemarks() {
+            // Keep only user content
+            const currentValue = remarksTextarea.value;
+            const userContent = currentValue.split('\n').filter(line => {
+                const lower = line.toLowerCase();
+                return !lower.includes('density too') && 
+                       !lower.includes('was overridden') &&
+                       !lower.includes('assigned to machine') &&
+                       !lower.includes('shared across machines') &&
+                       !lower.includes('appearance:') &&
+                       !lower.includes('fragrance:');
+            }).join('\n').trim();
+            remarksTextarea.value = userContent;
+        }
+
+        // ===== MACHINE SELECTION =====
+        function parseSiloMachineInput() {
+            const value = siloMachineInput.value.trim();
+            if (!value) return new Set();
+            
+            const numbers = value.split(',')
+                .map(s => parseInt(s.trim()))
+                .filter(n => !isNaN(n) && n >= 1 && n <= 30);
+            return new Set(numbers);
+        }
+
+        function syncMachinesFromInput() {
+            selectedMachines = parseSiloMachineInput();
+            updateMachineGridSelection();
+            updateRemarks();
+        }
+
+        function updateSiloMachineInput() {
+            if (selectedMachines.size === 0) {
+                siloMachineInput.value = '';
+            } else {
+                siloMachineInput.value = Array.from(selectedMachines).sort((a, b) => a - b).join(',');
+            }
+            updateRemarks();
+        }
+
+        function updateMachineGridSelection() {
+            document.querySelectorAll('.machine-btn').forEach(btn => {
+                const id = parseInt(btn.dataset.id);
+                btn.classList.toggle('selected', selectedMachines.has(id));
+            });
+        }
+
+        function toggleMachineSelection(machineId) {
+            if (selectedMachines.has(machineId)) {
+                selectedMachines.delete(machineId);
+            } else {
+                selectedMachines.add(machineId);
+            }
+            updateSiloMachineInput();
+            updateMachineGridSelection();
+            updateRemarks();
+        }
+
+        function addOverrideRemark(machineId) {
+            overrideMachines.add(machineId);
+            updateRemarks();
+        }
+
+        // ===== GRADE DROPDOWN HANDLERS =====
+        function handleGradeChange(selectElement) {
+            if (selectElement.value === 'U') {
+                selectElement.classList.remove('grade-a');
+                selectElement.classList.add('grade-u');
+            } else {
+                selectElement.classList.remove('grade-u');
+                selectElement.classList.add('grade-a');
+            }
+            updateRemarks();
+        }
+
+        appearanceSelect.addEventListener('change', () => handleGradeChange(appearanceSelect));
+        fragranceSelect.addEventListener('change', () => handleGradeChange(fragranceSelect));
+
+        // ===== SHIFT AUTO-UPDATE =====
         function updateShift() {
-            // getHours() returns 0-23 (military time)
             const currentHour = new Date().getHours();
-
-            // If time is 7:00 AM (7) or later, AND before 7:00 PM (19)
             if (currentHour >= 7 && currentHour < 19) {
                 shiftSelect.value = 'DAY';
             } else {
                 shiftSelect.value = 'NIGHT';
             }
         }
-
-        // 1. Run immediately when the page loads
         updateShift();
-
-        // 2. Bonus: Check the time every 60 seconds (60000ms)
-        // This ensures if a tablet is left open at 6:59 PM, it automatically flips to NIGHT at 7:00 PM
         setInterval(updateShift, 60000);
 
-
-        // --- NEW: Local Storage Memory Logic ---
-        const teamSelect = document.getElementById('team');
-        const qcNameInput = document.getElementById('qc-name');
-
-        // 1. Loader: Check if the browser remembers the user from last time
+        // ===== LOCAL STORAGE =====
         const savedTeam = localStorage.getItem('qcTeam');
-        if (savedTeam) {
-            teamSelect.value = savedTeam;
-        }
-
+        if (savedTeam) teamSelect.value = savedTeam;
         const savedName = localStorage.getItem('qcName');
-        if (savedName) {
-            qcNameInput.value = savedName;
-        }
+        if (savedName) qcNameInput.value = savedName;
 
-        // 2. Saver: Instantly save the user's choice to memory whenever they change it
-        teamSelect.addEventListener('change', (e) => {
-            localStorage.setItem('qcTeam', e.target.value);
-        });
+        teamSelect.addEventListener('change', (e) => localStorage.setItem('qcTeam', e.target.value));
+        qcNameInput.addEventListener('input', (e) => localStorage.setItem('qcName', e.target.value));
 
-        qcNameInput.addEventListener('input', (e) => {
-            localStorage.setItem('qcName', e.target.value);
-        });
-
-        const weightInput = document.getElementById('weight');
-        const resultsDiv = document.getElementById('results');
-        const modal = document.getElementById('modal');
-        const modalClose = document.getElementById('modal-close');
-
+        // ===== MODAL SETUP =====
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
@@ -678,42 +888,89 @@
         modal.style.opacity = '0';
         modal.style.visibility = 'hidden';
 
+        // ===== EVENT LISTENERS =====
         weightInput.addEventListener('focus', () => {
             weightInput.value = '';
             resultsDiv.innerHTML = '';
+            currentDensity = null;
+            clearAutoRemarks();
         });
 
         modeSelect.addEventListener('change', () => {
             weightInput.value = '';
             resultsDiv.innerHTML = '';
+            currentDensity = null;
+            selectedMachines.clear();
+            overrideMachines.clear();
+            siloMachineInput.value = '';
+            updateMachineGridSelection();
+            clearAutoRemarks();
         });
 
         weightInput.addEventListener('input', calculate);
 
+        buggyInput.addEventListener('input', updateRemarks);
+
+        siloMachineInput.addEventListener('input', () => {
+            syncMachinesFromInput();
+            updateMachineGridSelection();
+        });
+
+        siloMachineInput.addEventListener('blur', () => {
+            // Validate and clean up on blur
+            syncMachinesFromInput();
+        });
+
         modalClose.addEventListener('click', () => {
             modal.style.opacity = '0';
             modal.style.visibility = 'hidden';
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
+            setTimeout(() => { modal.style.display = 'none'; }, 300);
         });
 
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.style.opacity = '0';
                 modal.style.visibility = 'hidden';
-                setTimeout(() => {
-                    modal.style.display = 'none';
-                }, 300);
+                setTimeout(() => { modal.style.display = 'none'; }, 300);
             }
         });
 
+        modalMachineSelect.addEventListener('change', () => {
+            if (currentModalMachineId !== null) {
+                if (modalMachineSelect.checked) {
+                    selectedMachines.add(currentModalMachineId);
+                } else {
+                    selectedMachines.delete(currentModalMachineId);
+                }
+                updateSiloMachineInput();
+                updateMachineGridSelection();
+                updateRemarks();
+            }
+        });
+
+        overrideBtn.addEventListener('click', () => {
+            if (currentModalMachineId !== null) {
+                overrideMachines.add(currentModalMachineId);
+                selectedMachines.add(currentModalMachineId);
+                modalMachineSelect.checked = true;
+                updateSiloMachineInput();
+                updateMachineGridSelection();
+                updateRemarks();
+                
+                // Update button state
+                overrideBtn.style.display = 'none';
+            }
+        });
+
+        // ===== CALCULATION FUNCTIONS =====
         function calculate() {
             const weight = parseFloat(weightInput.value);
             const mode = modeSelect.value;
 
             if (isNaN(weight) || weight <= 0) {
                 resultsDiv.innerHTML = '';
+                currentDensity = null;
+                clearAutoRemarks();
                 return;
             }
 
@@ -725,25 +982,48 @@
         }
 
         function calculateLevel9(weight) {
-            const density = (weight / 1580).toFixed(3);
+            currentDensity = (weight / CONFIG.LEVEL9_DIVISOR).toFixed(3);
+            const density = parseFloat(currentDensity);
+
             const matchingMachines = machineData.filter(m =>
                 density >= m.min && density <= m.max
             );
             const matchingIds = matchingMachines.map(m => m.id);
 
+            // Determine density status class
+            let densityClass = '';
+            if (isDensityTooLow(density)) {
+                densityClass = 'too-low';
+            } else if (isDensityTooHigh(density)) {
+                densityClass = 'too-high';
+            }
+
             let html = `
                 <div class="density-display">
-                    <div class="density-value">${density}</div>
+                    <div class="density-value ${densityClass}">${currentDensity}</div>
                     <div class="density-label">g/mL</div>
                 </div>
-                <div class="machine-grid" style="grid-template-columns: repeat(6, 1fr);">
+                <div class="machine-grid">
             `;
 
             const columnOrder = [26, 21, 16, 11, 6, 1, 27, 22, 17, 12, 7, 2, 28, 23, 18, 13, 8, 3, 29, 24, 19, 14, 9, 4, 30, 25, 20, 15, 10, 5];
 
             columnOrder.forEach(id => {
                 const isMatch = matchingIds.includes(id);
-                const btnClass = isMatch ? 'machine-btn highlighted' : 'machine-btn dimmed';
+                const isSelected = selectedMachines.has(id);
+                const isOverride = overrideMachines.has(id);
+                
+                let btnClass = 'machine-btn';
+                if (isMatch && isSelected) {
+                    btnClass += ' highlighted selected';
+                } else if (isMatch) {
+                    btnClass += ' highlighted';
+                } else if (isSelected || isOverride) {
+                    btnClass += ' selected override';
+                } else {
+                    btnClass += ' dimmed';
+                }
+                
                 html += `<button class="${btnClass}" data-id="${id}">M${id}</button>`;
             });
 
@@ -754,20 +1034,23 @@
             }
 
             resultsDiv.innerHTML = html;
+            updateRemarks();
 
-            document.querySelectorAll('.machine-btn.highlighted').forEach(btn => {
-                btn.addEventListener('click', () => showMachineModal(parseInt(btn.dataset.id), density));
+            // Attach click handlers - ALL machines are clickable now
+            document.querySelectorAll('.machine-btn').forEach(btn => {
+                btn.addEventListener('click', () => showMachineModal(parseInt(btn.dataset.id), density, matchingIds.includes(parseInt(btn.dataset.id))));
             });
         }
 
         function calculateBOT(weight) {
-            const density = (weight / 1680).toFixed(3);
-            let statusClass, statusText;
+            currentDensity = (weight / CONFIG.BOT_DIVISOR).toFixed(3);
+            const density = parseFloat(currentDensity);
 
-            if (density < 0.200) {
+            let statusClass, statusText;
+            if (density < CONFIG.DENSITY_TOO_LOW) {
                 statusClass = 'too-low';
                 statusText = 'TOO LOW';
-            } else if (density > 0.240) {
+            } else if (density > CONFIG.BOT_NORMAL_MAX) {
                 statusClass = 'too-high';
                 statusText = 'TOO HIGH';
             } else {
@@ -778,23 +1061,35 @@
             const html = `
                 <div class="bot-result ${statusClass}">
                     <div class="bot-label">Base Powder Density</div>
-                    <div class="density-value">${density} <span style="font-size: 1.5rem;">g/mL</span></div>
+                    <div class="density-value">${currentDensity} <span style="font-size: 1.5rem;">g/mL</span></div>
                     <div class="status-text">${statusText}</div>
                 </div>
             `;
 
             resultsDiv.innerHTML = html;
+            updateRemarks();
         }
 
-        function showMachineModal(machineId, density) {
+        function showMachineModal(machineId, density, isMatching) {
+            currentModalMachineId = machineId;
             const machine = machineData.find(m => m.id === machineId);
             const line = lineMap[machineId];
+            const isSelected = selectedMachines.has(machineId);
 
             document.getElementById('modal-machine-id').textContent = `M${machineId}`;
             document.getElementById('modal-line').textContent = line;
             document.getElementById('modal-gram').textContent = `${machine.gram}g`;
             document.getElementById('modal-range').textContent = `${machine.min.toFixed(3)} - ${machine.max.toFixed(3)}`;
             document.getElementById('modal-carton').textContent = getCartonContent(machine.gram);
+
+            modalMachineSelect.checked = isSelected;
+
+            // Show override button only if machine is not matching (dimmed)
+            if (!isMatching && !isSelected) {
+                overrideBtn.style.display = 'inline-block';
+            } else {
+                overrideBtn.style.display = 'none';
+            }
 
             modal.style.position = 'fixed';
             modal.style.top = '0';
@@ -806,7 +1101,6 @@
             modal.style.display = 'flex';
             modal.style.justifyContent = 'center';
             modal.style.alignItems = 'center';
-            modal.style.display = 'flex';
             modal.style.opacity = '1';
             modal.style.visibility = 'visible';
         }
