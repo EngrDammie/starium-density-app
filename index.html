@@ -498,6 +498,10 @@
 
         footer:hover::after { opacity: 1; }
 
+        .bot-hidden {
+            display: none !important;
+        }
+
         @media (max-width: 400px) {
             .machine-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
             .machine-btn { padding: 8px 2px; font-size: 0.7rem; }
@@ -545,7 +549,7 @@
 
     <main>
         <div class="control-box">
-            <div class="input-row">
+            <div class="input-row" id="level9-row1">
                 <div class="input-group">
                     <label for="weight">Powder Weight (g)</label>
                     <input type="number" id="weight" placeholder="Enter powder weight in grams" step="any">
@@ -556,14 +560,14 @@
                 </div>
             </div>
 
-            <div class="input-row">
+            <div class="input-row" id="level9-row2">
                 <div class="input-group">
                     <label for="silo-machine">Silo/Machine Numbers</label>
                     <input type="text" id="silo-machine" placeholder="e.g., 1,2,3 or leave empty" autocomplete="off">
                 </div>
             </div>
 
-            <div class="input-row">
+            <div class="input-row" id="level9-row3">
                 <div class="input-group">
                     <label for="appearance">Appearance</label>
                     <select id="appearance" class="grade-a">
@@ -580,7 +584,7 @@
                 </div>
             </div>
 
-            <div class="input-group">
+            <div class="input-group" id="level9-remarks">
                 <label for="remarks">Remarks</label>
                 <textarea id="remarks" placeholder="Enter additional remarks..."></textarea>
             </div>
@@ -888,7 +892,28 @@
         modal.style.opacity = '0';
         modal.style.visibility = 'hidden';
 
+
         // ===== EVENT LISTENERS =====
+        
+        // Toggle Level 9 / BOT mode elements
+        function updateModeVisibility() {
+            const isBotMode = modeSelect.value === 'bot';
+            const level9Elements = [
+                document.getElementById('level9-row1'),
+                document.getElementById('level9-row2'),
+                document.getElementById('level9-row3'),
+                document.getElementById('level9-remarks')
+            ];
+            level9Elements.forEach(el => {
+                if (el) {
+                    el.classList.toggle('bot-hidden', isBotMode);
+                }
+            });
+        }
+        
+        // Initialize visibility on load
+        updateModeVisibility();
+        
         weightInput.addEventListener('focus', () => {
             weightInput.value = '';
             resultsDiv.innerHTML = '';
@@ -905,6 +930,8 @@
             siloMachineInput.value = '';
             updateMachineGridSelection();
             clearAutoRemarks();
+            updateModeVisibility();
+        });
         });
 
         weightInput.addEventListener('input', calculate);
