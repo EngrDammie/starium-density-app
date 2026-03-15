@@ -502,6 +502,7 @@
         footer:hover::after { opacity: 1; }
 
         .bot-hidden { display: none !important; }
+        .level9-hidden { display: none !important; }
 
         @media (max-width: 400px) {
             .machine-grid { grid-template-columns: repeat(6, 1fr); gap: 5px; }
@@ -554,6 +555,17 @@
                 <div class="input-group">
                     <label for="weight">Powder Weight (g)</label>
                     <input type="number" id="weight" placeholder="Enter powder weight in grams" step="any">
+                </div>
+            </div>
+
+            <!-- BOT Mode: Appearance Dropdown -->
+            <div class="input-row" id="bot-appearance-row">
+                <div class="input-group">
+                    <label for="bot-appearance">Appearance</label>
+                    <select id="bot-appearance" class="grade-a">
+                        <option value="A" selected>Acceptable</option>
+                        <option value="U">Unacceptable</option>
+                    </select>
                 </div>
             </div>
 
@@ -916,6 +928,12 @@
             level9Elements.forEach(el => {
                 if (el) el.classList.toggle('bot-hidden', isBotMode);
             });
+            
+            // BOT mode specific elements
+            const botAppearanceRow = document.getElementById('bot-appearance-row');
+            if (botAppearanceRow) {
+                botAppearanceRow.classList.toggle('level9-hidden', !isBotMode);
+            }
         }
         
         // Initialize on load
