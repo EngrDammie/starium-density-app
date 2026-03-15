@@ -569,6 +569,17 @@
                 </div>
             </div>
 
+            <!-- BOT Mode: Flow Property Dropdown -->
+            <div class="input-row" id="bot-flow-row">
+                <div class="input-group">
+                    <label for="bot-flow">Flow Property</label>
+                    <select id="bot-flow" class="grade-a">
+                        <option value="FF" selected>Free Flowing</option>
+                        <option value="NFF">Not Free Flowing</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="input-row" id="level9-row1">
                 <div class="input-group">
                     <label for="buggy-number">Buggy Number</label>
@@ -931,8 +942,12 @@
             
             // BOT mode specific elements
             const botAppearanceRow = document.getElementById('bot-appearance-row');
+            const botFlowRow = document.getElementById('bot-flow-row');
             if (botAppearanceRow) {
                 botAppearanceRow.classList.toggle('level9-hidden', !isBotMode);
+            }
+            if (botFlowRow) {
+                botFlowRow.classList.toggle('level9-hidden', !isBotMode);
             }
         }
         
