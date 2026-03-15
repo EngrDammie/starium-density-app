@@ -580,6 +580,12 @@
                 </div>
             </div>
 
+            <!-- BOT Mode: Remarks -->
+            <div class="input-group" id="bot-remarks">
+                <label for="bot-remarks">Remarks</label>
+                <textarea id="bot-remarks-text" placeholder="Enter additional remarks..."></textarea>
+            </div>
+
             <div class="input-row" id="level9-row1">
                 <div class="input-group">
                     <label for="buggy-number">Buggy Number</label>
@@ -943,11 +949,15 @@
             // BOT mode specific elements
             const botAppearanceRow = document.getElementById('bot-appearance-row');
             const botFlowRow = document.getElementById('bot-flow-row');
+            const botRemarks = document.getElementById('bot-remarks');
             if (botAppearanceRow) {
                 botAppearanceRow.classList.toggle('level9-hidden', !isBotMode);
             }
             if (botFlowRow) {
                 botFlowRow.classList.toggle('level9-hidden', !isBotMode);
+            }
+            if (botRemarks) {
+                botRemarks.classList.toggle('level9-hidden', !isBotMode);
             }
         }
         
