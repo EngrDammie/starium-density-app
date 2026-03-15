@@ -86,6 +86,22 @@
             box-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
         }
 
+        /* Special glow for Mode dropdown - important field */
+        .mode-selector select#mode {
+            border: 2px solid #00BCD4;
+            background: linear-gradient(135deg, #1E1E1E 0%, #2d2d2d 100%);
+            animation: modeGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes modeGlow {
+            from {
+                box-shadow: 0 0 5px rgba(0, 188, 212, 0.4), 0 0 10px rgba(0, 188, 212, 0.2);
+            }
+            to {
+                box-shadow: 0 0 15px rgba(0, 188, 212, 0.7), 0 0 25px rgba(0, 188, 212, 0.4), 0 0 35px rgba(0, 188, 212, 0.2);
+            }
+        }
+
         .header-controls {
             display: flex;
             justify-content: center;
