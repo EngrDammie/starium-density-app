@@ -750,10 +750,18 @@
         // ===== REMARKS AUTO-FILL =====
         function updateRemarks() {
             let remarks = [];
+            const isBotMode = modeSelect.value === 'bot';
             const buggy = buggyInput.value.trim();
             const siloMachines = siloMachineInput.value.trim();
             const appearance = appearanceSelect.value;
             const fragrance = fragranceSelect.value;
+            
+            // BOT mode elements
+            const botAppearance = document.getElementById('bot-appearance');
+            const botFlow = document.getElementById('bot-flow');
+            const botAppearanceValue = botAppearance ? botAppearance.value : 'A';
+            const botFlowValue = botFlow ? botFlow.value : 'FF';
+            const botRemarksTextarea = document.getElementById('bot-remarks-text');
 
             // Density-related remarks
             if (currentDensity !== null) {
@@ -791,15 +799,30 @@
                 remarks.push('Fragrance: Unacceptable');
             }
 
+            // BOT mode: Appearance remarks
+            if (isBotMode && botAppearanceValue === 'U') {
+                remarks.push('Appearance: Unacceptable');
+            }
+
+            // BOT mode: Flow Property remarks
+            if (isBotMode && botFlowValue === 'NFF') {
+                remarks.push('Flow Property: Not Free Flowing');
+            }
+
+            // Determine which textarea to use
+            const targetTextarea = isBotMode ? botRemarksTextarea : remarksTextarea;
+            if (!targetTextarea) return;
+
             // Preserve user-added content (content after auto-generated remarks)
-            const currentUserContent = remarksTextarea.value.split('\n').filter(line => {
+            const currentUserContent = targetTextarea.value.split('\n').filter(line => {
                 const lower = line.toLowerCase();
                 return !lower.includes('density too') && 
                        !lower.includes('was overridden') &&
                        !lower.includes('assigned to machine') &&
                        !lower.includes('shared across machines') &&
                        !lower.includes('appearance:') &&
-                       !lower.includes('fragrance:');
+                       !lower.includes('fragrance:') &&
+                       !lower.includes('flow property:');
             }).join('\n').trim();
 
             // Build new remarks
@@ -808,12 +831,17 @@
                 newRemarks += '\n' + currentUserContent;
             }
 
-            remarksTextarea.value = newRemarks;
+            targetTextarea.value = newRemarks;
         }
 
         function clearAutoRemarks() {
+            const isBotMode = modeSelect.value === 'bot';
+            const botRemarksTextarea = document.getElementById('bot-remarks-text');
+            const targetTextarea = isBotMode ? botRemarksTextarea : remarksTextarea;
+            if (!targetTextarea) return;
+            
             // Keep only user content
-            const currentValue = remarksTextarea.value;
+            const currentValue = targetTextarea.value;
             const userContent = currentValue.split('\n').filter(line => {
                 const lower = line.toLowerCase();
                 return !lower.includes('density too') && 
@@ -821,9 +849,10 @@
                        !lower.includes('assigned to machine') &&
                        !lower.includes('shared across machines') &&
                        !lower.includes('appearance:') &&
-                       !lower.includes('fragrance:');
+                       !lower.includes('fragrance:') &&
+                       !lower.includes('flow property:');
             }).join('\n').trim();
-            remarksTextarea.value = userContent;
+            targetTextarea.value = userContent;
         }
 
         // ===== MACHINE SELECTION =====
@@ -889,6 +918,16 @@
 
         appearanceSelect.addEventListener('change', () => handleGradeChange(appearanceSelect));
         fragranceSelect.addEventListener('change', () => handleGradeChange(fragranceSelect));
+
+        // BOT mode dropdowns - auto-update remarks
+        const botAppearanceSelect = document.getElementById('bot-appearance');
+        const botFlowSelect = document.getElementById('bot-flow');
+        if (botAppearanceSelect) {
+            botAppearanceSelect.addEventListener('change', updateRemarks);
+        }
+        if (botFlowSelect) {
+            botFlowSelect.addEventListener('change', updateRemarks);
+        }
 
         // ===== SHIFT AUTO-UPDATE =====
         function updateShift() {
@@ -973,6 +1012,7 @@
             siloMachineInput.value = '';
             updateMachineGridSelection();
             clearAutoRemarks();
+            updateRemarks();
             updateModeVisibility();
         });
 
