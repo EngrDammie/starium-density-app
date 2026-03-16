@@ -534,11 +534,6 @@
         <div class="density-status normal" id="densityStatus" style="display: none;">Normal</div>
     </div>
 
-    <div class="machine-grid-container">
-        <div class="machine-grid-title">🏭 Machine Status</div>
-        <div class="machine-grid" id="machineGrid"></div>
-    </div>
-
     <div class="qc-staff-panel">
         <div class="staff-info-item">
             <div class="staff-label">QC Staff Name</div>
@@ -654,7 +649,6 @@
         // ===== INITIALIZE =====
         async function init() {
             updateDateTime();
-            renderMachineGrid();
             await loadQCStaffInfo();
             await loadCurrentShiftApproval();
             await loadRecentTests();
@@ -695,13 +689,6 @@
             
             document.getElementById('currentDate').textContent = dateStr;
             document.getElementById('currentShift').textContent = shift;
-        }
-
-        function renderMachineGrid() {
-            const grid = document.getElementById('machineGrid');
-            grid.innerHTML = machineData.map(m => 
-                `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>`
-            ).join('');
         }
 
         async function loadQCStaffInfo() {
@@ -818,25 +805,12 @@
                                    status === 'low' ? '⚠ Low' : '⚠ High';
             statusEl.className = `density-status ${status}`;
             statusEl.style.display = 'inline-block';
-
-            // Update machine highlights
-            updateMachineHighlights(density);
         }
 
         function getDensityStatus(density) {
             if (density < DENSITY_TOO_LOW) return 'low';
             if (density > DENSITY_TOO_HIGH) return 'high';
             return 'normal';
-        }
-
-        function updateMachineHighlights(density) {
-            machineData.forEach(m => {
-                const btn = document.getElementById(`machine-${m.id}`);
-                const inRange = density >= m.min && density <= m.max;
-                
-                btn.classList.toggle('match', inRange);
-                btn.classList.toggle('dimmed', !inRange);
-            });
         }
 
         // ===== APPROVAL MODAL =====
