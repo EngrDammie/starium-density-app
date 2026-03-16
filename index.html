@@ -1052,29 +1052,26 @@
         // Toggle Level 9 / BOT mode elements
         function updateModeVisibility() {
             const isBotMode = modeSelect.value === 'bot';
-            const level9Elements = [
-                document.getElementById('level9-row1'),
-                document.getElementById('level9-row2'),
-                document.getElementById('level9-row3'),
-                document.getElementById('level9-remarks')
-            ];
-            level9Elements.forEach(el => {
-                if (el) el.classList.toggle('bot-hidden', isBotMode);
-            });
             
-            // BOT mode specific elements
+            // Level 9 elements - hide in BOT mode
+            const level9Row1 = document.getElementById('level9-row1');
+            const level9Row2 = document.getElementById('level9-row2');
+            const level9Row3 = document.getElementById('level9-row3');
+            const level9Remarks = document.getElementById('level9-remarks');
+            
+            if (level9Row1) level9Row1.style.display = isBotMode ? 'none' : '';
+            if (level9Row2) level9Row2.style.display = isBotMode ? 'none' : '';
+            if (level9Row3) level9Row3.style.display = isBotMode ? 'none' : '';
+            if (level9Remarks) level9Remarks.style.display = isBotMode ? 'none' : '';
+            
+            // BOT mode specific elements - show only in BOT mode
             const botAppearanceRow = document.getElementById('bot-appearance-row');
             const botFlowRow = document.getElementById('bot-flow-row');
             const botRemarks = document.getElementById('bot-remarks');
-            if (botAppearanceRow) {
-                botAppearanceRow.classList.toggle('level9-hidden', !isBotMode);
-            }
-            if (botFlowRow) {
-                botFlowRow.classList.toggle('level9-hidden', !isBotMode);
-            }
-            if (botRemarks) {
-                botRemarks.classList.toggle('level9-hidden', !isBotMode);
-            }
+            
+            if (botAppearanceRow) botAppearanceRow.style.display = isBotMode ? '' : 'none';
+            if (botFlowRow) botFlowRow.style.display = isBotMode ? '' : 'none';
+            if (botRemarks) botRemarks.style.display = isBotMode ? '' : 'none';
         }
         
         // Initialize on load
