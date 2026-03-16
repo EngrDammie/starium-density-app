@@ -1077,8 +1077,15 @@
             }
         }
         
-        // Initialize on load
-        updateModeVisibility();
+        // Initialize on load - ensure DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            updateModeVisibility();
+        });
+        
+        // Fallback: also try immediately in case DOM is already ready
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+            setTimeout(updateModeVisibility, 0);
+        }
 
         modeSelect.addEventListener('change', () => {
             weightInput.value = '';
@@ -1150,25 +1157,29 @@
 
         // ===== CALCULATION FUNCTIONS =====
         function calculate() {
-            const weight = parseFloat(weightInput.value);
-            const mode = modeSelect.value;
+            try {
+                const weight = parseFloat(weightInput.value);
+                const mode = modeSelect ? modeSelect.value : 'level9';
 
-            if (isNaN(weight) || weight <= 0) {
-                resultsDiv.innerHTML = '';
-                currentDensity = null;
-                clearAutoRemarks();
-                return;
-            }
+                if (isNaN(weight) || weight <= 0) {
+                    resultsDiv.innerHTML = '';
+                    currentDensity = null;
+                    clearAutoRemarks();
+                    return;
+                }
 
-            if (mode === 'level9') {
-                calculateLevel9(weight);
-            } else {
-                calculateBOT(weight);
-            }
-            
-            // Trigger auto-save after calculation
-            if (currentDensity) {
-                startAutoSave();
+                if (mode === 'level9') {
+                    calculateLevel9(weight);
+                } else {
+                    calculateBOT(weight);
+                }
+                
+                // Trigger auto-save after calculation
+                if (currentDensity) {
+                    startAutoSave();
+                }
+            } catch (e) {
+                console.error('Calculate error:', e);
             }
         }
 
