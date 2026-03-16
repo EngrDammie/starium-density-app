@@ -1,11 +1,11 @@
 // ===== FIREBASE CONFIGURATION =====
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT.firebaseapp.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
+    authDomain: "starium-rafa-app.firebaseapp.com",
+    projectId: "starium-rafa-app",
+    storageBucket: "starium-rafa-app.firebasestorage.app",
+    messagingSenderId: "743583982928",
+    appId: "1:743583982928:web:e331aaa0b9e741a1537855"
 };
 
 // Initialize Firebase
