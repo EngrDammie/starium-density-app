@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOT Executive View - Starium Rafa QC</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #00BCD4;
+            --primary-dark: #0097A7;
+            --accent: #FFD700;
+            --success: #00E676;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --bg-dark: #121212;
+            --bg-card: #1E1E1E;
+            --text: #ffffff;
+            --text-muted: #888;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #2d2d2d 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: var(--bg-dark);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Main Density Display */
+        .density-display {
+            background: linear-gradient(145deg, var(--bg-card), #252525);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(0, 188, 212, 0.3);
+        }
+
+        .density-label {
+            font-size: 1rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .density-value {
+            font-size: 5rem;
+            font-weight: bold;
+            color: var(--primary);
+            text-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
+        }
+
+        .density-status {
+            font-size: 1.2rem;
+            margin-top: 10px;
+            padding: 5px 15px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .density-status.normal {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success);
+        }
+
+        .density-status.low {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .density-status.high {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        /* Machine Grid */
+        .machine-grid-container {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .machine-grid-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 8px;
+        }
+
+        .machine-btn {
+            padding: 12px 5px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        .machine-btn.match {
+            background: linear-gradient(145deg, var(--success), #00C853);
+            border-color: var(--success);
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.5);
+            color: #121212;
+        }
+
+        .machine-btn.dimmed {
+            opacity: 0.3;
+        }
+
+        /* QC Staff Info */
+        .qc-staff-panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .staff-info-item {
+            text-align: center;
+        }
+
+        .staff-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .staff-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        /* Approval Buttons */
+        .approval-panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .approval-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .approval-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+        }
+
+        .approval-btn {
+            padding: 15px 20px;
+            border: 2px solid #444;
+            border-radius: 10px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .approval-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+        }
+
+        .approval-btn.approved {
+            border-color: var(--success);
+            background: rgba(0, 230, 118, 0.1);
+            color: var(--success);
+        }
+
+        .approval-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .approval-btn .approver-name {
+            display: block;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            color: var(--success);
+        }
+
+        /* Recent Data Table */
+        .recent-data-panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+        }
+
+        .recent-data-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            background: var(--bg-dark);
+            padding: 12px 8px;
+            text-align: left;
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .data-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .data-table tr:hover {
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+        }
+
+        .status-badge.normal {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success);
+        }
+
+        .status-badge.low {
+            background: rgba(255, 152, 0, 0.2);
+            color: var(--warning);
+        }
+
+        .status-badge.high {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            border: 2px solid var(--primary);
+            animation: modalPop 0.3s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #444;
+            border-radius: 8px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 1rem;
+            margin-bottom: 20px;
+        }
+
+        .modal input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: var(--primary);
+            color: #121212;
+        }
+
+        .modal-btn.confirm:hover {
+            background: var(--primary-dark);
+        }
+
+        .modal-btn.cancel {
+            background: #444;
+            color: var(--text);
+        }
+
+        .modal-btn.cancel:hover {
+            background: #555;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .machine-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            
+            .density-value {
+                font-size: 3rem;
+            }
+            
+            .approval-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 8px 4px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            .machine-grid {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .machine-btn {
+                padding: 8px 3px;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Sync Status */
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .sync-status.online {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success);
+        }
+
+        .sync-status.offline {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="sync-status online" id="syncStatus">🟢 Online</div>
+
+    <header>
+        <h1>🏭 BOT Executive View</h1>
+        <p class="subtitle">Real-time BOT Density Monitoring</p>
+        <div class="header-stats">
+            <div class="stat-box">
+                <div class="stat-label">Mode</div>
+                <div class="stat-value">Level 9</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Shift</div>
+                <div class="stat-value" id="currentShift">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Date</div>
+                <div class="stat-value" id="currentDate">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Tests Today</div>
+                <div class="stat-value" id="totalTests">0</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="density-display">
+        <div class="density-label">Current Density</div>
+        <div class="density-value" id="currentDensity">--</div>
+        <div class="density-status normal" id="densityStatus" style="display: none;">Normal</div>
+    </div>
+
+    <div class="machine-grid-container">
+        <div class="machine-grid-title">🏭 Machine Status</div>
+        <div class="machine-grid" id="machineGrid"></div>
+    </div>
+
+    <div class="qc-staff-panel">
+        <div class="staff-info-item">
+            <div class="staff-label">QC Staff Name</div>
+            <div class="staff-value" id="qcStaffName">--</div>
+        </div>
+        <div class="staff-info-item">
+            <div class="staff-label">Shift</div>
+            <div class="staff-value" id="qcStaffShift">--</div>
+        </div>
+        <div class="staff-info-item">
+            <div class="staff-label">Team</div>
+            <div class="staff-value" id="qcStaffTeam">--</div>
+        </div>
+        <div class="staff-info-item">
+            <div class="staff-label">Last Test Time</div>
+            <div class="staff-value" id="lastTestTime">--</div>
+        </div>
+    </div>
+
+    <div class="approval-panel">
+        <div class="approval-title">👔 Shift Approvals</div>
+        <div class="approval-buttons">
+            <button class="approval-btn" id="btnPlcOperator" onclick="openApprovalModal('plcOperator')">
+                ⚡ PLC Operator
+                <span class="approver-name" id="namePlcOperator"></span>
+            </button>
+            <button class="approval-btn" id="btnProductionManager" onclick="openApprovalModal('productionManager')">
+                🏭 Production Manager
+                <span class="approver-name" id="nameProductionManager"></span>
+            </button>
+            <button class="approval-btn" id="btnQcManager" onclick="openApprovalModal('qcManager')">
+                ✅ Quality Control Manager
+                <span class="approver-name" id="nameQcManager"></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="recent-data-panel">
+        <div class="recent-data-title">📋 Recent Tests (Last 10)</div>
+        <div id="recentDataTable">
+            <div class="loading">
+                <div class="spinner"></div>
+                Loading recent data...
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Starium Rafa Quality Control Tool | Executive View</p>
+    </footer>
+
+    <!-- Approval Modal -->
+    <div class="modal-overlay" id="approvalModal">
+        <div class="modal">
+            <h2 id="modalTitle">Approve</h2>
+            <input type="text" id="approverNameInput" placeholder="Enter your name" autocomplete="off">
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeApprovalModal()">Cancel</button>
+                <button class="modal-btn confirm" onclick="confirmApproval()">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-storage.js"></script>
+    <script>
+        // ===== CONFIG =====
+        const MODE = 'bot';
+        const BOT_DIVISOR = 1680;
+        const LEVEL9_DIVISOR = 1580;
+        const DENSITY_TOO_LOW = 0.200;
+        const DENSITY_TOO_HIGH = 0.310;
+
+        // Machine data
+        const machineData = [
+            { id: 1, gram: 125, min: 0.200, max: 0.270 },
+            { id: 2, gram: 85, min: 0.240, max: 0.300 },
+            { id: 3, gram: 85, min: 0.240, max: 0.300 },
+            { id: 4, gram: 85, min: 0.240, max: 0.300 },
+            { id: 5, gram: 85, min: 0.240, max: 0.300 },
+            { id: 6, gram: 125, min: 0.200, max: 0.270 },
+            { id: 7, gram: 85, min: 0.240, max: 0.300 },
+            { id: 8, gram: 850, min: 0.200, max: 0.270 },
+            { id: 9, gram: 85, min: 0.240, max: 0.300 },
+            { id: 10, gram: 22, min: 0.200, max: 0.310 },
+            { id: 11, gram: 85, min: 0.240, max: 0.300 },
+            { id: 12, gram: 85, min: 0.240, max: 0.300 },
+            { id: 13, gram: 85, min: 0.240, max: 0.300 },
+            { id: 14, gram: 85, min: 0.240, max: 0.300 },
+            { id: 15, gram: 85, min: 0.240, max: 0.300 },
+            { id: 16, gram: 850, min: 0.200, max: 0.270 },
+            { id: 17, gram: 85, min: 0.240, max: 0.300 },
+            { id: 18, gram: 85, min: 0.240, max: 0.300 },
+            { id: 19, gram: 85, min: 0.240, max: 0.300 },
+            { id: 20, gram: 85, min: 0.240, max: 0.300 },
+            { id: 21, gram: 850, min: 0.200, max: 0.270 },
+            { id: 22, gram: 45, min: 0.210, max: 0.310 },
+            { id: 23, gram: 45, min: 0.210, max: 0.310 },
+            { id: 24, gram: 45, min: 0.210, max: 0.310 },
+            { id: 25, gram: 45, min: 0.210, max: 0.310 },
+            { id: 26, gram: 850, min: 0.200, max: 0.270 },
+            { id: 27, gram: 45, min: 0.210, max: 0.310 },
+            { id: 28, gram: 45, min: 0.210, max: 0.310 },
+            { id: 29, gram: 45, min: 0.210, max: 0.310 },
+            { id: 30, gram: 45, min: 0.210, max: 0.310 }
+        ];
+
+        // State
+        let currentApprovalId = null;
+        let currentApproverType = null;
+        let currentShiftApproval = null;
+        let lastTestData = null;
+
+        // ===== INITIALIZE =====
+        async function init() {
+            updateDateTime();
+            renderMachineGrid();
+            await loadQCStaffInfo();
+            await loadCurrentShiftApproval();
+            await loadRecentTests();
+            
+            // Real-time listener for latest test
+            db.collection('qc_tests')
+                .where('mode', '==', MODE)
+                .orderBy('createdAt', 'desc')
+                .limit(1)
+                .onSnapshot((snapshot) => {
+                    if (!snapshot.empty) {
+                        const test = snapshot.docs[0].data();
+                        updateCurrentDensity(test);
+                    }
+                });
+
+            // Real-time listener for shift approval
+            if (currentApprovalId) {
+                db.collection('shift_approvals').doc(currentApprovalId)
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            currentShiftApproval = doc.data();
+                            updateApprovalButtons();
+                        }
+                    });
+            }
+
+            // Network status
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const hour = now.getHours();
+            const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentShift').textContent = shift;
+        }
+
+        function renderMachineGrid() {
+            const grid = document.getElementById('machineGrid');
+            grid.innerHTML = machineData.map(m => 
+                `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>`
+            ).join('');
+        }
+
+        async function loadQCStaffInfo() {
+            const querySnapshot = await db.collection('qc_tests')
+                .where('mode', '==', MODE)
+                .orderBy('createdAt', 'desc')
+                .limit(1)
+                .get();
+
+            if (!querySnapshot.empty) {
+                const test = querySnapshot.docs[0].data();
+                document.getElementById('qcStaffName').textContent = test.qcStaffName || '--';
+                document.getElementById('qcStaffShift').textContent = test.qcStaffShift || '--';
+                document.getElementById('qcStaffTeam').textContent = test.qcStaffTeam || '--';
+                
+                if (test.createdAt) {
+                    const date = test.createdAt.toDate();
+                    document.getElementById('lastTestTime').textContent = date.toLocaleTimeString();
+                }
+            }
+        }
+
+        async function loadCurrentShiftApproval() {
+            const now = new Date();
+            const date = now.toISOString().split('T')[0];
+            const hour = now.getHours();
+            const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+
+            currentShiftApproval = await getOrCreateShiftApproval(MODE, shift, date);
+            currentApprovalId = currentShiftApproval.id;
+            updateApprovalButtons();
+        }
+
+        function updateApprovalButtons() {
+            const approvers = [
+                { type: 'plcOperator', btnId: 'btnPlcOperator', nameId: 'namePlcOperator' },
+                { type: 'productionManager', btnId: 'btnProductionManager', nameId: 'nameProductionManager' },
+                { type: 'qcManager', btnId: 'btnQcManager', nameId: 'nameQcManager' }
+            ];
+
+            approvers.forEach(({ type, btnId, nameId }) => {
+                const btn = document.getElementById(btnId);
+                const nameSpan = document.getElementById(nameId);
+                const data = currentShiftApproval?.[type];
+
+                if (data?.name) {
+                    btn.classList.add('approved');
+                    btn.disabled = true;
+                    nameSpan.textContent = `✓ ${data.name}`;
+                } else {
+                    btn.classList.remove('approved');
+                    btn.disabled = false;
+                    nameSpan.textContent = '';
+                }
+            });
+        }
+
+        async function loadRecentTests() {
+            const tests = await getRecentTests(MODE, 10);
+            document.getElementById('totalTests').textContent = tests.length;
+            
+            if (tests.length === 0) {
+                document.getElementById('recentDataTable').innerHTML = 
+                    '<div class="loading">No tests recorded yet</div>';
+                return;
+            }
+
+            const tableHtml = `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Weight</th>
+                            <th>Density</th>
+                            <th>Status</th>
+                            <th>Buggy</th>
+                            <th>QC Staff</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tests.map(test => {
+                            const density = test.density?.toFixed(3) || '--';
+                            const status = getDensityStatus(density);
+                            const time = test.createdAt ? test.createdAt.toDate().toLocaleTimeString() : '--';
+                            return `
+                                <tr>
+                                    <td>${time}</td>
+                                    <td>${test.weight || '--'}g</td>
+                                    <td>${density}</td>
+                                    <td><span class="status-badge ${status}">${status}</span></td>
+                                    <td>${test.buggyNumber || '--'}</td>
+                                    <td>${test.qcStaffName || '--'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('recentDataTable').innerHTML = tableHtml;
+        }
+
+        function updateCurrentDensity(test) {
+            lastTestData = test;
+            const density = test.density;
+            
+            if (density === null || density === undefined) return;
+            
+            document.getElementById('currentDensity').textContent = density.toFixed(3);
+            
+            const status = getDensityStatus(density);
+            const statusEl = document.getElementById('densityStatus');
+            statusEl.textContent = status === 'normal' ? '✓ Normal' : 
+                                   status === 'low' ? '⚠ Low' : '⚠ High';
+            statusEl.className = `density-status ${status}`;
+            statusEl.style.display = 'inline-block';
+
+            // Update machine highlights
+            updateMachineHighlights(density);
+        }
+
+        function getDensityStatus(density) {
+            if (density < DENSITY_TOO_LOW) return 'low';
+            if (density > DENSITY_TOO_HIGH) return 'high';
+            return 'normal';
+        }
+
+        function updateMachineHighlights(density) {
+            machineData.forEach(m => {
+                const btn = document.getElementById(`machine-${m.id}`);
+                const inRange = density >= m.min && density <= m.max;
+                
+                btn.classList.toggle('match', inRange);
+                btn.classList.toggle('dimmed', !inRange);
+            });
+        }
+
+        // ===== APPROVAL MODAL =====
+        function openApprovalModal(approverType) {
+            currentApproverType = approverType;
+            const titles = {
+                plcOperator: 'PLC Operator Approval',
+                productionManager: 'Production Manager Approval',
+                qcManager: 'Quality Control Manager Approval'
+            };
+            
+            document.getElementById('modalTitle').textContent = titles[approverType];
+            document.getElementById('approverNameInput').value = '';
+            document.getElementById('approvalModal').classList.add('active');
+            document.getElementById('approverNameInput').focus();
+        }
+
+        function closeApprovalModal() {
+            document.getElementById('approvalModal').classList.remove('active');
+        }
+
+        async function confirmApproval() {
+            const name = document.getElementById('approverNameInput').value.trim();
+            if (!name) {
+                alert('Please enter your name');
+                return;
+            }
+
+            await updateApprover(currentApprovalId, currentApproverType, name);
+            closeApprovalModal();
+        }
+
+        // ===== NETWORK STATUS =====
+        function updateNetworkStatus() {
+            const statusEl = document.getElementById('syncStatus');
+            if (navigator.onLine) {
+                statusEl.textContent = '🟢 Online';
+                statusEl.className = 'sync-status online';
+            } else {
+                statusEl.textContent = '📴 Offline';
+                statusEl.className = 'sync-status offline';
+            }
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>

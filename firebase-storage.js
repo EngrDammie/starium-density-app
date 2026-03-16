@@ -1,0 +1,210 @@
+// ===== FIREBASE CONFIGURATION =====
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+};
+
+// Initialize Firebase
+const app = firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Enable offline persistence
+firebase.firestore().enableIndexedDBPersistence(db, { synchronizeTabs: true })
+    .catch((err) => {
+        if (err.code == 'failed-precondition') {
+            console.warn('Persistence failed: Multiple tabs open');
+        } else if (err.code == 'unimplemented') {
+            console.warn('Persistence not available in this browser');
+        }
+    });
+
+// ===== AUTO-SAVE CONFIGURATION =====
+const AUTO_SAVE_CONFIG = {
+    delaySeconds: 10, // Configurable delay before auto-save
+    enableAutoSave: true
+};
+
+// ===== DATA MODEL =====
+
+/**
+ * Save QC Test to Firestore
+ * @param {Object} testData - The QC test data
+ * @returns {Promise<string>} - The document ID
+ */
+async function saveQCTest(testData) {
+    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
+    
+    const docRef = await db.collection('qc_tests').add({
+        ...testData,
+        createdAt: timestamp,
+        syncStatus: 'synced'
+    });
+    
+    return docRef.id;
+}
+
+/**
+ * Get or create shift approval record
+ * @param {string} mode - 'level9' or 'bot'
+ * @param {string} shift - 'DAY' or 'NIGHT'
+ * @param {string} date - YYYY-MM-DD format
+ * @returns {Promise<Object>} - The shift approval document
+ */
+async function getOrCreateShiftApproval(mode, shift, date) {
+    const querySnapshot = await db.collection('shift_approvals')
+        .where('mode', '==', mode)
+        .where('shift', '==', shift)
+        .where('date', '==', date)
+        .limit(1)
+        .get();
+    
+    if (!querySnapshot.empty) {
+        return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+    }
+    
+    // Create new shift approval
+    const docRef = await db.collection('shift_approvals').add({
+        mode,
+        shift,
+        date,
+        buggySupervisor: null,
+        plcOperator: null,
+        productionManager: null,
+        qcManager: null,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    
+    return { id: docRef.id, mode, shift, date, status: 'pending' };
+}
+
+/**
+ * Update approver for a shift
+ * @param {string} approvalId - The shift approval document ID
+ * @param {string} approverType - 'buggySupervisor' | 'plcOperator' | 'productionManager' | 'qcManager'
+ * @param {string} approverName - Name of the approver
+ */
+async function updateApprover(approvalId, approverType, approverName) {
+    await db.collection('shift_approvals').doc(approvalId).update({
+        [approverType]: {
+            name: approverName,
+            approvedAt: firebase.firestore.FieldValue.serverTimestamp()
+        },
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+}
+
+/**
+ * Get recent QC tests for a mode
+ * @param {string} mode - 'level9' or 'bot'
+ * @param {number} limit - Number of records to fetch
+ * @returns {Promise<Array>} - Array of QC test documents
+ */
+async function getRecentTests(mode, limit = 10) {
+    const querySnapshot = await db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
+    
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+/**
+ * Get shift approval for current shift
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Promise<Object>} - Current shift approval
+ */
+async function getCurrentShiftApproval(mode) {
+    const now = new Date();
+    const date = now.toISOString().split('T')[0];
+    const hour = now.getHours();
+    const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+    
+    return getOrCreateShiftApproval(mode, shift, date);
+}
+
+/**
+ * Get QC staff info from localStorage
+ */
+function getQCStaffInfo() {
+    return {
+        name: localStorage.getItem('qcName') || '',
+        team: localStorage.getItem('qcTeam') || '',
+        shift: (() => {
+            const hour = new Date().getHours();
+            return (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+        })()
+    };
+}
+
+// ===== AUTO-SAVE FUNCTIONALITY =====
+
+let autoSaveTimer = null;
+
+function startAutoSave(callback, delaySeconds = AUTO_SAVE_CONFIG.delaySeconds) {
+    if (!AUTO_SAVE_CONFIG.enableAutoSave) return;
+    
+    // Clear any existing timer
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+    }
+    
+    // Start new timer
+    autoSaveTimer = setTimeout(() => {
+        callback();
+    }, delaySeconds * 1000);
+}
+
+function cancelAutoSave() {
+    if (autoSaveTimer) {
+        clearTimeout(autoSaveTimer);
+        autoSaveTimer = null;
+    }
+}
+
+// ===== UI FEEDBACK FUNCTIONS =====
+
+function showAutoSaveProgress(elementId, delaySeconds = AUTO_SAVE_CONFIG.delaySeconds) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    let remaining = delaySeconds;
+    element.innerHTML = `Auto-saving in ${remaining}s...`;
+    element.style.color = '#FFA500';
+    
+    const interval = setInterval(() => {
+        remaining--;
+        if (remaining > 0) {
+            element.innerHTML = `Auto-saving in ${remaining}s...`;
+        } else {
+            clearInterval(interval);
+            element.innerHTML = 'Saving...';
+        }
+    }, 1000);
+}
+
+function showSavedFeedback(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.innerHTML = '✓ Saved';
+    element.style.color = '#00E676';
+    
+    setTimeout(() => {
+        element.innerHTML = '';
+    }, 3000);
+}
+
+function showOfflineFeedback(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.innerHTML = '📴 Offline - Will sync when online';
+    element.style.color = '#FF5722';
+}
