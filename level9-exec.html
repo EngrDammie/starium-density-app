@@ -649,6 +649,9 @@
             { id: 30, gram: 45, min: 0.210, max: 0.310 }
         ];
 
+        // Column order for display (matches index.html)
+        const columnOrder = [26, 21, 16, 11, 6, 1, 27, 22, 17, 12, 7, 2, 28, 23, 18, 13, 8, 3, 29, 24, 19, 14, 9, 4, 30, 25, 20, 15, 10, 5];
+
         // State
         let currentApprovalId = null;
         let currentApproverType = null;
@@ -703,9 +706,10 @@
 
         function renderMachineGrid() {
             const grid = document.getElementById('machineGrid');
-            grid.innerHTML = machineData.map(m => 
-                `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>`
-            ).join('');
+            grid.innerHTML = columnOrder.map(id => {
+                const m = machineData.find(machine => machine.id === id);
+                return m ? `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>` : '';
+            }).join('');
         }
 
         async function loadQCStaffInfo() {
