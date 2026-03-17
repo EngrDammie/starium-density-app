@@ -215,11 +215,15 @@ async function getTestsTodayCount(mode) {
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
+    console.log('getTestsTodayCount:', mode, { startOfDay: startOfDay.toISOString(), endOfDay: endOfDay.toISOString() });
+    
     // Get all tests for this mode and filter by today's date
     // This works without needing a composite index
     const querySnapshot = await db.collection('qc_tests')
         .where('mode', '==', mode)
         .get();
+    
+    console.log('All tests for mode:', querySnapshot.size);
     
     const startMs = startOfDay.getTime();
     const endMs = endOfDay.getTime();
@@ -227,14 +231,17 @@ async function getTestsTodayCount(mode) {
     
     querySnapshot.forEach(doc => {
         const data = doc.data();
+        console.log('Test doc:', doc.id, 'createdAt:', data.createdAt, 'mode:', data.mode);
         if (data.createdAt) {
             const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
+            console.log('  createdMs:', createdMs, 'in range?', createdMs >= startMs && createdMs <= endMs);
             if (createdMs >= startMs && createdMs <= endMs) {
                 count++;
             }
         }
     });
     
+    console.log('Final count:', count);
     return count;
 }
 
@@ -249,6 +256,8 @@ function subscribeToTestsTodayCount(mode, callback) {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    
+    console.log('subscribeToTestsTodayCount:', mode, { startOfDay: startOfDay.toISOString(), endOfDay: endOfDay.toISOString() });
     
     // Simple approach: get all and filter client-side (no index needed)
     return db.collection('qc_tests')
@@ -268,6 +277,7 @@ function subscribeToTestsTodayCount(mode, callback) {
                 }
             });
             
+            console.log('Subscription count update:', count);
             callback(count);
         }, (error) => {
             console.error('Error subscribing to tests count:', error);
