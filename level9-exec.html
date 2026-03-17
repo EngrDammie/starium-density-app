@@ -112,6 +112,22 @@
             font-weight: bold;
             color: var(--primary);
             text-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .density-value.normal {
+            color: var(--success);
+            text-shadow: 0 0 20px rgba(0, 230, 118, 0.5);
+        }
+
+        .density-value.low {
+            color: var(--warning);
+            text-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+        }
+
+        .density-value.high {
+            color: var(--danger);
+            text-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
         }
 
         .density-status {
@@ -858,9 +874,15 @@
             
             if (density === null || density === undefined) return;
             
-            document.getElementById('currentDensity').textContent = density.toFixed(3);
+            const densityEl = document.getElementById('currentDensity');
+            densityEl.textContent = density.toFixed(3);
             
             const status = getDensityStatus(density);
+            
+            // Apply color to density value
+            densityEl.className = `density-value ${status}`;
+            
+            // Update status badge
             const statusEl = document.getElementById('densityStatus');
             statusEl.textContent = status === 'normal' ? '✓ Normal' : 
                                    status === 'low' ? '⚠ Low' : '⚠ High';
