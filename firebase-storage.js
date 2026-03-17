@@ -147,20 +147,28 @@ async function checkAndUpdateApprovalStatus(approvalId) {
     }
 }
 
-/**
- * Get recent QC tests for a mode
- * @param {string} mode - 'level9' or 'bot'
- * @param {number} limit - Number of records to fetch
- * @returns {Promise<Array>} - Array of QC test documents
- */
 async function getRecentTests(mode, limit = 10) {
+    // Get all tests for mode and sort/limit client-side (no index needed)
     const querySnapshot = await db.collection('qc_tests')
         .where('mode', '==', mode)
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
         .get();
     
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Convert to array and sort by createdAt descending
+    const tests = [];
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        tests.push({ id: doc.id, ...data });
+    });
+    
+    // Sort by createdAt descending
+    tests.sort((a, b) => {
+        if (!a.createdAt || !b.createdAt) return 0;
+        const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+        const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+        return bDate - aDate;
+    });
+    
+    return tests.slice(0, limit);
 }
 
 /**
@@ -171,14 +179,26 @@ async function getRecentTests(mode, limit = 10) {
 async function getLatestTest(mode) {
     const querySnapshot = await db.collection('qc_tests')
         .where('mode', '==', mode)
-        .orderBy('createdAt', 'desc')
-        .limit(1)
         .get();
     
     if (querySnapshot.empty) return null;
     
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() };
+    // Find the most recent
+    let latestDoc = null;
+    let latestDate = null;
+    
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.createdAt) {
+            const docDate = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+            if (!latestDate || docDate > latestDate) {
+                latestDate = docDate;
+                latestDoc = { id: doc.id, ...data };
+            }
+        }
+    });
+    
+    return latestDoc;
 }
 
 /**
@@ -190,15 +210,28 @@ async function getLatestTest(mode) {
 function subscribeToLatestTest(mode, callback) {
     return db.collection('qc_tests')
         .where('mode', '==', mode)
-        .orderBy('createdAt', 'desc')
-        .limit(1)
         .onSnapshot((snapshot) => {
-            if (!snapshot.empty) {
-                const test = snapshot.docs[0].data();
-                callback({ id: snapshot.docs[0].id, ...test });
-            } else {
+            if (snapshot.empty) {
                 callback(null);
+                return;
             }
+            
+            // Find the most recent document
+            let latestDoc = null;
+            let latestDate = null;
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.createdAt) {
+                    const docDate = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                    if (!latestDate || docDate > latestDate) {
+                        latestDate = docDate;
+                        latestDoc = { id: doc.id, ...data };
+                    }
+                }
+            });
+            
+            callback(latestDoc);
         }, (error) => {
             console.error('Error subscribing to latest test:', error);
             callback(null);
