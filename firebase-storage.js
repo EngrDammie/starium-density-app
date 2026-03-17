@@ -148,27 +148,35 @@ async function checkAndUpdateApprovalStatus(approvalId) {
 }
 
 async function getRecentTests(mode, limit = 10) {
-    // Get all tests for mode and sort/limit client-side (no index needed)
-    const querySnapshot = await db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .get();
-    
-    // Convert to array and sort by createdAt descending
-    const tests = [];
-    querySnapshot.forEach(doc => {
-        const data = doc.data();
-        tests.push({ id: doc.id, ...data });
-    });
-    
-    // Sort by createdAt descending
-    tests.sort((a, b) => {
-        if (!a.createdAt || !b.createdAt) return 0;
-        const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-        const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-        return bDate - aDate;
-    });
-    
-    return tests.slice(0, limit);
+    try {
+        // Get all tests for mode and sort/limit client-side (no index needed)
+        const querySnapshot = await db.collection('qc_tests')
+            .where('mode', '==', mode)
+            .get();
+        
+        console.log('getRecentTests: found', querySnapshot.size, 'tests for mode:', mode);
+        
+        // Convert to array and sort by createdAt descending
+        const tests = [];
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            tests.push({ id: doc.id, ...data });
+        });
+        
+        // Sort by createdAt descending
+        tests.sort((a, b) => {
+            if (!a.createdAt || !b.createdAt) return 0;
+            const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+            const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+            return bDate - aDate;
+        });
+        
+        console.log('getRecentTests: returning', tests.length, 'tests');
+        return tests.slice(0, limit);
+    } catch (error) {
+        console.error('getRecentTests error:', error);
+        return [];
+    }
 }
 
 /**
@@ -208,30 +216,33 @@ async function getLatestTest(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToLatestTest(mode, callback) {
+    // Get all and find latest client-side (no index needed)
     return db.collection('qc_tests')
         .where('mode', '==', mode)
         .onSnapshot((snapshot) => {
+            console.log('subscribeToLatestTest: received', snapshot.size, 'tests for mode:', mode);
+            
             if (snapshot.empty) {
                 callback(null);
                 return;
             }
             
-            // Find the most recent document
-            let latestDoc = null;
-            let latestDate = null;
-            
+            // Convert to array and sort by createdAt descending
+            const tests = [];
             snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.createdAt) {
-                    const docDate = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
-                    if (!latestDate || docDate > latestDate) {
-                        latestDate = docDate;
-                        latestDoc = { id: doc.id, ...data };
-                    }
-                }
+                tests.push({ id: doc.id, ...doc.data() });
             });
             
-            callback(latestDoc);
+            // Sort by createdAt descending
+            tests.sort((a, b) => {
+                if (!a.createdAt || !b.createdAt) return 0;
+                const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+                const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+                return bDate - aDate; // descending
+            });
+            
+            console.log('subscribeToLatestTest: latest test:', tests[0]);
+            callback(tests[0] || null);
         }, (error) => {
             console.error('Error subscribing to latest test:', error);
             callback(null);
