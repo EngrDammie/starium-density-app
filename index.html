@@ -489,6 +489,52 @@
  75% { transform: translateX(5px); }
  }
 
+ .save-controls {
+ display: flex;
+ justify-content: center;
+ align-items: center;
+ gap: 15px;
+ margin-top: 20px;
+ padding: 20px;
+ }
+
+ .save-btn {
+ background: linear-gradient(145deg, #00BCD4, #0097A7);
+ color: #121212;
+ border: none;
+ padding: 15px 40px;
+ font-size: 1.1rem;
+ font-weight: bold;
+ border-radius: 10px;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ box-shadow: 0 4px 15px rgba(0, 188, 212, 0.4);
+ }
+
+ .save-btn:hover {
+ transform: translateY(-3px);
+ box-shadow: 0 8px 25px rgba(0, 188, 212, 0.6);
+ background: linear-gradient(145deg, #00E5FF, #00BCD4);
+ }
+
+ .save-btn:disabled {
+ background: #555;
+ cursor: not-allowed;
+ box-shadow: none;
+ transform: none;
+ }
+
+ .save-status {
+ font-size: 1rem;
+ font-weight: bold;
+ min-width: 150px;
+ text-align: center;
+ }
+
+ .save-status.saving { color: #FFA500; }
+ .save-status.saved { color: #00E676; }
+ .save-status.error { color: #FF1744; }
+
  footer {
  background-color: #1E1E1E;
  padding: 20px;
@@ -648,6 +694,12 @@
  </div>
 
  <div class="results-area" id="results"></div>
+
+ <!-- Save Controls -->
+ <div class="save-controls">
+ <button class="save-btn" id="saveBtn" onclick="saveQCData()">💾 Save Test</button>
+ <div class="save-status" id="saveStatus"></div>
+ </div>
  </main>
 
  <div class="modal-overlay" id="modal">
@@ -671,6 +723,7 @@
 
  <footer><p>&nbsp;</p></footer>
 
+ <script src="firebase-storage.js"></script>
  <script>
  // ===== CONFIGURABLE CONSTANTS =====
  const CONFIG = {
@@ -1237,6 +1290,104 @@
  modal.style.opacity = '1';
  modal.style.visibility = 'visible';
  }
+
+ // ===== SAVE QC TEST DATA =====
+ async function saveQCData() {
+ const saveBtn = document.getElementById('saveBtn');
+ const saveStatus = document.getElementById('saveStatus');
+ const mode = modeSelect.value;
+ const shift = shiftSelect.value;
+ const team = teamSelect.value;
+ const qcName = qcNameInput.value.trim();
+ const weight = parseFloat(weightInput.value);
+
+ // Validation
+ if (!qcName) {
+ saveStatus.textContent = '⚠️ Enter your name';
+ saveStatus.className = 'save-status error';
+ return;
+ }
+
+ if (!team) {
+ saveStatus.textContent = '⚠️ Select your team';
+ saveStatus.className = 'save-status error';
+ return;
+ }
+
+ if (isNaN(weight) || weight <= 0) {
+ saveStatus.textContent = '⚠️ Enter valid weight';
+ saveStatus.className = 'save-status error';
+ return;
+ }
+
+ if (!currentDensity) {
+ saveStatus.textContent = '⚠️ Calculate density first';
+ saveStatus.className = 'save-status error';
+ return;
+ }
+
+ // Disable button during save
+ saveBtn.disabled = true;
+ saveStatus.textContent = '⏳ Saving...';
+ saveStatus.className = 'save-status saving';
+
+ try {
+ let testData = {
+ mode: mode,
+ weight: weight,
+ density: currentDensity,
+ shift: shift,
+ team: team,
+ qcName: qcName,
+ appearance: 'A',
+ fragrance: 'A',
+ remarks: '',
+ machines: [],
+ createdAt: firebase.firestore.FieldValue.serverTimestamp()
+ };
+
+ if (mode === 'level9') {
+ // Level 9 mode data
+ testData.buggyNumber = buggyInput.value.trim() || '';
+ testData.appearance = appearanceSelect.value;
+ testData.fragrance = fragranceSelect.value;
+ testData.remarks = remarksTextarea.value.trim();
+ testData.machines = Array.from(selectedMachines).sort((a, b) => a - b);
+ } else {
+ // BOT mode data
+ testData.appearance = document.getElementById('bot-appearance').value;
+ testData.flowProperty = document.getElementById('bot-flow').value;
+ testData.remarks = document.getElementById('bot-remarks-text').value.trim();
+ }
+
+ // Save to Firestore
+ await saveQCTest(testData);
+
+ saveStatus.textContent = '✅ Saved!';
+ saveStatus.className = 'save-status saved';
+
+ // Reset after 3 seconds
+ setTimeout(() => {
+ saveStatus.textContent = '';
+ saveBtn.disabled = false;
+ }, 3000);
+
+ } catch (error) {
+ console.error('Save error:', error);
+ saveStatus.textContent = '❌ Error saving';
+ saveStatus.className = 'save-status error';
+ saveBtn.disabled = false;
+ }
+ }
+
+ // Clear error status when user starts typing
+ [qcNameInput, teamSelect, weightInput].forEach(el => {
+ if (el) {
+ el.addEventListener('input', () => {
+ saveStatus.textContent = '';
+ });
+ }
+ });
  </script>
 </body>
 
