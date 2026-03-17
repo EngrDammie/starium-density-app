@@ -698,7 +698,9 @@
             }
 
             // Real-time listener for tests today count
+            console.log('Setting up subscribeToTestsTodayCount for mode:', MODE);
             unsubscribeTestsCount = subscribeToTestsTodayCount(MODE, (count) => {
+                console.log('subscribeToTestsTodayCount callback:', count);
                 document.getElementById('totalTests').textContent = count;
             });
 
@@ -752,7 +754,9 @@
 
         async function loadTestsTodayCount() {
             // Use efficient count query
+            console.log('loadTestsTodayCount called, MODE:', MODE);
             const count = await getTestsTodayCount(MODE);
+            console.log('loadTestsTodayCount result:', count);
             document.getElementById('totalTests').textContent = count;
         }
 
