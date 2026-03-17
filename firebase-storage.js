@@ -244,7 +244,7 @@ function subscribeToLatestTest(mode, callback) {
  * @returns {Promise<number>} - Count of tests today
  */
 async function getTestsTodayCount(mode) {
-    // Debug: just count all tests for this mode first
+    alert('getTestsTodayCount called for ' + mode);
     console.log('getTestsTodayCount called for mode:', mode);
     
     // Get all tests for this mode - no date filter
@@ -252,6 +252,7 @@ async function getTestsTodayCount(mode) {
         .where('mode', '==', mode)
         .get();
     
+    alert('Query returned ' + querySnapshot.size + ' tests');
     console.log('Total tests for mode', mode, ':', querySnapshot.size);
     return querySnapshot.size;
 }
