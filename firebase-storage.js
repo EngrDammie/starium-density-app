@@ -210,37 +210,32 @@ function subscribeToLatestTest(mode, callback) {
  * @returns {Promise<number>} - Count of tests today
  */
 async function getTestsTodayCount(mode) {
-    // Use local date boundaries (not UTC) for accurate day matching
+    // Use local date boundaries for accurate day matching
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
-    try {
-        const querySnapshot = await db.collection('qc_tests')
-            .where('mode', '==', mode)
-            .where('createdAt', '>=', startOfDay)
-            .get();
-        
-        return querySnapshot.size;
-    } catch (error) {
-        console.error('Error getting tests count:', error);
-        // Fallback: get all tests for mode and filter client-side
-        const fallbackSnapshot = await db.collection('qc_tests')
-            .where('mode', '==', mode)
-            .get();
-        
-        const startMs = startOfDay.getTime();
-        const endMs = endOfDay.getTime();
-        let count = 0;
-        fallbackSnapshot.forEach(doc => {
-            const data = doc.data();
-            if (data.createdAt) {
-                const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
-                if (createdMs >= startMs && createdMs <= endMs) count++;
+    // Get all tests for this mode and filter by today's date
+    // This works without needing a composite index
+    const querySnapshot = await db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .get();
+    
+    const startMs = startOfDay.getTime();
+    const endMs = endOfDay.getTime();
+    let count = 0;
+    
+    querySnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.createdAt) {
+            const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
+            if (createdMs >= startMs && createdMs <= endMs) {
+                count++;
             }
-        });
-        return count;
-    }
+        }
+    });
+    
+    return count;
 }
 
 /**
@@ -250,36 +245,33 @@ async function getTestsTodayCount(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToTestsTodayCount(mode, callback) {
-    // Use local date boundaries (not UTC) for accurate day matching
+    // Use local date boundaries for accurate day matching
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
     
+    // Simple approach: get all and filter client-side (no index needed)
     return db.collection('qc_tests')
         .where('mode', '==', mode)
-        .where('createdAt', '>=', startOfDay)
         .onSnapshot((snapshot) => {
-            callback(snapshot.size);
+            const startMs = startOfDay.getTime();
+            const endMs = endOfDay.getTime();
+            let count = 0;
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.createdAt) {
+                    const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
+                    if (createdMs >= startMs && createdMs <= endMs) {
+                        count++;
+                    }
+                }
+            });
+            
+            callback(count);
         }, (error) => {
-            console.error('Error subscribing to tests count (using fallback):', error);
-            // Fallback: get all and filter client-side
-            db.collection('qc_tests')
-                .where('mode', '==', mode)
-                .get()
-                .then(fallbackSnapshot => {
-                    const startMs = startOfDay.getTime();
-                    const endMs = endOfDay.getTime();
-                    let count = 0;
-                    fallbackSnapshot.forEach(doc => {
-                        const data = doc.data();
-                        if (data.createdAt) {
-                            const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
-                            if (createdMs >= startMs && createdMs <= endMs) count++;
-                        }
-                    });
-                    callback(count);
-                })
-                .catch(() => callback(0));
+            console.error('Error subscribing to tests count:', error);
+            callback(0);
         });
 }
 
