@@ -1,4 +1,6 @@
 // ===== FIREBASE CONFIGURATION =====
+console.log('🔥 Firebase storage.js loaded - ' + new Date().toISOString());
+alert('Firebase storage.js LOADED at ' + new Date().toISOString());
 
 const firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
