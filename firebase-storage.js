@@ -244,16 +244,11 @@ function subscribeToLatestTest(mode, callback) {
  * @returns {Promise<number>} - Count of tests today
  */
 async function getTestsTodayCount(mode) {
-    alert('getTestsTodayCount called for ' + mode);
-    console.log('getTestsTodayCount called for mode:', mode);
-    
     // Get all tests for this mode - no date filter
     const querySnapshot = await db.collection('qc_tests')
         .where('mode', '==', mode)
         .get();
     
-    alert('Query returned ' + querySnapshot.size + ' tests');
-    console.log('Total tests for mode', mode, ':', querySnapshot.size);
     return querySnapshot.size;
 }
 
@@ -264,13 +259,10 @@ async function getTestsTodayCount(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToTestsTodayCount(mode, callback) {
-    console.log('subscribeToTestsTodayCount called for mode:', mode);
-    
     // Simple approach: get all and count - no date filter
     return db.collection('qc_tests')
         .where('mode', '==', mode)
         .onSnapshot((snapshot) => {
-            console.log('Subscription got snapshot, size:', snapshot.size);
             callback(snapshot.size);
         }, (error) => {
             console.error('Error subscribing to tests count:', error);
