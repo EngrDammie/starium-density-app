@@ -1,6 +1,4 @@
 // ===== FIREBASE CONFIGURATION =====
-console.log('🔥 Firebase storage.js loaded - ' + new Date().toISOString());
-alert('Firebase storage.js LOADED at ' + new Date().toISOString());
 
 const firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
@@ -151,30 +149,12 @@ async function checkAndUpdateApprovalStatus(approvalId) {
 
 async function getRecentTests(mode, limit = 10) {
     try {
-        // Get all tests for mode and sort/limit client-side (no index needed)
         const querySnapshot = await db.collection('qc_tests')
             .where('mode', '==', mode)
+            .limit(limit)
             .get();
         
-        console.log('getRecentTests: found', querySnapshot.size, 'tests for mode:', mode);
-        
-        // Convert to array and sort by createdAt descending
-        const tests = [];
-        querySnapshot.forEach(doc => {
-            const data = doc.data();
-            tests.push({ id: doc.id, ...data });
-        });
-        
-        // Sort by createdAt descending
-        tests.sort((a, b) => {
-            if (!a.createdAt || !b.createdAt) return 0;
-            const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-            const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-            return bDate - aDate;
-        });
-        
-        console.log('getRecentTests: returning', tests.length, 'tests');
-        return tests.slice(0, limit);
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     } catch (error) {
         console.error('getRecentTests error:', error);
         return [];
@@ -218,33 +198,22 @@ async function getLatestTest(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToLatestTest(mode, callback) {
-    // Get all and find latest client-side (no index needed)
+    // Simple approach: get all docs, take first one (no sorting, just for testing)
     return db.collection('qc_tests')
         .where('mode', '==', mode)
         .onSnapshot((snapshot) => {
-            console.log('subscribeToLatestTest: received', snapshot.size, 'tests for mode:', mode);
+            console.log('subscribeToLatestTest: received', snapshot.size, 'tests');
             
             if (snapshot.empty) {
                 callback(null);
                 return;
             }
             
-            // Convert to array and sort by createdAt descending
-            const tests = [];
-            snapshot.forEach(doc => {
-                tests.push({ id: doc.id, ...doc.data() });
-            });
-            
-            // Sort by createdAt descending
-            tests.sort((a, b) => {
-                if (!a.createdAt || !b.createdAt) return 0;
-                const aDate = a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-                const bDate = b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-                return bDate - aDate; // descending
-            });
-            
-            console.log('subscribeToLatestTest: latest test:', tests[0]);
-            callback(tests[0] || null);
+            // Just take the first document for now (no sorting)
+            const firstDoc = snapshot.docs[0];
+            const data = { id: firstDoc.id, ...firstDoc.data() };
+            console.log('subscribeToLatestTest: first doc data:', data);
+            callback(data);
         }, (error) => {
             console.error('Error subscribing to latest test:', error);
             callback(null);
