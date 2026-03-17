@@ -1,4 +1,7 @@
 // ===== FIREBASE CONFIGURATION =====
+console.log('Firebase storage.js LOADED');
+alert('Firebase storage.js LOADED');
+
 const firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
     authDomain: "starium-rafa-app.firebaseapp.com",
