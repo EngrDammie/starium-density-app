@@ -131,6 +131,106 @@ async function getRecentTests(mode, limit = 10) {
 }
 
 /**
+ * Get the latest QC test for a mode (efficient single query)
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Promise<Object|null>} - Latest test document or null
+ */
+async function getLatestTest(mode) {
+    const querySnapshot = await db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .get();
+    
+    if (querySnapshot.empty) return null;
+    
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() };
+}
+
+/**
+ * Get real-time listener for latest test
+ * @param {string} mode - 'level9' or 'bot'
+ * @param {Function} callback - Callback function receiving test data
+ * @returns {Function} - Unsubscribe function
+ */
+function subscribeToLatestTest(mode, callback) {
+    return db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
+        .onSnapshot((snapshot) => {
+            if (!snapshot.empty) {
+                const test = snapshot.docs[0].data();
+                callback({ id: snapshot.docs[0].id, ...test });
+            } else {
+                callback(null);
+            }
+        }, (error) => {
+            console.error('Error subscribing to latest test:', error);
+            callback(null);
+        });
+}
+
+/**
+ * Get count of tests for today
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Promise<number>} - Count of tests today
+ */
+async function getTestsTodayCount(mode) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const querySnapshot = await db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .where('createdAt', '>=', today)
+        .get();
+    
+    return querySnapshot.size;
+}
+
+/**
+ * Subscribe to tests today count
+ * @param {string} mode - 'level9' or 'bot'
+ * @param {Function} callback - Callback function receiving count
+ * @returns {Function} - Unsubscribe function
+ */
+function subscribeToTestsTodayCount(mode, callback) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return db.collection('qc_tests')
+        .where('mode', '==', mode)
+        .where('createdAt', '>=', today)
+        .onSnapshot((snapshot) => {
+            callback(snapshot.size);
+        }, (error) => {
+            console.error('Error subscribing to tests count:', error);
+            callback(0);
+        });
+}
+
+/**
+ * Subscribe to shift approval changes (real-time)
+ * @param {string} approvalId - The shift approval document ID
+ * @param {Function} callback - Callback function receiving approval data
+ * @returns {Function} - Unsubscribe function
+ */
+function subscribeToShiftApproval(approvalId, callback) {
+    return db.collection('shift_approvals').doc(approvalId)
+        .onSnapshot((doc) => {
+            if (doc.exists) {
+                callback({ id: doc.id, ...doc.data() });
+            } else {
+                callback(null);
+            }
+        }, (error) => {
+            console.error('Error subscribing to shift approval:', error);
+            callback(null);
+        });
+}
+
+/**
  * Get shift approval for current shift
  * @param {string} mode - 'level9' or 'bot'
  * @returns {Promise<Object>} - Current shift approval

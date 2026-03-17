@@ -666,37 +666,45 @@
         let currentApproverType = null;
         let currentShiftApproval = null;
         let lastTestData = null;
+        let unsubscribeLatestTest = null;
+        let unsubscribeShiftApproval = null;
+        let unsubscribeTestsCount = null;
 
         // ===== INITIALIZE =====
         async function init() {
             updateDateTime();
             renderMachineGrid();
-            await loadQCStaffInfo();
-            await loadCurrentShiftApproval();
-            await loadRecentTests();
             
-            // Real-time listener for latest test
-            db.collection('qc_tests')
-                .where('mode', '==', MODE)
-                .orderBy('createdAt', 'desc')
-                .limit(1)
-                .onSnapshot((snapshot) => {
-                    if (!snapshot.empty) {
-                        const test = snapshot.docs[0].data();
-                        updateCurrentDensity(test);
-                    }
-                });
+            // Load initial data in parallel
+            await Promise.all([
+                loadQCStaffInfo(),
+                loadCurrentShiftApproval(),
+                loadRecentTests(),
+                loadTestsTodayCount()
+            ]);
+            
+            // Real-time listener for latest test (efficient: uses index)
+            unsubscribeLatestTest = subscribeToLatestTest(MODE, (test) => {
+                if (test) {
+                    updateCurrentDensity(test);
+                    updateStaffFromTest(test);
+                }
+            });
 
             // Real-time listener for shift approval
             if (currentApprovalId) {
-                db.collection('shift_approvals').doc(currentApprovalId)
-                    .onSnapshot((doc) => {
-                        if (doc.exists) {
-                            currentShiftApproval = doc.data();
-                            updateApprovalButtons();
-                        }
-                    });
+                unsubscribeShiftApproval = subscribeToShiftApproval(currentApprovalId, (approval) => {
+                    if (approval) {
+                        currentShiftApproval = approval;
+                        updateApprovalButtons();
+                    }
+                });
             }
+
+            // Real-time listener for tests today count
+            unsubscribeTestsCount = subscribeToTestsTodayCount(MODE, (count) => {
+                document.getElementById('totalTests').textContent = count;
+            });
 
             // Network status
             window.addEventListener('online', updateNetworkStatus);
@@ -722,29 +730,34 @@
         }
 
         async function loadQCStaffInfo() {
-            const querySnapshot = await db.collection('qc_tests')
-                .where('mode', '==', MODE)
-                .orderBy('createdAt', 'desc')
-                .limit(1)
-                .get();
-
-            if (!querySnapshot.empty) {
-                const test = querySnapshot.docs[0].data();
-                // Map saved field names to display elements
-                document.getElementById('qcStaffName').textContent = test.qcName || '--';
-                document.getElementById('qcStaffShift').textContent = test.shift || '--';
-                document.getElementById('qcStaffTeam').textContent = test.team || '--';
-                
-                if (test.createdAt) {
-                    const date = test.createdAt.toDate();
-                    document.getElementById('lastTestTime').textContent = date.toLocaleTimeString();
-                }
-                
-                // Update machine highlights with selected machines from test
-                if (test.machines && Array.isArray(test.machines)) {
-                    updateSelectedMachines(test.machines);
-                }
+            // Use efficient single query via getLatestTest
+            const test = await getLatestTest(MODE);
+            
+            if (test) {
+                updateStaffFromTest(test);
             }
+        }
+
+        function updateStaffFromTest(test) {
+            document.getElementById('qcStaffName').textContent = test.qcName || '--';
+            document.getElementById('qcStaffShift').textContent = test.shift || '--';
+            document.getElementById('qcStaffTeam').textContent = test.team || '--';
+            
+            if (test.createdAt) {
+                const date = test.createdAt.toDate ? test.createdAt.toDate() : new Date(test.createdAt);
+                document.getElementById('lastTestTime').textContent = date.toLocaleTimeString();
+            }
+            
+            // Update machine highlights with selected machines from test
+            if (test.machines && Array.isArray(test.machines)) {
+                updateSelectedMachines(test.machines);
+            }
+        }
+
+        async function loadTestsTodayCount() {
+            // Use efficient count query
+            const count = await getTestsTodayCount(MODE);
+            document.getElementById('totalTests').textContent = count;
         }
 
         async function loadCurrentShiftApproval() {
@@ -785,13 +798,20 @@
 
         async function loadRecentTests() {
             const tests = await getRecentTests(MODE, 10);
-            document.getElementById('totalTests').textContent = tests.length;
+            // Note: totalTests is now handled by loadTestsTodayCount() + real-time subscription
             
             if (tests.length === 0) {
                 document.getElementById('recentDataTable').innerHTML = 
                     '<div class="loading">No tests recorded yet</div>';
                 return;
             }
+
+            // Helper to safely convert timestamp
+            const formatTime = (timestamp) => {
+                if (!timestamp) return '--';
+                const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+                return date.toLocaleTimeString();
+            };
 
             const tableHtml = `
                 <table class="data-table">
@@ -809,7 +829,7 @@
                         ${tests.map(test => {
                             const density = test.density?.toFixed(3) || '--';
                             const status = getDensityStatus(density);
-                            const time = test.createdAt ? test.createdAt.toDate().toLocaleTimeString() : '--';
+                            const time = formatTime(test.createdAt);
                             return `
                                 <tr>
                                     <td>${time}</td>
