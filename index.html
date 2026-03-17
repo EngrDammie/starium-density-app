@@ -844,10 +844,19 @@
 
  // Density-related remarks
  if (currentDensity !== null) {
- if (isDensityTooLow(currentDensity)) {
+ const density = parseFloat(currentDensity);
+ if (isDensityTooLow(density)) {
  remarks.push(`Density too LOW (${currentDensity} g/mL)`);
- } else if (isDensityTooHigh(currentDensity)) {
+ } else if (isBotMode) {
+ // BOT mode uses BOT_NORMAL_MAX (0.240) as upper limit
+ if (density > CONFIG.BOT_NORMAL_MAX) {
  remarks.push(`Density too HIGH (${currentDensity} g/mL)`);
+ }
+ } else {
+ // Level 9 mode uses DENSITY_TOO_HIGH (0.310)
+ if (isDensityTooHigh(density)) {
+ remarks.push(`Density too HIGH (${currentDensity} g/mL)`);
+ }
  }
  }
 
@@ -1367,6 +1376,24 @@
 
  saveStatus.textContent = '✅ Saved!';
  saveStatus.className = 'save-status saved';
+
+ // Clear form controls after successful save
+ weightInput.value = '';
+ resultsDiv.innerHTML = '';
+ currentDensity = null;
+ selectedMachines.clear();
+ overrideMachines.clear();
+ siloMachineInput.value = '';
+ buggyInput.value = '';
+ appearanceSelect.value = 'A';
+ fragranceSelect.value = 'A';
+ remarksTextarea.value = '';
+ document.getElementById('bot-appearance').value = 'A';
+ document.getElementById('bot-flow').value = 'FF';
+ document.getElementById('bot-remarks-text').value = '';
+ clearAutoRemarks();
+ updateMachineGridSelection();
+ updateModeVisibility();
 
  // Reset after 3 seconds
  setTimeout(() => {
