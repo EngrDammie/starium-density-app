@@ -558,15 +558,12 @@
         <div class="approval-buttons">
             <button class="approval-btn" id="btnPlcOperator" onclick="openApprovalModal('plcOperator')">
                 ⚡ PLC Operator
-                <span class="approver-name" id="namePlcOperator"></span>
             </button>
             <button class="approval-btn" id="btnProductionManager" onclick="openApprovalModal('productionManager')">
                 🏭 Production Manager
-                <span class="approver-name" id="nameProductionManager"></span>
             </button>
             <button class="approval-btn" id="btnQcManager" onclick="openApprovalModal('qcManager')">
                 ✅ Quality Control Manager
-                <span class="approver-name" id="nameQcManager"></span>
             </button>
         </div>
     </div>
@@ -738,26 +735,34 @@
 
         function updateApprovalButtons() {
             const approvers = [
-                { type: 'plcOperator', btnId: 'btnPlcOperator', nameId: 'namePlcOperator' },
-                { type: 'productionManager', btnId: 'btnProductionManager', nameId: 'nameProductionManager' },
-                { type: 'qcManager', btnId: 'btnQcManager', nameId: 'nameQcManager' }
+                { type: 'plcOperator', btnId: 'btnPlcOperator', label: 'PLC Operator' },
+                { type: 'productionManager', btnId: 'btnProductionManager', label: 'Production Manager' },
+                { type: 'qcManager', btnId: 'btnQcManager', label: 'Quality Control Manager' }
             ];
 
-            approvers.forEach(({ type, btnId, nameId }) => {
+            approvers.forEach(({ type, btnId, label }) => {
                 const btn = document.getElementById(btnId);
-                const nameSpan = document.getElementById(nameId);
                 const data = currentShiftApproval?.[type];
 
                 if (data?.name) {
                     btn.classList.add('approved');
                     btn.disabled = true;
-                    nameSpan.textContent = `✓ ${data.name}`;
+                    btn.innerHTML = `✓ ${label} ${data.name} has approved this shift`;
                 } else {
                     btn.classList.remove('approved');
                     btn.disabled = false;
-                    nameSpan.textContent = '';
+                    btn.innerHTML = getApproverButtonHTML(type, label);
                 }
             });
+        }
+
+        function getApproverButtonHTML(type, label) {
+            const icons = {
+                plcOperator: '⚡',
+                productionManager: '🏭',
+                qcManager: '✅'
+            };
+            return `${icons[type] || '👤'} ${label}`;
         }
 
         async function loadRecentTests() {
@@ -863,6 +868,21 @@
 
             await updateApprover(currentApprovalId, currentApproverType, name);
             closeApprovalModal();
+            
+            // Show approval message on button and disable it
+            const btnId = 'btn' + currentApproverType.charAt(0).toUpperCase() + currentApproverType.slice(1);
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                const roleLabels = {
+                    plcOperator: 'PLC Operator',
+                    productionManager: 'Production Manager',
+                    qcManager: 'Quality Control Manager'
+                };
+                const roleLabel = roleLabels[currentApproverType] || currentApproverType;
+                btn.innerHTML = `✓ ${roleLabel} ${name} has approved this shift`;
+                btn.classList.add('approved');
+                btn.disabled = true;
+            }
         }
 
         // ===== NETWORK STATUS =====

@@ -112,6 +112,38 @@ async function updateApprover(approvalId, approverType, approverName) {
         },
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    
+    // Check if all required approvers have approved and update status
+    await checkAndUpdateApprovalStatus(approvalId);
+}
+
+/**
+ * Check if all required approvers have approved and update status to completed
+ * @param {string} approvalId - The shift approval document ID
+ */
+async function checkAndUpdateApprovalStatus(approvalId) {
+    const doc = await db.collection('shift_approvals').doc(approvalId).get();
+    if (!doc.exists) return;
+    
+    const data = doc.data();
+    
+    // Define required approvers based on mode
+    const requiredApprovers = data.mode === 'bot' 
+        ? ['plcOperator', 'productionManager', 'qcManager']
+        : ['buggySupervisor', 'plcOperator', 'productionManager', 'qcManager'];
+    
+    // Check if all required approvers have approved
+    const allApproved = requiredApprovers.every(approver => {
+        return data[approver] && data[approver].name && data[approver].name.trim() !== '';
+    });
+    
+    if (allApproved) {
+        await db.collection('shift_approvals').doc(approvalId).update({
+            status: 'completed',
+            completedAt: firebase.firestore.FieldValue.serverTimestamp(),
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
 }
 
 /**
