@@ -8,19 +8,30 @@ const firebaseConfig = {
     appId: "1:743583982928:web:e331aaa0b9e741a1537855"
 };
 
-// Initialize Firebase
-const app = firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// Initialize Firebase (only if not already initialized)
+let app, db;
+try {
+    if (!firebase.apps.length) {
+        app = firebase.initializeApp(firebaseConfig);
+    } else {
+        app = firebase.app();
+    }
+    db = firebase.firestore();
+} catch (e) {
+    console.error('Firebase initialization error:', e);
+}
 
 // Enable offline persistence
-firebase.firestore().enableIndexedDBPersistence(db, { synchronizeTabs: true })
-    .catch((err) => {
-        if (err.code == 'failed-precondition') {
-            console.warn('Persistence failed: Multiple tabs open');
-        } else if (err.code == 'unimplemented') {
-            console.warn('Persistence not available in this browser');
-        }
-    });
+if (db) {
+    db.enableIndexedDBPersistence(db, { synchronizeTabs: true })
+        .catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn('Persistence failed: Multiple tabs open');
+            } else if (err.code == 'unimplemented') {
+                console.warn('Persistence not available in this browser');
+            }
+        });
+}
 
 // ===== AUTO-SAVE CONFIGURATION =====
 const AUTO_SAVE_CONFIG = {
@@ -36,6 +47,10 @@ const AUTO_SAVE_CONFIG = {
  * @returns {Promise<string>} - The document ID
  */
 async function saveQCTest(testData) {
+    if (!db) {
+        throw new Error('Firebase not initialized');
+    }
+    
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
     
     const docRef = await db.collection('qc_tests').add({
