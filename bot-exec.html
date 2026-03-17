@@ -700,9 +700,10 @@
 
             if (!querySnapshot.empty) {
                 const test = querySnapshot.docs[0].data();
-                document.getElementById('qcStaffName').textContent = test.qcStaffName || '--';
-                document.getElementById('qcStaffShift').textContent = test.qcStaffShift || '--';
-                document.getElementById('qcStaffTeam').textContent = test.qcStaffTeam || '--';
+                // Map saved field names to display elements
+                document.getElementById('qcStaffName').textContent = test.qcName || '--';
+                document.getElementById('qcStaffShift').textContent = test.shift || '--';
+                document.getElementById('qcStaffTeam').textContent = test.team || '--';
                 
                 if (test.createdAt) {
                     const date = test.createdAt.toDate();
@@ -773,14 +774,15 @@
                             const density = test.density?.toFixed(3) || '--';
                             const status = getDensityStatus(density);
                             const time = test.createdAt ? test.createdAt.toDate().toLocaleTimeString() : '--';
+                            const appearance = test.appearance === 'A' ? 'OK' : 'Issue';
                             return `
                                 <tr>
                                     <td>${time}</td>
                                     <td>${test.weight || '--'}g</td>
                                     <td>${density}</td>
                                     <td><span class="status-badge ${status}">${status}</span></td>
-                                    <td>${test.buggyNumber || '--'}</td>
-                                    <td>${test.qcStaffName || '--'}</td>
+                                    <td>${test.flowProperty || test.appearance || '--'}</td>
+                                    <td>${test.qcName || '--'}</td>
                                 </tr>
                             `;
                         }).join('')}

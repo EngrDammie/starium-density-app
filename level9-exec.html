@@ -181,6 +181,13 @@
             color: #121212;
         }
 
+        .machine-btn.selected {
+            background: linear-gradient(145deg, #FFD700, #FFA500);
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+            color: #121212;
+        }
+
         .machine-btn.dimmed {
             opacity: 0.3;
         }
@@ -723,13 +730,19 @@
 
             if (!querySnapshot.empty) {
                 const test = querySnapshot.docs[0].data();
-                document.getElementById('qcStaffName').textContent = test.qcStaffName || '--';
-                document.getElementById('qcStaffShift').textContent = test.qcStaffShift || '--';
-                document.getElementById('qcStaffTeam').textContent = test.qcStaffTeam || '--';
+                // Map saved field names to display elements
+                document.getElementById('qcStaffName').textContent = test.qcName || '--';
+                document.getElementById('qcStaffShift').textContent = test.shift || '--';
+                document.getElementById('qcStaffTeam').textContent = test.team || '--';
                 
                 if (test.createdAt) {
                     const date = test.createdAt.toDate();
                     document.getElementById('lastTestTime').textContent = date.toLocaleTimeString();
+                }
+                
+                // Update machine highlights with selected machines from test
+                if (test.machines && Array.isArray(test.machines)) {
+                    updateSelectedMachines(test.machines);
                 }
             }
         }
@@ -804,7 +817,7 @@
                                     <td>${density}</td>
                                     <td><span class="status-badge ${status}">${status}</span></td>
                                     <td>${test.buggyNumber || '--'}</td>
-                                    <td>${test.qcStaffName || '--'}</td>
+                                    <td>${test.qcName || '--'}</td>
                                 </tr>
                             `;
                         }).join('')}
@@ -847,6 +860,20 @@
                 
                 btn.classList.toggle('match', inRange);
                 btn.classList.toggle('dimmed', !inRange);
+            });
+        }
+        
+        // Highlight selected machines from the test
+        function updateSelectedMachines(selectedMachineIds) {
+            machineData.forEach(m => {
+                const btn = document.getElementById(`machine-${m.id}`);
+                const isSelected = selectedMachineIds.includes(m.id);
+                
+                if (isSelected) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
             });
         }
 
