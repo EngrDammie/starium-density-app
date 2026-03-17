@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "qc_tests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "mode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "shift_approvals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "mode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "shift",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
