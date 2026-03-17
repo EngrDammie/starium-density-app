@@ -213,12 +213,31 @@ async function getTestsTodayCount(mode) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const querySnapshot = await db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .where('createdAt', '>=', today)
-        .get();
-    
-    return querySnapshot.size;
+    try {
+        const querySnapshot = await db.collection('qc_tests')
+            .where('mode', '==', mode)
+            .where('createdAt', '>=', today)
+            .get();
+        
+        return querySnapshot.size;
+    } catch (error) {
+        console.error('Error getting tests count:', error);
+        // Fallback: get all tests for mode and filter client-side
+        const fallbackSnapshot = await db.collection('qc_tests')
+            .where('mode', '==', mode)
+            .get();
+        
+        const todayMs = today.getTime();
+        let count = 0;
+        fallbackSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.createdAt) {
+                const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
+                if (createdMs >= todayMs) count++;
+            }
+        });
+        return count;
+    }
 }
 
 /**
@@ -237,8 +256,24 @@ function subscribeToTestsTodayCount(mode, callback) {
         .onSnapshot((snapshot) => {
             callback(snapshot.size);
         }, (error) => {
-            console.error('Error subscribing to tests count:', error);
-            callback(0);
+            console.error('Error subscribing to tests count (using fallback):', error);
+            // Fallback: get all and filter client-side
+            db.collection('qc_tests')
+                .where('mode', '==', mode)
+                .get()
+                .then(fallbackSnapshot => {
+                    const todayMs = today.getTime();
+                    let count = 0;
+                    fallbackSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.createdAt) {
+                            const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
+                            if (createdMs >= todayMs) count++;
+                        }
+                    });
+                    callback(count);
+                })
+                .catch(() => callback(0));
         });
 }
 
