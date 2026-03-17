@@ -1,6 +1,4 @@
 // ===== FIREBASE CONFIGURATION =====
-console.log('Firebase storage.js LOADED');
-alert('Firebase storage.js LOADED');
 
 const firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
@@ -213,39 +211,16 @@ function subscribeToLatestTest(mode, callback) {
  * @returns {Promise<number>} - Count of tests today
  */
 async function getTestsTodayCount(mode) {
-    // Use local date boundaries for accurate day matching
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    // Debug: just count all tests for this mode first
+    console.log('getTestsTodayCount called for mode:', mode);
     
-    console.log('getTestsTodayCount:', mode, { startOfDay: startOfDay.toISOString(), endOfDay: endOfDay.toISOString() });
-    
-    // Get all tests for this mode and filter by today's date
-    // This works without needing a composite index
+    // Get all tests for this mode - no date filter
     const querySnapshot = await db.collection('qc_tests')
         .where('mode', '==', mode)
         .get();
     
-    console.log('All tests for mode:', querySnapshot.size);
-    
-    const startMs = startOfDay.getTime();
-    const endMs = endOfDay.getTime();
-    let count = 0;
-    
-    querySnapshot.forEach(doc => {
-        const data = doc.data();
-        console.log('Test doc:', doc.id, 'createdAt:', data.createdAt, 'mode:', data.mode);
-        if (data.createdAt) {
-            const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
-            console.log('  createdMs:', createdMs, 'in range?', createdMs >= startMs && createdMs <= endMs);
-            if (createdMs >= startMs && createdMs <= endMs) {
-                count++;
-            }
-        }
-    });
-    
-    console.log('Final count:', count);
-    return count;
+    console.log('Total tests for mode', mode, ':', querySnapshot.size);
+    return querySnapshot.size;
 }
 
 /**
@@ -255,33 +230,14 @@ async function getTestsTodayCount(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToTestsTodayCount(mode, callback) {
-    // Use local date boundaries for accurate day matching
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    console.log('subscribeToTestsTodayCount called for mode:', mode);
     
-    console.log('subscribeToTestsTodayCount:', mode, { startOfDay: startOfDay.toISOString(), endOfDay: endOfDay.toISOString() });
-    
-    // Simple approach: get all and filter client-side (no index needed)
+    // Simple approach: get all and count - no date filter
     return db.collection('qc_tests')
         .where('mode', '==', mode)
         .onSnapshot((snapshot) => {
-            const startMs = startOfDay.getTime();
-            const endMs = endOfDay.getTime();
-            let count = 0;
-            
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                if (data.createdAt) {
-                    const createdMs = data.createdAt.toDate ? data.createdAt.toDate().getTime() : new Date(data.createdAt).getTime();
-                    if (createdMs >= startMs && createdMs <= endMs) {
-                        count++;
-                    }
-                }
-            });
-            
-            console.log('Subscription count update:', count);
-            callback(count);
+            console.log('Subscription got snapshot, size:', snapshot.size);
+            callback(snapshot.size);
         }, (error) => {
             console.error('Error subscribing to tests count:', error);
             callback(0);
