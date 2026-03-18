@@ -784,6 +784,28 @@
  let selectedMachines = new Set();
  let overrideMachines = new Set();
  let currentModalMachineId = null;
+ let currentApprovalDocId = null; // Direct link to shift_approvals document
+
+ // ===== APPROVAL LINK INITIALIZATION =====
+ // Initialize the link to shift_approvals document when page loads or mode changes
+ async function initApprovalLink() {
+     const mode = modeSelect.value;
+     const now = new Date();
+     const date = now.toISOString().split('T')[0];
+     const shift = (now.getHours() >= 7 && now.getHours() < 19) ? 'DAY' : 'NIGHT';
+     
+     try {
+         const approval = await getOrCreateShiftApproval(mode, shift, date);
+         currentApprovalDocId = approval.id;
+         console.log('Linked to shift_approvals doc:', currentApprovalDocId);
+     } catch (error) {
+         console.error('Failed to initialize approval link:', error);
+         currentApprovalDocId = null;
+     }
+ }
+
+ // Initialize approval link on page load
+ initApprovalLink();
 
  // ===== DOM ELEMENTS =====
  const modeSelect = document.getElementById('mode');
@@ -1102,6 +1124,7 @@
  clearAutoRemarks();
  updateRemarks();
  updateModeVisibility();
+ initApprovalLink(); // Refresh approval link for new mode
  });
 
  weightInput.addEventListener('input', calculate);
@@ -1345,6 +1368,7 @@
  try {
  let testData = {
  mode: mode,
+ approvalDocId: currentApprovalDocId, // Direct link to shift_approvals document
  weight: weight,
  density: currentDensity,
  shift: shift,

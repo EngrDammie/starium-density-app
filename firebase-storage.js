@@ -54,8 +54,12 @@ async function saveQCTest(testData) {
     
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
     
+    // Ensure approvalDocId is always stored (fallback to null if not provided)
+    const approvalDocId = testData.approvalDocId || null;
+    
     const docRef = await db.collection('qc_tests').add({
         ...testData,
+        approvalDocId: approvalDocId,
         createdAt: timestamp,
         syncStatus: 'synced'
     });
@@ -97,6 +101,20 @@ async function getOrCreateShiftApproval(mode, shift, date) {
     });
     
     return { id: docRef.id, mode, shift, date, status: 'pending' };
+}
+
+/**
+ * Get shift approval by document ID
+ * @param {string} approvalDocId - The shift approval document ID
+ * @returns {Promise<Object|null>} - The shift approval document or null
+ */
+async function getShiftApprovalById(approvalDocId) {
+    if (!approvalDocId) return null;
+    
+    const doc = await db.collection('shift_approvals').doc(approvalDocId).get();
+    if (!doc.exists) return null;
+    
+    return { id: doc.id, ...doc.data() };
 }
 
 /**
@@ -159,6 +177,51 @@ async function getRecentTests(mode, limit = 10) {
         console.error('getRecentTests error:', error);
         return [];
     }
+}
+
+/**
+ * Get tests by approval document ID (direct link)
+ * @param {string} approvalDocId - The shift approval document ID
+ * @param {number} limit - Maximum number of tests to return
+ * @returns {Promise<Array>} - Array of test documents
+ */
+async function getTestsByApprovalDoc(approvalDocId, limit = 50) {
+    if (!approvalDocId) return [];
+    
+    try {
+        const querySnapshot = await db.collection('qc_tests')
+            .where('approvalDocId', '==', approvalDocId)
+            .limit(limit)
+            .get();
+        
+        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error('getTestsByApprovalDoc error:', error);
+        return [];
+    }
+}
+
+/**
+ * Subscribe to tests by approval document ID (real-time)
+ * @param {string} approvalDocId - The shift approval document ID
+ * @param {Function} callback - Callback function receiving array of tests
+ * @returns {Function} - Unsubscribe function
+ */
+function subscribeToTestsByApprovalDoc(approvalDocId, callback) {
+    if (!approvalDocId) {
+        callback([]);
+        return () => {};
+    }
+    
+    return db.collection('qc_tests')
+        .where('approvalDocId', '==', approvalDocId)
+        .onSnapshot((snapshot) => {
+            const tests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            callback(tests);
+        }, (error) => {
+            console.error('Error subscribing to tests by approvalDoc:', error);
+            callback([]);
+        });
 }
 
 /**
