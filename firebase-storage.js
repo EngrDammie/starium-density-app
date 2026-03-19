@@ -159,6 +159,125 @@ function notifyOnlineStatusListeners(status) {
     onlineStatusListeners.forEach(cb => cb(status));
 }
 
+// ===== APP CONFIG =====
+const DEFAULT_CONFIG = {
+    level9MinDensity: 0.200,
+    level9MaxDensity: 0.310,
+    botMinDensity: 0.200,
+    botMaxDensity: 0.240,
+    level9Divisor: 1580,
+    botDivisor: 1680,
+    dayShiftStart: 7,
+    nightShiftStart: 19
+};
+
+// Cached config - used immediately, then updated from Firestore
+let appConfig = { ...DEFAULT_CONFIG };
+let configUnsubscribe = null;
+
+/**
+ * Get current app config (synchronous - returns cached value)
+ * @returns {Object} - Current config
+ */
+function getConfig() {
+    return { ...appConfig };
+}
+
+/**
+ * Load config from Firestore
+ * @returns {Promise<Object>} - Config from Firestore or defaults
+ */
+async function loadConfig() {
+    if (!db) {
+        console.warn('Firebase not initialized, using default config');
+        return { ...DEFAULT_CONFIG };
+    }
+    
+    try {
+        const doc = await db.collection('config').doc('settings').get();
+        
+        if (doc.exists) {
+            const data = doc.data();
+            appConfig = { ...DEFAULT_CONFIG, ...data };
+            console.log('✅ Config loaded from Firestore:', appConfig);
+        } else {
+            // Create default config document
+            await db.collection('config').doc('settings').set({
+                ...DEFAULT_CONFIG,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            appConfig = { ...DEFAULT_CONFIG };
+            console.log('✅ Default config created in Firestore');
+        }
+        
+        return { ...appConfig };
+    } catch (error) {
+        console.error('Error loading config:', error);
+        return { ...DEFAULT_CONFIG };
+    }
+}
+
+/**
+ * Update config in Firestore
+ * @param {Object} newConfig - New config values to merge
+ * @returns {Promise<boolean>} - Success status
+ */
+async function updateConfig(newConfig) {
+    if (!db) {
+        console.error('Firebase not initialized');
+        return false;
+    }
+    
+    try {
+        await db.collection('config').doc('settings').update({
+            ...newConfig,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        
+        // Update cached config
+        appConfig = { ...appConfig, ...newConfig };
+        console.log('✅ Config updated:', appConfig);
+        return true;
+    } catch (error) {
+        console.error('Error updating config:', error);
+        return false;
+    }
+}
+
+/**
+ * Subscribe to config changes (real-time)
+ * @param {Function} callback - Called with config object when it changes
+ * @returns {Function} - Unsubscribe function
+ */
+function subscribeToConfig(callback) {
+    if (!db) {
+        callback({ ...DEFAULT_CONFIG });
+        return () => {};
+    }
+    
+    // Unsubscribe from previous listener if exists
+    if (configUnsubscribe) {
+        configUnsubscribe();
+    }
+    
+    configUnsubscribe = db.collection('config').doc('settings')
+        .onSnapshot((doc) => {
+            if (doc.exists) {
+                const data = doc.data();
+                appConfig = { ...DEFAULT_CONFIG, ...data };
+                callback({ ...appConfig });
+            } else {
+                callback({ ...DEFAULT_CONFIG });
+            }
+        }, (error) => {
+            console.error('Error subscribing to config:', error);
+            callback({ ...appConfig });
+        });
+    
+    return configUnsubscribe;
+}
+
 // ===== AUTO-SAVE CONFIGURATION =====
 const AUTO_SAVE_CONFIG = {
     delaySeconds: 10, // Configurable delay before auto-save

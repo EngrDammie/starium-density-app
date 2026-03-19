@@ -539,6 +539,156 @@
             color: var(--danger);
         }
 
+        /* Settings Button */
+        .settings-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            font-size: 1.3rem;
+            cursor: pointer;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
+        }
+
+        /* Settings Modal */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 99999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .settings-overlay.active {
+            display: flex;
+        }
+
+        .settings-modal {
+            background: linear-gradient(145deg, var(--bg-card), #2d2d2d);
+            padding: 30px;
+            border-radius: 20px;
+            border: 2px solid var(--primary);
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .settings-modal h2 {
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .settings-group {
+            margin-bottom: 20px;
+        }
+
+        .settings-group h3 {
+            color: var(--primary);
+            font-size: 1rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .settings-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid #333;
+        }
+
+        .settings-field label {
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .settings-field input {
+            width: 120px;
+            padding: 8px 12px;
+            border: 2px solid #444;
+            border-radius: 6px;
+            background: var(--bg-dark);
+            color: var(--text);
+            font-size: 0.9rem;
+            text-align: right;
+        }
+
+        .settings-field input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 25px;
+        }
+
+        .settings-btn-save,
+        .settings-btn-cancel {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .settings-btn-save {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .settings-btn-save:hover {
+            background: var(--success);
+        }
+
+        .settings-btn-cancel {
+            background: #444;
+            color: var(--text);
+        }
+
+        .settings-btn-cancel:hover {
+            background: #555;
+        }
+
+        .settings-status {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .settings-status.success { color: var(--success); }
+        .settings-status.error { color: var(--danger); }
+        .settings-status.loading { color: var(--warning); }
+
         /* Loading */
         .loading {
             text-align: center;
@@ -656,6 +806,66 @@
                 <button class="modal-btn cancel" onclick="closeApprovalModal()">Cancel</button>
                 <button class="modal-btn confirm" onclick="confirmApproval()">Confirm</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Settings Button -->
+    <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
+
+    <!-- Settings Modal -->
+    <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-modal">
+            <h2>⚙️ Settings</h2>
+            
+            <div class="settings-group">
+                <h3>Level 9 Density</h3>
+                <div class="settings-field">
+                    <label>Minimum Density:</label>
+                    <input type="number" id="settingLevel9Min" step="0.001" min="0">
+                </div>
+                <div class="settings-field">
+                    <label>Maximum Density:</label>
+                    <input type="number" id="settingLevel9Max" step="0.001" min="0">
+                </div>
+                <div class="settings-field">
+                    <label>Volume (Divisor):</label>
+                    <input type="number" id="settingLevel9Divisor" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>BOT Density</h3>
+                <div class="settings-field">
+                    <label>Minimum Density:</label>
+                    <input type="number" id="settingBotMin" step="0.001" min="0">
+                </div>
+                <div class="settings-field">
+                    <label>Maximum Density:</label>
+                    <input type="number" id="settingBotMax" step="0.001" min="0">
+                </div>
+                <div class="settings-field">
+                    <label>Volume (Divisor):</label>
+                    <input type="number" id="settingBotDivisor" step="1" min="1">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Shift Times</h3>
+                <div class="settings-field">
+                    <label>Day Shift Start (hour):</label>
+                    <input type="number" id="settingDayShiftStart" min="0" max="23">
+                </div>
+                <div class="settings-field">
+                    <label>Night Shift Start (hour):</label>
+                    <input type="number" id="settingNightShiftStart" min="0" max="23">
+                </div>
+            </div>
+
+            <div class="settings-buttons">
+                <button class="settings-btn-cancel" id="settingsCancel">Cancel</button>
+                <button class="settings-btn-save" id="settingsSave">Save</button>
+            </div>
+            <div class="settings-status" id="settingsStatus"></div>
         </div>
     </div>
 
@@ -1078,6 +1288,85 @@
 
         // Initialize on load
         init();
+
+        // ===== SETTINGS FUNCTIONS =====
+        const settingsBtn = document.getElementById('settingsBtn');
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const settingsCancel = document.getElementById('settingsCancel');
+        const settingsSave = document.getElementById('settingsSave');
+        const settingsStatus = document.getElementById('settingsStatus');
+
+        function openSettings() {
+            const config = getConfig();
+            document.getElementById('settingLevel9Min').value = config.level9MinDensity;
+            document.getElementById('settingLevel9Max').value = config.level9MaxDensity;
+            document.getElementById('settingLevel9Divisor').value = config.level9Divisor;
+            document.getElementById('settingBotMin').value = config.botMinDensity;
+            document.getElementById('settingBotMax').value = config.botMaxDensity;
+            document.getElementById('settingBotDivisor').value = config.botDivisor;
+            document.getElementById('settingDayShiftStart').value = config.dayShiftStart;
+            document.getElementById('settingNightShiftStart').value = config.nightShiftStart;
+            
+            settingsStatus.textContent = '';
+            settingsOverlay.classList.add('active');
+        }
+
+        function closeSettings() {
+            settingsOverlay.classList.remove('active');
+        }
+
+        async function saveSettings() {
+            settingsStatus.textContent = 'Saving...';
+            settingsStatus.className = 'settings-status loading';
+            settingsSave.disabled = true;
+
+            const newConfig = {
+                level9MinDensity: parseFloat(document.getElementById('settingLevel9Min').value),
+                level9MaxDensity: parseFloat(document.getElementById('settingLevel9Max').value),
+                level9Divisor: parseInt(document.getElementById('settingLevel9Divisor').value),
+                botMinDensity: parseFloat(document.getElementById('settingBotMin').value),
+                botMaxDensity: parseFloat(document.getElementById('settingBotMax').value),
+                botDivisor: parseInt(document.getElementById('settingBotDivisor').value),
+                dayShiftStart: parseInt(document.getElementById('settingDayShiftStart').value),
+                nightShiftStart: parseInt(document.getElementById('settingNightShiftStart').value)
+            };
+
+            if (newConfig.level9MinDensity >= newConfig.level9MaxDensity) {
+                settingsStatus.textContent = 'Error: Level 9 Min must be less than Max';
+                settingsStatus.className = 'settings-status error';
+                settingsSave.disabled = false;
+                return;
+            }
+
+            if (newConfig.botMinDensity >= newConfig.botMaxDensity) {
+                settingsStatus.textContent = 'Error: BOT Min must be less than Max';
+                settingsStatus.className = 'settings-status error';
+                settingsSave.disabled = false;
+                return;
+            }
+
+            const success = await updateConfig(newConfig);
+
+            if (success) {
+                settingsStatus.textContent = 'Saved!';
+                settingsStatus.className = 'settings-status success';
+                setTimeout(closeSettings, 1000);
+            } else {
+                settingsStatus.textContent = 'Error saving settings';
+                settingsStatus.className = 'settings-status error';
+            }
+            settingsSave.disabled = false;
+        }
+
+        settingsBtn.addEventListener('click', openSettings);
+        settingsCancel.addEventListener('click', closeSettings);
+        settingsSave.addEventListener('click', saveSettings);
+        settingsOverlay.addEventListener('click', (e) => {
+            if (e.target === settingsOverlay) closeSettings();
+        });
+
+        // Load config on startup
+        loadConfig();
     </script>
 </body>
 </html>
