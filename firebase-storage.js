@@ -236,13 +236,17 @@ async function getRecentTests(mode, limit = 10) {
 async function getTestsByApprovalDoc(approvalDocId, limit = 50) {
     if (!approvalDocId) return [];
     
+    console.log('getTestsByApprovalDoc - querying for approvalDocId:', approvalDocId);
+    
     try {
         const querySnapshot = await db.collection('qc_tests')
             .where('approvalDocId', '==', approvalDocId)
             .limit(limit)
             .get();
         
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const tests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        console.log('getTestsByApprovalDoc - found tests:', tests.length, tests);
+        return tests;
     } catch (error) {
         console.error('getTestsByApprovalDoc error:', error);
         return [];

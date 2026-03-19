@@ -659,10 +659,12 @@
         async function init() {
             updateDateTime();
             
-            // Load initial data in parallel
+            // First, load the current shift approval to get currentApprovalId
+            await loadCurrentShiftApproval();
+            
+            // Then load data that depends on currentApprovalId
             await Promise.all([
                 loadQCStaffInfo(),
-                loadCurrentShiftApproval(),
                 loadRecentTests(),
                 loadTestsTodayCount()
             ]);

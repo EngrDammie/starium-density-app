@@ -680,10 +680,12 @@
             updateDateTime();
             renderMachineGrid();
             
-            // Load initial data in parallel
+            // First, load the current shift approval to get currentApprovalId
+            await loadCurrentShiftApproval();
+            
+            // Then load data that depends on currentApprovalId
             await Promise.all([
                 loadQCStaffInfo(),
-                loadCurrentShiftApproval(),
                 loadRecentTests(),
                 loadTestsTodayCount()
             ]);
@@ -827,9 +829,14 @@
         async function loadRecentTests() {
             // Use approvalDocId to get tests for this specific shift only
             let tests = [];
+            console.log('loadRecentTests - currentApprovalId:', currentApprovalId);
+            
             if (currentApprovalId) {
                 tests = await getTestsByApprovalDoc(currentApprovalId, 10);
+                console.log('loadRecentTests - tests found:', tests);
             }
+            
+            console.log('loadRecentTests - final tests:', tests);
             
             if (!tests || tests.length === 0) {
                 document.getElementById('recentDataTable').innerHTML = 
