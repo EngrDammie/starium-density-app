@@ -786,6 +786,23 @@
  let currentModalMachineId = null;
  let currentApprovalDocId = null; // Direct link to shift_approvals document
 
+ // ===== DOM ELEMENTS =====
+ const modeSelect = document.getElementById('mode');
+ const shiftSelect = document.getElementById('shift');
+ const teamSelect = document.getElementById('team');
+ const qcNameInput = document.getElementById('qc-name');
+ const weightInput = document.getElementById('weight');
+ const buggyInput = document.getElementById('buggy-number');
+ const siloMachineInput = document.getElementById('silo-machine');
+ const appearanceSelect = document.getElementById('appearance');
+ const fragranceSelect = document.getElementById('fragrance');
+ const remarksTextarea = document.getElementById('remarks');
+ const resultsDiv = document.getElementById('results');
+ const modal = document.getElementById('modal');
+ const modalClose = document.getElementById('modal-close');
+ const modalMachineSelect = document.getElementById('modal-machine-select');
+ const overrideBtn = document.getElementById('override-btn');
+
  // ===== APPROVAL LINK INITIALIZATION =====
  // Initialize the link to shift_approvals document when page loads or mode changes
  async function initApprovalLink() {
@@ -806,23 +823,6 @@
 
  // Initialize approval link on page load
  initApprovalLink();
-
- // ===== DOM ELEMENTS =====
- const modeSelect = document.getElementById('mode');
- const shiftSelect = document.getElementById('shift');
- const teamSelect = document.getElementById('team');
- const qcNameInput = document.getElementById('qc-name');
- const weightInput = document.getElementById('weight');
- const buggyInput = document.getElementById('buggy-number');
- const siloMachineInput = document.getElementById('silo-machine');
- const appearanceSelect = document.getElementById('appearance');
- const fragranceSelect = document.getElementById('fragrance');
- const remarksTextarea = document.getElementById('remarks');
- const resultsDiv = document.getElementById('results');
- const modal = document.getElementById('modal');
- const modalClose = document.getElementById('modal-close');
- const modalMachineSelect = document.getElementById('modal-machine-select');
- const overrideBtn = document.getElementById('override-btn');
 
  // ===== UTILITY FUNCTIONS =====
  function getCartonContent(gram) {

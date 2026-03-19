@@ -109,8 +109,7 @@ async function saveQCTest(testData) {
     const docRef = await db.collection('qc_tests').add({
         ...testData,
         approvalDocId: approvalDocId,
-        createdAt: timestamp,
-        syncStatus: 'synced'
+        createdAt: timestamp
     });
     
     return docRef.id;
