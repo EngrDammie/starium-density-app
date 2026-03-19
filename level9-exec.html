@@ -169,6 +169,37 @@
             letter-spacing: 1px;
         }
 
+        /* Machine Status Remarks */
+        .machine-remarks {
+            background: linear-gradient(145deg, #252525, #1a1a1a);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            min-height: 60px;
+        }
+
+        .machine-remarks-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .machine-remarks-content {
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .machine-remarks-content.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         .machine-grid {
             display: grid;
             grid-template-columns: repeat(6, 1fr);
@@ -574,6 +605,11 @@
     <div class="machine-grid-container">
         <div class="machine-grid-title">🏭 Machine Status</div>
         <div class="machine-grid" id="machineGrid"></div>
+        
+        <div class="machine-remarks">
+            <div class="machine-remarks-title">📝 Remarks</div>
+            <div class="machine-remarks-content" id="machineRemarks">--</div>
+        </div>
     </div>
 
     <div class="approval-panel">
@@ -867,7 +903,9 @@
                             <th>Density</th>
                             <th>Status</th>
                             <th>Buggy</th>
-                            <th>QC Staff</th>
+                            <th>Silo/Machine</th>
+                            <th>Appearance</th>
+                            <th>Fragrance</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -876,6 +914,9 @@
                             const density = densityNum.toFixed(3);
                             const status = getDensityStatus(densityNum);
                             const time = formatTime(test.createdAt);
+                            const appearance = test.appearance === 'A' ? '✓' : test.appearance === 'U' ? '✗' : '--';
+                            const fragrance = test.fragrance === 'A' ? '✓' : test.fragrance === 'U' ? '✗' : '--';
+                            const machines = test.machines ? test.machines.join(', ') : '--';
                             return `
                                 <tr>
                                     <td>${time}</td>
@@ -883,7 +924,9 @@
                                     <td>${density}</td>
                                     <td><span class="status-badge ${status}">${status}</span></td>
                                     <td>${test.buggyNumber || '--'}</td>
-                                    <td>${test.qcName || '--'}</td>
+                                    <td>${machines}</td>
+                                    <td>${appearance}</td>
+                                    <td>${fragrance}</td>
                                 </tr>
                             `;
                         }).join('')}
@@ -917,6 +960,12 @@
 
             // Update machine highlights
             updateMachineHighlights(density);
+            
+            // Update remarks display
+            updateMachineRemarks(test);
+            
+            // Update selected machines
+            updateMachineHighlights(density);
         }
 
         function getDensityStatus(density) {
@@ -933,6 +982,20 @@
                 btn.classList.toggle('match', inRange);
                 btn.classList.toggle('dimmed', !inRange);
             });
+        }
+
+        // Update remarks display in Machine Status panel
+        function updateMachineRemarks(test) {
+            const remarksEl = document.getElementById('machineRemarks');
+            const remarks = test?.remarks;
+            
+            if (remarks && remarks.trim()) {
+                remarksEl.textContent = remarks;
+                remarksEl.classList.remove('empty');
+            } else {
+                remarksEl.textContent = 'No remarks';
+                remarksEl.classList.add('empty');
+            }
         }
         
         // Highlight selected machines from the test

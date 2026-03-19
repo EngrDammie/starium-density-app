@@ -100,6 +100,37 @@
             box-shadow: 0 0 30px rgba(0, 188, 212, 0.3);
         }
 
+        /* Density Remarks */
+        .density-remarks {
+            background: linear-gradient(145deg, #252525, #1a1a1a);
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-top: 20px;
+            min-height: 60px;
+        }
+
+        .density-remarks-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .density-remarks-content {
+            font-size: 0.95rem;
+            color: var(--text);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .density-remarks-content.empty {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
         .density-label {
             font-size: 1rem;
             color: var(--text-muted);
@@ -560,6 +591,11 @@
         <div class="density-label">Current Density</div>
         <div class="density-value" id="currentDensity">--</div>
         <div class="density-status normal" id="densityStatus" style="display: none;">Normal</div>
+        
+        <div class="density-remarks">
+            <div class="density-remarks-title">📝 Remarks</div>
+            <div class="density-remarks-content" id="densityRemarks">--</div>
+        </div>
     </div>
 
     <div class="approval-panel">
@@ -826,7 +862,7 @@
                             <th>Density</th>
                             <th>Status</th>
                             <th>Appearance</th>
-                            <th>QC Staff</th>
+                            <th>Flow Property</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -835,7 +871,8 @@
                             const density = densityNum.toFixed(3);
                             const status = getDensityStatus(densityNum);
                             const time = formatTime(test.createdAt);
-                            const appearance = test.appearance === 'A' ? 'OK' : (test.appearance === 'U' ? 'Issue' : '--');
+                            const appearance = test.appearance === 'A' ? '✓' : test.appearance === 'U' ? '✗' : '--';
+                            const flowProperty = test.flowProperty === 'FF' ? 'Free Flowing' : test.flowProperty === 'NFF' ? 'Not Free Flowing' : '--';
                             return `
                                 <tr>
                                     <td>${time}</td>
@@ -843,7 +880,7 @@
                                     <td>${density}</td>
                                     <td><span class="status-badge ${status}">${status}</span></td>
                                     <td>${appearance}</td>
-                                    <td>${test.qcName || '--'}</td>
+                                    <td>${flowProperty}</td>
                                 </tr>
                             `;
                         }).join('')}
@@ -874,6 +911,23 @@
                                    status === 'low' ? '⚠ Low' : '⚠ High';
             statusEl.className = `density-status ${status}`;
             statusEl.style.display = 'inline-block';
+
+            // Update remarks display
+            updateDensityRemarks(test);
+        }
+
+        // Update remarks display in density panel
+        function updateDensityRemarks(test) {
+            const remarksEl = document.getElementById('densityRemarks');
+            const remarks = test?.remarks;
+            
+            if (remarks && remarks.trim()) {
+                remarksEl.textContent = remarks;
+                remarksEl.classList.remove('empty');
+            } else {
+                remarksEl.textContent = 'No remarks';
+                remarksEl.classList.add('empty');
+            }
         }
 
         function getDensityStatus(density) {
