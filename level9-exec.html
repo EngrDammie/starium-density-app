@@ -547,8 +547,20 @@
                 <div class="stat-value" id="currentDate">--</div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">Total Tests This Shift</div>
+                <div class="stat-label">Total Tests</div>
                 <div class="stat-value" id="totalTests">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">QC Staff</div>
+                <div class="stat-value" id="qcStaffName">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Team</div>
+                <div class="stat-value" id="qcStaffTeam">--</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Last Test</div>
+                <div class="stat-value" id="lastTestTime">--</div>
             </div>
         </div>
     </header>
@@ -557,30 +569,6 @@
         <div class="density-label">Current Density</div>
         <div class="density-value" id="currentDensity">--</div>
         <div class="density-status normal" id="densityStatus" style="display: none;">Normal</div>
-    </div>
-
-    <div class="machine-grid-container">
-        <div class="machine-grid-title">🏭 Machine Status</div>
-        <div class="machine-grid" id="machineGrid"></div>
-    </div>
-
-    <div class="qc-staff-panel">
-        <div class="staff-info-item">
-            <div class="staff-label">QC Staff Name</div>
-            <div class="staff-value" id="qcStaffName">--</div>
-        </div>
-        <div class="staff-info-item">
-            <div class="staff-label">Shift</div>
-            <div class="staff-value" id="qcStaffShift">--</div>
-        </div>
-        <div class="staff-info-item">
-            <div class="staff-label">Team</div>
-            <div class="staff-value" id="qcStaffTeam">--</div>
-        </div>
-        <div class="staff-info-item">
-            <div class="staff-label">Last Test Time</div>
-            <div class="staff-value" id="lastTestTime">--</div>
-        </div>
     </div>
 
     <div class="approval-panel">
@@ -732,7 +720,10 @@
 
         function updateDateTime() {
             const now = new Date();
-            const dateStr = now.toISOString().split('T')[0];
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+            const dateStr = `${day}-${month}-${year}`;
             const hour = now.getHours();
             const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
             
@@ -760,7 +751,6 @@
 
         function updateStaffFromTest(test) {
             document.getElementById('qcStaffName').textContent = test.qcName || '--';
-            document.getElementById('qcStaffShift').textContent = test.shift || '--';
             document.getElementById('qcStaffTeam').textContent = test.team || '--';
             
             if (test.createdAt) {
