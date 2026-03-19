@@ -1419,10 +1419,15 @@
  }
 
  // Save to Firestore
- await saveQCTest(testData);
+ const result = await saveQCTest(testData);
 
+ if (result === 'offline-queued') {
+ saveStatus.textContent = '📱 Saved Offline!';
+ saveStatus.className = 'save-status saved';
+ } else {
  saveStatus.textContent = '✅ Saved!';
  saveStatus.className = 'save-status saved';
+ }
 
  // Clear form controls after successful save
  weightInput.value = '';

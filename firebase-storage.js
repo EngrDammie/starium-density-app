@@ -22,7 +22,9 @@ try {
     console.error('Firebase initialization error:', e);
 }
 
-// Enable offline persistence - allows app to work without internet
+// NOTE: Firebase IndexedDB persistence not working in v9.22.0 compat
+// Using localStorage-based offline queue instead
+/*
 if (db) {
     db.enableIndexedDBPersistence({ synchronizeTabs: true })
         .then(() => {
@@ -43,6 +45,80 @@ if (db) {
         cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
     });
 }
+*/
+
+// ===== LOCALSTORAGE OFFLINE QUEUE =====
+const OFFLINE_QUEUE_KEY = 'starium_offline_queue';
+
+/**
+ * Save data to localStorage queue (for offline use)
+ */
+function saveToLocalQueue(testData) {
+    try {
+        const queue = getLocalQueue();
+        queue.push({
+            ...testData,
+            queuedAt: new Date().toISOString()
+        });
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        console.log('📱 Saved to local queue (offline)', queue.length, 'items');
+        return true;
+    } catch (e) {
+        console.error('Failed to save to local queue:', e);
+        return false;
+    }
+}
+
+/**
+ * Get pending items from localStorage queue
+ */
+function getLocalQueue() {
+    try {
+        const data = localStorage.getItem(OFFLINE_QUEUE_KEY);
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+/**
+ * Clear localStorage queue
+ */
+function clearLocalQueue() {
+    localStorage.removeItem(OFFLINE_QUEUE_KEY);
+    console.log('🗑️ Cleared local queue');
+}
+
+/**
+ * Sync local queue to Firestore
+ */
+async function syncLocalQueue() {
+    const queue = getLocalQueue();
+    if (queue.length === 0) return;
+    
+    console.log('🔄 Syncing', queue.length, 'items from local queue...');
+    
+    for (const testData of queue) {
+        try {
+            await db.collection('qc_tests').add({
+                ...testData,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                syncedFromOffline: true
+            });
+        } catch (e) {
+            console.error('Failed to sync item:', e);
+        }
+    }
+    
+    clearLocalQueue();
+    console.log('✅ Local queue synced to Firestore');
+}
+
+// Listen for network restoration to sync
+window.addEventListener('online', () => {
+    console.log('📶 Network restored - syncing offline queue...');
+    syncLocalQueue();
+});
 
 // Track online/offline status
 let isOnline = navigator.onLine;
@@ -99,6 +175,16 @@ const AUTO_SAVE_CONFIG = {
 async function saveQCTest(testData) {
     if (!db) {
         throw new Error('Firebase not initialized');
+    }
+    
+    // Check if online - if not, save to localStorage queue
+    if (!navigator.onLine) {
+        console.log('📴 Offline - saving to local queue');
+        const success = saveToLocalQueue(testData);
+        if (success) {
+            return 'offline-queued';
+        }
+        throw new Error('Failed to save offline');
     }
     
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
