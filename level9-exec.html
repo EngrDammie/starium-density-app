@@ -328,6 +328,7 @@
             background: var(--bg-card);
             border-radius: 15px;
             padding: 20px;
+            overflow-x: auto;
         }
 
         .recent-data-title {
@@ -336,10 +337,12 @@
             margin-bottom: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            white-space: nowrap;
         }
 
         .data-table {
             width: 100%;
+            min-width: 600px; /* Force horizontal scroll on small screens */
             border-collapse: collapse;
             font-size: 0.85rem;
         }
@@ -659,11 +662,13 @@
     <script src="firebase-storage.js"></script>
     <script>
         // ===== CONFIG =====
+        // These constants match index.html - density thresholds for Level 9 mode
         const MODE = 'level9';
         const BOT_DIVISOR = 1680;
         const LEVEL9_DIVISOR = 1580;
         const DENSITY_TOO_LOW = 0.200;
         const DENSITY_TOO_HIGH = 0.310;
+        const BOT_NORMAL_MAX = 0.240; // For reference (used in BOT mode)
 
         // Machine data
         const machineData = [

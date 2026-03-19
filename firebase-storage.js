@@ -313,9 +313,11 @@ async function getLatestTest(mode) {
  * @returns {Function} - Unsubscribe function
  */
 function subscribeToLatestTest(mode, callback) {
-    // Simple approach: get all docs, take first one (no sorting, just for testing)
+    // Get most recent test by sorting by createdAt descending
     return db.collection('qc_tests')
         .where('mode', '==', mode)
+        .orderBy('createdAt', 'desc')
+        .limit(1)
         .onSnapshot((snapshot) => {
             console.log('subscribeToLatestTest: received', snapshot.size, 'tests');
             
@@ -324,10 +326,10 @@ function subscribeToLatestTest(mode, callback) {
                 return;
             }
             
-            // Just take the first document for now (no sorting)
+            // Get the most recent document (first after sorting by createdAt desc)
             const firstDoc = snapshot.docs[0];
             const data = { id: firstDoc.id, ...firstDoc.data() };
-            console.log('subscribeToLatestTest: first doc data:', data);
+            console.log('subscribeToLatestTest: most recent doc data:', data);
             callback(data);
         }, (error) => {
             console.error('Error subscribing to latest test:', error);
