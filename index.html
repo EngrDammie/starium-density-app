@@ -581,10 +581,33 @@
  .machine-btn { padding: 8px 2px; font-size: 0.7rem; }
  .input-row { flex-direction: column; }
  }
+
+ /* Sync Status */
+ .sync-status {
+ position: fixed;
+ top: 20px;
+ right: 20px;
+ padding: 8px 15px;
+ border-radius: 20px;
+ font-size: 0.8rem;
+ z-index: 100;
+ }
+
+ .sync-status.online {
+ background: rgba(0, 230, 118, 0.2);
+ color: #00E676;
+ }
+
+ .sync-status.offline {
+ background: rgba(244, 67, 54, 0.2);
+ color: #F44336;
+ }
  </style>
 </head>
 
 <body>
+ <div class="sync-status online" id="syncStatus">🟢 Online</div>
+
  <header>
  <h1>Starium Rafa Quality Control Tool</h1>
  <div class="header-controls">
@@ -1441,6 +1464,22 @@
  });
  }
  });
+
+ // Network status
+ function updateNetworkStatus() {
+ const statusEl = document.getElementById('syncStatus');
+ if (navigator.onLine) {
+ statusEl.textContent = '🟢 Online';
+ statusEl.className = 'sync-status online';
+ } else {
+ statusEl.textContent = '📴 Offline';
+ statusEl.className = 'sync-status offline';
+ }
+ }
+
+ // Listen for network changes
+ window.addEventListener('online', updateNetworkStatus);
+ window.addEventListener('offline', updateNetworkStatus);
  </script>
 </body>
 
