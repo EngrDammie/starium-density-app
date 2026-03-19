@@ -24,7 +24,7 @@ try {
 
 // Enable offline persistence - allows app to work without internet
 if (db) {
-    db.enableIndexedDBPersistence(db, { synchronizeTabs: true })
+    db.enableIndexedDBPersistence({ synchronizeTabs: true })
         .then(() => {
             console.log('✅ IndexedDB persistence enabled - app works offline');
         })
