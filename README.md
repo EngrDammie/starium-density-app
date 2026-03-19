@@ -18,13 +18,14 @@ A web-based quality control application for a detergent factory that records pow
 6. [How to Use Executive Pages](#how-to-use-executive-pages)
 7. [Firestore Data Structure](#firestore-data-structure)
 8. [Offline Support](#offline-support)
-9. [User Preferences](#user-preferences)
-10. [Shift Timing](#shift-timing)
-11. [Network Status Indicator](#network-status-indicator)
-12. [Configurable Constants](#configurable-constants)
-13. [Color Coding](#color-coding)
-14. [Browser Support](#browser-support)
-15. [Troubleshooting](#troubleshooting)
+9. [Settings & Configuration](#settings--configuration)
+10. [User Preferences](#user-preferences)
+11. [Shift Timing](#shift-timing)
+12. [Network Status Indicator](#network-status-indicator)
+13. [Configurable Constants](#configurable-constants)
+14. [Color Coding](#color-coding)
+15. [Browser Support](#browser-support)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -284,6 +285,66 @@ Each document represents one shift's approval status:
 
 ---
 
+## Settings & Configuration
+
+The app includes a Settings dialog that allows users to view and modify configuration values. All settings are stored in Firestore and automatically synced across all devices and browser tabs in real-time.
+
+### Accessing Settings
+
+Click the ⚙️ gear button located at the bottom-left corner of any page.
+
+### Configurable Settings
+
+#### Level 9 Density
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Minimum Density | 0.200 | Lower threshold for acceptable density (g/mL) |
+| Maximum Density | 0.310 | Upper threshold for Level 9 density (g/mL) |
+| Volume (Divisor) | 1580 | Divisor used in calculation: density = weight ÷ divisor |
+
+#### BOT Density
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Minimum Density | 0.200 | Lower threshold for acceptable density (g/mL) |
+| Maximum Density | 0.240 | Upper threshold for BOT density (g/mL) |
+| Volume (Divisor) | 1680 | Divisor used in calculation: density = weight ÷ divisor |
+
+#### Shift Times
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Day Shift Start | 7 | Hour (0-23) when DAY shift begins |
+| Night Shift Start | 19 | Hour (0-23) when NIGHT shift begins |
+
+### Firestore Storage
+
+Settings are stored in a `config` collection with document ID `settings`:
+
+```javascript
+{
+  level9MinDensity: 0.200,
+  level9MaxDensity: 0.310,
+  level9Divisor: 1580,
+  botMinDensity: 0.200,
+  botMaxDensity: 0.240,
+  botDivisor: 1680,
+  dayShiftStart: 7,
+  nightShiftStart: 19,
+  updatedAt: Timestamp
+}
+```
+
+### Features
+
+- **Real-time Sync:** Changes made in one tab/device instantly reflect in all others
+- **Validation:** Prevents saving invalid configurations (e.g., min >= max)
+- **Default Values:** If no config exists in Firestore, default values are created automatically
+- **Persistent:** Settings survive browser cache clearing (stored in Firestore)
+
+---
+
 ## User Preferences
 
 The app saves user preferences locally using browser localStorage:
@@ -317,6 +378,8 @@ All pages display online/offline status in the top-right corner:
 
 ## Configurable Constants
 
+> **Note:** These constants can now be modified via the Settings dialog (⚙️ button). The values below are the defaults.
+
 In `index.html` JavaScript, these constants control density calculations:
 
 ```javascript
@@ -328,6 +391,8 @@ const CONFIG = {
   BOT_NORMAL_MAX: 0.240       // BOT maximum
 };
 ```
+
+To change these values, click the ⚙️ Settings button at the bottom-left of any page.
 
 ---
 
