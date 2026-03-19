@@ -23,26 +23,8 @@ try {
 }
 
 // Enable offline persistence - allows app to work without internet
-// Using firebase.firestore().enableIndexedDBPersistence() for compat library
 if (db) {
-    try {
-        firebase.firestore().enableIndexedDBPersistence(db, { synchronizeTabs: true })
-            .then(() => {
-                console.log('✅ IndexedDB persistence enabled - app works offline');
-            })
-            .catch((err) => {
-                if (err.code == 'failed-precondition') {
-                    console.warn('⚠️ Persistence failed: Multiple tabs open');
-                } else if (err.code == 'unimplemented') {
-                    console.warn('⚠️ Persistence not available in this browser');
-                } else {
-                    console.warn('⚠️ Persistence error:', err.message);
-                }
-            });
-    } catch (e) {
-        console.warn('⚠️ enableIndexedDBPersistence not available:', e.message);
-    }
-}
+    db.enableIndexedDBPersistence({ synchronizeTabs: true })
         .then(() => {
             console.log('✅ IndexedDB persistence enabled - app works offline');
         })
