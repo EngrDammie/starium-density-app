@@ -22,16 +22,65 @@ try {
     console.error('Firebase initialization error:', e);
 }
 
-// Enable offline persistence
+// Enable offline persistence - allows app to work without internet
 if (db) {
     db.enableIndexedDBPersistence(db, { synchronizeTabs: true })
+        .then(() => {
+            console.log('✅ IndexedDB persistence enabled - app works offline');
+        })
         .catch((err) => {
             if (err.code == 'failed-precondition') {
-                console.warn('Persistence failed: Multiple tabs open');
+                console.warn('⚠️ Persistence failed: Multiple tabs open');
             } else if (err.code == 'unimplemented') {
-                console.warn('Persistence not available in this browser');
+                console.warn('⚠️ Persistence not available in this browser');
+            } else {
+                console.warn('⚠️ Persistence error:', err.message);
             }
         });
+    
+    // Configure cache settings for better offline experience
+    db.settings({
+        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
+    });
+}
+
+// Track online/offline status
+let isOnline = navigator.onLine;
+let onlineStatusListeners = [];
+
+// Listen for network status changes
+window.addEventListener('online', () => {
+    isOnline = true;
+    console.log('📶 Network restored - syncing data...');
+    notifyOnlineStatusListeners(true);
+});
+
+window.addEventListener('offline', () => {
+    isOnline = false;
+    console.log('📴 Network lost - working offline');
+    notifyOnlineStatusListeners(false);
+});
+
+/**
+ * Get current online status
+ * @returns {boolean} - True if online
+ */
+function isNetworkOnline() {
+    return isOnline;
+}
+
+/**
+ * Add callback for online/offline status changes
+ * @param {Function} callback - Called with true when online, false when offline
+ */
+function onOnlineStatusChange(callback) {
+    onlineStatusListeners.push(callback);
+    // Immediately call with current status
+    callback(isOnline);
+}
+
+function notifyOnlineStatusListeners(status) {
+    onlineStatusListeners.forEach(cb => cb(status));
 }
 
 // ===== AUTO-SAVE CONFIGURATION =====
