@@ -365,11 +365,16 @@ const CONFIG = {
 
 ## Backup and Recovery
 
-A backup tag exists for recovery purposes: `backup-pre-offline-queue-20260319-055204`
+Current backup: `backup-pre-offline-queue-20260319-055204`
 
-To revert to this backup:
+Previous backups can be restored using:
 ```bash
-git checkout backup-pre-offline-queue-20260319-055204
+git checkout <backup-tag-name>
+```
+
+To list all backup tags:
+```bash
+git tag -l
 ```
 
 ---
