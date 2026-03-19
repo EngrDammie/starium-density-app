@@ -547,7 +547,7 @@
                 <div class="stat-value" id="currentDate">--</div>
             </div>
             <div class="stat-box">
-                <div class="stat-label">Total Tests Today</div>
+                <div class="stat-label">Total Tests This Shift</div>
                 <div class="stat-value" id="totalTests">0</div>
             </div>
         </div>
@@ -602,7 +602,7 @@
     </div>
 
     <div class="recent-data-panel">
-        <div class="recent-data-title">📋 Recent Tests (Last 10)</div>
+        <div class="recent-data-title">📋 Tests for This Shift (Last 10)</div>
         <div id="recentDataTable">
             <div class="loading">
                 <div class="spinner"></div>
@@ -695,16 +695,28 @@
                 loadTestsTodayCount()
             ]);
             
-            // Real-time listener for latest test (efficient: uses index)
-            unsubscribeLatestTest = subscribeToLatestTest(MODE, (test) => {
-                if (test) {
-                    updateCurrentDensity(test);
-                    updateStaffFromTest(test);
-                }
-            });
-
-            // Real-time listener for shift approval
+            // Real-time listener for tests in this shift (using approvalDocId)
             if (currentApprovalId) {
+                unsubscribeLatestTest = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
+                    if (tests && tests.length > 0) {
+                        // Get the most recent test
+                        const sorted = tests.sort((a, b) => {
+                            const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+                            const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+                            return dateB - dateA;
+                        });
+                        const latestTest = sorted[0];
+                        updateCurrentDensity(latestTest);
+                        updateStaffFromTest(latestTest);
+                    }
+                });
+
+                // Real-time listener for tests count for this shift
+                unsubscribeTestsCount = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
+                    document.getElementById('totalTests').textContent = tests ? tests.length : 0;
+                });
+
+                // Real-time listener for shift approval
                 unsubscribeShiftApproval = subscribeToShiftApproval(currentApprovalId, (approval) => {
                     if (approval) {
                         currentShiftApproval = approval;
@@ -712,11 +724,6 @@
                     }
                 });
             }
-
-            // Real-time listener for tests today count
-            unsubscribeTestsCount = subscribeToTestsTodayCount(MODE, (count) => {
-                document.getElementById('totalTests').textContent = count;
-            });
 
             // Network status
             window.addEventListener('online', updateNetworkStatus);
@@ -742,11 +749,12 @@
         }
 
         async function loadQCStaffInfo() {
-            // Use efficient single query via getLatestTest
-            const test = await getLatestTest(MODE);
-            
-            if (test) {
-                updateStaffFromTest(test);
+            // Get tests for this shift using approvalDocId
+            if (currentApprovalId) {
+                const tests = await getTestsByApprovalDoc(currentApprovalId, 1);
+                if (tests && tests.length > 0) {
+                    updateStaffFromTest(tests[0]);
+                }
             }
         }
 
@@ -767,8 +775,13 @@
         }
 
         async function loadTestsTodayCount() {
-            const count = await getTestsTodayCount(MODE);
-            document.getElementById('totalTests').textContent = count;
+            // Use approvalDocId to get count for this specific shift
+            if (currentApprovalId) {
+                const tests = await getTestsByApprovalDoc(currentApprovalId, 100);
+                document.getElementById('totalTests').textContent = tests ? tests.length : 0;
+            } else {
+                document.getElementById('totalTests').textContent = 0;
+            }
         }
 
         async function loadCurrentShiftApproval() {
@@ -817,14 +830,24 @@
         }
 
         async function loadRecentTests() {
-            const tests = await getRecentTests(MODE, 10);
-            // Note: totalTests is now handled by loadTestsTodayCount() + real-time subscription
+            // Use approvalDocId to get tests for this specific shift only
+            let tests = [];
+            if (currentApprovalId) {
+                tests = await getTestsByApprovalDoc(currentApprovalId, 10);
+            }
             
-            if (tests.length === 0) {
+            if (!tests || tests.length === 0) {
                 document.getElementById('recentDataTable').innerHTML = 
-                    '<div class="loading">No tests recorded yet</div>';
+                    '<div class="loading">No tests recorded for this shift yet</div>';
                 return;
             }
+
+            // Sort by time (most recent first)
+            tests.sort((a, b) => {
+                const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+                const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+                return dateB - dateA;
+            });
 
             // Helper to safely convert timestamp
             const formatTime = (timestamp) => {
