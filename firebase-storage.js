@@ -168,7 +168,10 @@ const DEFAULT_CONFIG = {
     level9Divisor: 1580,
     botDivisor: 1680,
     dayShiftStart: 7,
-    nightShiftStart: 19
+    nightShiftStart: 19,
+    showSettingsBtnIndex: true,
+    showSettingsBtnLevel9Exec: true,
+    showSettingsBtnBotExec: true
 };
 
 // Cached config - used immediately, then updated from Firestore

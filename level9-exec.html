@@ -861,6 +861,14 @@
                 </div>
             </div>
 
+            <div class="settings-group">
+                <h3>UI Settings</h3>
+                <div class="settings-field">
+                    <label>Show Settings Button:</label>
+                    <input type="checkbox" id="settingShowSettingsBtnLevel9Exec" checked>
+                </div>
+            </div>
+
             <div class="settings-buttons">
                 <button class="settings-btn-cancel" id="settingsCancel">Cancel</button>
                 <button class="settings-btn-save" id="settingsSave">Save</button>
@@ -1306,6 +1314,7 @@
             document.getElementById('settingBotDivisor').value = config.botDivisor;
             document.getElementById('settingDayShiftStart').value = config.dayShiftStart;
             document.getElementById('settingNightShiftStart').value = config.nightShiftStart;
+            document.getElementById('settingShowSettingsBtnLevel9Exec').checked = config.showSettingsBtnLevel9Exec !== false;
             
             settingsStatus.textContent = '';
             settingsOverlay.classList.add('active');
@@ -1328,7 +1337,8 @@
                 botMaxDensity: parseFloat(document.getElementById('settingBotMax').value),
                 botDivisor: parseInt(document.getElementById('settingBotDivisor').value),
                 dayShiftStart: parseInt(document.getElementById('settingDayShiftStart').value),
-                nightShiftStart: parseInt(document.getElementById('settingNightShiftStart').value)
+                nightShiftStart: parseInt(document.getElementById('settingNightShiftStart').value),
+                showSettingsBtnLevel9Exec: document.getElementById('settingShowSettingsBtnLevel9Exec').checked
             };
 
             if (newConfig.level9MinDensity >= newConfig.level9MaxDensity) {
@@ -1365,8 +1375,19 @@
             if (e.target === settingsOverlay) closeSettings();
         });
 
-        // Load config on startup
-        loadConfig();
+        // Load config on startup and show/hide settings button
+        const configOnLoad = getConfig();
+        const settingsBtnLevel9 = document.getElementById('settingsBtn');
+        if (settingsBtnLevel9) {
+            settingsBtnLevel9.style.display = configOnLoad.showSettingsBtnLevel9Exec !== false ? 'flex' : 'none';
+        }
+        
+        loadConfig().then(config => {
+            const settingsBtn = document.getElementById('settingsBtn');
+            if (settingsBtn) {
+                settingsBtn.style.display = config.showSettingsBtnLevel9Exec !== false ? 'flex' : 'none';
+            }
+        });
     </script>
 </body>
 </html>

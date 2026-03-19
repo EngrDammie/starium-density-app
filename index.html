@@ -948,6 +948,14 @@
  </div>
  </div>
 
+ <div class="settings-group">
+ <h3>UI Settings</h3>
+ <div class="settings-field">
+ <label>Show Settings Button:</label>
+ <input type="checkbox" id="settingShowSettingsBtnIndex" checked>
+ </div>
+ </div>
+
  <div class="settings-buttons">
  <button class="settings-btn-cancel" id="settingsCancel">Cancel</button>
  <button class="settings-btn-save" id="settingsSave">Save</button>
@@ -1705,20 +1713,21 @@
  const settingsStatus = document.getElementById('settingsStatus');
 
  function openSettings() {
- // Load current config values into form
- const config = getConfig();
- document.getElementById('settingLevel9Min').value = config.level9MinDensity;
- document.getElementById('settingLevel9Max').value = config.level9MaxDensity;
- document.getElementById('settingLevel9Divisor').value = config.level9Divisor;
- document.getElementById('settingBotMin').value = config.botMinDensity;
- document.getElementById('settingBotMax').value = config.botMaxDensity;
- document.getElementById('settingBotDivisor').value = config.botDivisor;
- document.getElementById('settingDayShiftStart').value = config.dayShiftStart;
- document.getElementById('settingNightShiftStart').value = config.nightShiftStart;
- 
- settingsStatus.textContent = '';
- settingsOverlay.classList.add('active');
- }
+            // Load current config values into form
+            const config = getConfig();
+            document.getElementById('settingLevel9Min').value = config.level9MinDensity;
+            document.getElementById('settingLevel9Max').value = config.level9MaxDensity;
+            document.getElementById('settingLevel9Divisor').value = config.level9Divisor;
+            document.getElementById('settingBotMin').value = config.botMinDensity;
+            document.getElementById('settingBotMax').value = config.botMaxDensity;
+            document.getElementById('settingBotDivisor').value = config.botDivisor;
+            document.getElementById('settingDayShiftStart').value = config.dayShiftStart;
+            document.getElementById('settingNightShiftStart').value = config.nightShiftStart;
+            document.getElementById('settingShowSettingsBtnIndex').checked = config.showSettingsBtnIndex !== false;
+            
+            settingsStatus.textContent = '';
+            settingsOverlay.classList.add('active');
+        }
 
  function closeSettings() {
  settingsOverlay.classList.remove('active');
@@ -1737,7 +1746,8 @@
  botMaxDensity: parseFloat(document.getElementById('settingBotMax').value),
  botDivisor: parseInt(document.getElementById('settingBotDivisor').value),
  dayShiftStart: parseInt(document.getElementById('settingDayShiftStart').value),
- nightShiftStart: parseInt(document.getElementById('settingNightShiftStart').value)
+ nightShiftStart: parseInt(document.getElementById('settingNightShiftStart').value),
+ showSettingsBtnIndex: document.getElementById('settingShowSettingsBtnIndex').checked
  };
 
  // Validation
@@ -1789,6 +1799,13 @@
  CONFIG.LEVEL9_DIVISOR = config.level9Divisor;
  CONFIG.BOT_DIVISOR = config.botDivisor;
  CONFIG.BOT_NORMAL_MAX = config.botMaxDensity;
+ 
+ // Show/hide settings button based on config
+ const settingsBtn = document.getElementById('settingsBtn');
+ if (settingsBtn) {
+ settingsBtn.style.display = config.showSettingsBtnIndex !== false ? 'flex' : 'none';
+ }
+ 
  console.log('Config loaded:', CONFIG);
  });
 
@@ -1799,6 +1816,13 @@
  CONFIG.LEVEL9_DIVISOR = config.level9Divisor;
  CONFIG.BOT_DIVISOR = config.botDivisor;
  CONFIG.BOT_NORMAL_MAX = config.botMaxDensity;
+ 
+ // Show/hide settings button based on config
+ const settingsBtn = document.getElementById('settingsBtn');
+ if (settingsBtn) {
+ settingsBtn.style.display = config.showSettingsBtnIndex !== false ? 'flex' : 'none';
+ }
+ 
  console.log('Config updated from server:', CONFIG);
  });
  </script>
