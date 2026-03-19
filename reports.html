@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports - Starium Rafa QC</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #00BCD4;
+            --primary-dark: #0097A7;
+            --success: #00E676;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --bg-dark: #121212;
+            --bg-card: #1E1E1E;
+            --text: #ffffff;
+            --text-muted: #888;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #2d2d2d 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .panel-title {
+            color: var(--primary);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .form-group select,
+        .form-group input {
+            background: var(--bg-dark);
+            color: var(--text);
+            border: 2px solid #444;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--success);
+        }
+
+        .btn-secondary {
+            background: #444;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 0.8rem;
+        }
+
+        /* Filters */
+        .filters-container {
+            margin-top: 15px;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .filter-row select,
+        .filter-row input {
+            background: var(--bg-dark);
+            color: var(--text);
+            border: 2px solid #444;
+            padding: 8px;
+            border-radius: 6px;
+            flex: 1;
+        }
+
+        .filter-row .remove-filter {
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        /* Joins */
+        .joins-container {
+            margin-top: 15px;
+        }
+
+        .join-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Templates */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .template-card {
+            background: var(--bg-dark);
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .template-card:hover {
+            border-color: var(--primary);
+        }
+
+        .template-card.selected {
+            border-color: var(--success);
+            background: rgba(0, 230, 118, 0.1);
+        }
+
+        .template-card h4 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .template-card p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Results Table */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .results-count {
+            color: var(--text-muted);
+        }
+
+        .export-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: var(--bg-dark);
+            color: var(--primary);
+            padding: 12px 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #333;
+        }
+
+        tr:hover {
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #333;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Saved Reports */
+        .saved-reports-list {
+            margin-top: 15px;
+        }
+
+        .saved-report-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: var(--bg-dark);
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .saved-report-item:hover {
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .saved-report-info {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .saved-report-name {
+            color: var(--text);
+            font-weight: bold;
+        }
+
+        .saved-report-desc {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        /* Sync Status */
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .sync-status.online {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success);
+        }
+
+        .sync-status.offline {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .templates-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="level9-exec.html" class="back-btn">← Back</a>
+    <div class="sync-status online" id="syncStatus">🟢 Online</div>
+
+    <header>
+        <h1>📊 Report Builder</h1>
+        <p class="subtitle">Create custom reports from your data</p>
+    </header>
+
+    <div class="container">
+        <!-- Templates Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Quick Templates</h2>
+            </div>
+            <div class="templates-grid" id="templatesGrid">
+                <!-- Templates loaded dynamically -->
+            </div>
+        </div>
+
+        <!-- Report Builder Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Build Custom Report</h2>
+                <button class="btn btn-secondary" onclick="saveCurrentReport()">💾 Save Report</button>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Collection</label>
+                    <select id="collectionSelect" onchange="onCollectionChange()">
+                        <option value="">Select Collection</option>
+                        <option value="qc_tests">qc_tests</option>
+                        <option value="shift_approvals">shift_approvals</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Joins -->
+            <div class="joins-container">
+                <label style="color: var(--text-muted); text-transform: uppercase; font-size: 0.85rem;">Join Collections</label>
+                <div id="joinsContainer"></div>
+                <button class="btn btn-secondary btn-sm" onclick="addJoin()" style="margin-top: 10px;">+ Add Join</button>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters-container">
+                <label style="color: var(--text-muted); text-transform: uppercase; font-size: 0.85rem;">Filters</label>
+                <div id="filtersContainer"></div>
+                <button class="btn btn-secondary btn-sm" onclick="addFilter()">+ Add Filter</button>
+            </div>
+
+            <!-- Sort & Limit -->
+            <div class="form-row" style="margin-top: 20px;">
+                <div class="form-group">
+                    <label>Sort By</label>
+                    <select id="sortField">
+                        <option value="">None</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Direction</label>
+                    <select id="sortDirection">
+                        <option value="asc">Ascending</option>
+                        <option value="desc">Descending</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Limit</label>
+                    <input type="number" id="limitInput" value="100" min="1" max="1000">
+                </div>
+            </div>
+
+            <button class="btn" onclick="runReport()" style="margin-top: 15px;">▶ Run Report</button>
+        </div>
+
+        <!-- Saved Reports Panel -->
+        <div class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">Saved Reports</h2>
+            </div>
+            <div class="saved-reports-list" id="savedReportsList">
+                <div class="loading">Loading saved reports...</div>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div class="panel" id="resultsPanel" style="display: none;">
+            <div class="results-header">
+                <div>
+                    <h2 class="panel-title">Results</h2>
+                    <span class="results-count" id="resultsCount">0 rows</span>
+                </div>
+                <div class="export-btns">
+                    <button class="btn btn-secondary" onclick="exportCSV()">📥 CSV</button>
+                    <button class="btn btn-secondary" onclick="exportJSON()">📥 JSON</button>
+                </div>
+            </div>
+            <div class="table-container" id="resultsTableContainer">
+                <!-- Table rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="firebase-storage.js"></script>
+    <script src="reports.js"></script>
+    <script>
+        // State
+        let currentReportData = [];
+        let currentCollection = '';
+        let availableFields = [];
+
+        // Initialize
+        async function init() {
+            renderTemplates();
+            await loadSavedReports();
+            setupNetworkStatus();
+            
+            // Add initial empty filter
+            addFilter();
+        }
+
+        function setupNetworkStatus() {
+            function updateNetworkStatus() {
+                const statusEl = document.getElementById('syncStatus');
+                if (navigator.onLine) {
+                    statusEl.textContent = '🟢 Online';
+                    statusEl.className = 'sync-status online';
+                } else {
+                    statusEl.textContent = '📴 Offline';
+                    statusEl.className = 'sync-status offline';
+                }
+            }
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+            updateNetworkStatus();
+        }
+
+        // Render templates
+        function renderTemplates() {
+            const grid = document.getElementById('templatesGrid');
+            grid.innerHTML = REPORT_TEMPLATES.map(template => `
+                <div class="template-card" onclick="loadTemplate('${template.id}')">
+                    <h4>${template.name}</h4>
+                    <p>${template.description}</p>
+                </div>
+            `).join('');
+        }
+
+        // Load a template
+        function loadTemplate(templateId) {
+            const template = REPORT_TEMPLATES.find(t => t.id === templateId);
+            if (!template) return;
+
+            // Select collection
+            document.getElementById('collectionSelect').value = template.collections[0];
+            onCollectionChange();
+
+            // Set filters
+            document.getElementById('filtersContainer').innerHTML = '';
+            template.filters.forEach(filter => addFilter(filter));
+
+            // Set joins
+            document.getElementById('joinsContainer').innerHTML = '';
+            if (template.joins) {
+                template.joins.forEach(join => addJoin(join));
+            }
+
+            // Set sort and limit
+            if (template.sort) {
+                document.getElementById('sortField').value = template.sort.field || '';
+                document.getElementById('sortDirection').value = template.sort.direction || 'asc';
+            }
+            document.getElementById('limitInput').value = template.limit || 100;
+
+            // Highlight selected template
+            document.querySelectorAll('.template-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.target.closest('.template-card')?.classList.add('selected');
+
+            // Auto-run
+            runReport();
+        }
+
+        // Collection changed
+        async function onCollectionChange() {
+            const collection = document.getElementById('collectionSelect').value;
+            currentCollection = collection;
+            
+            if (!collection) {
+                availableFields = [];
+                return;
+            }
+
+            // Get fields for this collection
+            availableFields = await getCollectionFields(collection);
+            
+            // Update sort dropdown
+            const sortSelect = document.getElementById('sortField');
+            sortSelect.innerHTML = '<option value="">None</option>' + 
+                availableFields.map(f => `<option value="${f}">${f}</option>`).join('');
+        }
+
+        // Add filter row
+        function addFilter(filter = null) {
+            const container = document.getElementById('filtersContainer');
+            const filterId = Date.now();
+            
+            const html = `
+                <div class="filter-row" data-filter-id="${filterId}">
+                    <select class="filter-field">
+                        <option value="">Select Field</option>
+                        ${availableFields.map(f => `<option value="${f}" ${filter?.field === f ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                    <select class="filter-operator">
+                        <option value="==" ${filter?.operator === '==' ? 'selected' : ''}>=</option>
+                        <option value="!=" ${filter?.operator === '!=' ? 'selected' : ''}>≠</option>
+                        <option value=">" ${filter?.operator === '>' ? 'selected' : ''}>&gt;</option>
+                        <option value=">=" ${filter?.operator === '>=' ? 'selected' : ''}>≥</option>
+                        <option value="<" ${filter?.operator === '<' ? 'selected' : ''}>&lt;</option>
+                        <option value="<=" ${filter?.operator === '<=' ? 'selected' : ''}>≤</option>
+                        <option value="array-contains" ${filter?.operator === 'array-contains' ? 'selected' : ''}>Contains</option>
+                    </select>
+                    <input type="text" class="filter-value" placeholder="Value" value="${filter?.value || ''}">
+                    <button class="remove-filter" onclick="removeFilter(${filterId})">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeFilter(filterId) {
+            document.querySelector(`[data-filter-id="${filterId}"]`)?.remove();
+        }
+
+        // Add join row
+        function addJoin(join = null) {
+            const container = document.getElementById('joinsContainer');
+            const joinId = Date.now();
+            
+            const html = `
+                <div class="join-row" data-join-id="${joinId}">
+                    <span style="color: var(--text-muted);">Join</span>
+                    <select class="join-source-field">
+                        <option value="">Source Field</option>
+                        ${availableFields.map(f => `<option value="${f}" ${join?.sourceField === f ? 'selected' : ''}>${f}</option>`).join('')}
+                    </select>
+                    <span style="color: var(--text-muted);">→</span>
+                    <select class="join-target-collection" onchange="updateJoinTargetFields(${joinId}, this.value)">
+                        <option value="">Target Collection</option>
+                        <option value="shift_approvals" ${join?.targetCollection === 'shift_approvals' ? 'selected' : ''}>shift_approvals</option>
+                        <option value="qc_tests" ${join?.targetCollection === 'qc_tests' ? 'selected' : ''}>qc_tests</option>
+                    </select>
+                    <input type="text" class="join-alias" placeholder="Alias" value="${join?.alias || ''}" style="width: 120px;">
+                    <button class="remove-filter" onclick="removeJoin(${joinId})">×</button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeJoin(joinId) {
+            document.querySelector(`[data-join-id="${joinId}"]`)?.remove();
+        }
+
+        // Run report
+        async function runReport() {
+            const collection = document.getElementById('collectionSelect').value;
+            if (!collection) {
+                alert('Please select a collection');
+                return;
+            }
+
+            // Get filters
+            const filters = [];
+            document.querySelectorAll('.filter-row').forEach(row => {
+                const field = row.querySelector('.filter-field').value;
+                const operator = row.querySelector('.filter-operator').value;
+                const value = row.querySelector('.filter-value').value;
+                if (field && operator) {
+                    filters.push({ field, operator, value });
+                }
+            });
+
+            // Get sort
+            const sortField = document.getElementById('sortField').value;
+            const sort = sortField ? {
+                field: sortField,
+                direction: document.getElementById('sortDirection').value
+            } : null;
+
+            // Get limit
+            const limit = parseInt(document.getElementById('limitInput').value) || 100;
+
+            // Get joins
+            const joins = [];
+            document.querySelectorAll('.join-row').forEach(row => {
+                const sourceField = row.querySelector('.join-source-field').value;
+                const targetCollection = row.querySelector('.join-target-collection').value;
+                const alias = row.querySelector('.join-alias').value;
+                if (sourceField && targetCollection && alias) {
+                    joins.push({
+                        sourceField,
+                        targetCollection,
+                        targetDocField: 'id',
+                        alias
+                    });
+                }
+            });
+
+            // Show loading
+            document.getElementById('resultsPanel').style.display = 'block';
+            document.getElementById('resultsTableContainer').innerHTML = '<div class="loading"><div class="spinner"></div>Loading...</div>';
+
+            // Query data
+            let data = await queryCollection(collection, filters, sort, limit);
+
+            // Perform joins
+            if (joins.length > 0) {
+                data = await performJoins(data, joins);
+            }
+
+            currentReportData = data;
+
+            // Render results
+            renderResults(data);
+        }
+
+        // Render results table
+        function renderResults(data) {
+            const count = data.length;
+            document.getElementById('resultsCount').textContent = `${count} row${count !== 1 ? 's' : ''}`;
+
+            if (count === 0) {
+                document.getElementById('resultsTableContainer').innerHTML = '<div class="loading">No results found</div>';
+                return;
+            }
+
+            // Get all unique keys
+            const allKeys = new Set();
+            data.forEach(item => {
+                Object.keys(item).forEach(key => {
+                    if (typeof item[key] !== 'object') {
+                        allKeys.add(key);
+                    }
+                });
+            });
+            const columns = Array.from(allKeys).sort();
+
+            // Build table
+            let html = '<table><thead><tr>';
+            columns.forEach(col => {
+                html += `<th>${col}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+
+            data.forEach(row => {
+                html += '<tr>';
+                columns.forEach(col => {
+                    let value = row[col];
+                    
+                    // Handle timestamps
+                    if (value && typeof value === 'object' && value.toDate) {
+                        value = value.toDate().toLocaleString();
+                    } else if (value && typeof value === 'object') {
+                        value = JSON.stringify(value);
+                    }
+                    
+                    html += `<td>${value ?? ''}</td>`;
+                });
+                html += '</tr>';
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('resultsTableContainer').innerHTML = html;
+        }
+
+        // Export functions
+        function exportCSV() {
+            if (currentReportData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            exportToCSV(currentReportData, 'report.csv');
+        }
+
+        function exportJSON() {
+            if (currentReportData.length === 0) {
+                alert('No data to export');
+                return;
+            }
+            exportToJSON(currentReportData, 'report.json');
+        }
+
+        // Save current report
+        async function saveCurrentReport() {
+            const name = prompt('Enter a name for this report:');
+            if (!name) return;
+
+            const collection = document.getElementById('collectionSelect').value;
+            
+            // Get filters
+            const filters = [];
+            document.querySelectorAll('.filter-row').forEach(row => {
+                const field = row.querySelector('.filter-field').value;
+                const operator = row.querySelector('.filter-operator').value;
+                const value = row.querySelector('.filter-value').value;
+                if (field && operator) {
+                    filters.push({ field, operator, value });
+                }
+            });
+
+            // Get joins
+            const joins = [];
+            document.querySelectorAll('.join-row').forEach(row => {
+                const sourceField = row.querySelector('.join-source-field').value;
+                const targetCollection = row.querySelector('.join-target-collection').value;
+                const alias = row.querySelector('.join-alias').value;
+                if (sourceField && targetCollection && alias) {
+                    joins.push({
+                        sourceField,
+                        targetCollection,
+                        targetDocField: 'id',
+                        alias
+                    });
+                }
+            });
+
+            const config = {
+                name,
+                collections: [collection],
+                joins,
+                filters,
+                sort: {
+                    field: document.getElementById('sortField').value,
+                    direction: document.getElementById('sortDirection').value
+                },
+                limit: parseInt(document.getElementById('limitInput').value)
+            };
+
+            const result = await saveReportConfig(config);
+            if (result) {
+                alert('Report saved!');
+                loadSavedReports();
+            } else {
+                alert('Error saving report');
+            }
+        }
+
+        // Load saved reports
+        async function loadSavedReports() {
+            const list = document.getElementById('savedReportsList');
+            const reports = await loadReportConfigs();
+
+            if (reports.length === 0) {
+                list.innerHTML = '<div class="loading">No saved reports</div>';
+                return;
+            }
+
+            list.innerHTML = reports.map(report => `
+                <div class="saved-report-item">
+                    <div class="saved-report-info" onclick="loadSavedReport('${report.id}')">
+                        <div class="saved-report-name">${report.name}</div>
+                        <div class="saved-report-desc">${report.collections?.join(', ')}</div>
+                    </div>
+                    <button class="btn btn-danger btn-sm" onclick="deleteReport('${report.id}')">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        // Load a saved report
+        async function loadSavedReport(reportId) {
+            const reports = await loadReportConfigs();
+            const report = reports.find(r => r.id === reportId);
+            if (!report) return;
+
+            // Set collection
+            document.getElementById('collectionSelect').value = report.collections?.[0] || '';
+            await onCollectionChange();
+
+            // Set filters
+            document.getElementById('filtersContainer').innerHTML = '';
+            (report.filters || []).forEach(f => addFilter(f));
+
+            // Set joins
+            document.getElementById('joinsContainer').innerHTML = '';
+            (report.joins || []).forEach(j => addJoin(j));
+
+            // Set sort and limit
+            document.getElementById('sortField').value = report.sort?.field || '';
+            document.getElementById('sortDirection').value = report.sort?.direction || 'asc';
+            document.getElementById('limitInput').value = report.limit || 100;
+
+            // Run
+            runReport();
+        }
+
+        // Delete a saved report
+        async function deleteReport(reportId) {
+            if (!confirm('Delete this saved report?')) return;
+            
+            const success = await deleteReportConfig(reportId);
+            if (success) {
+                loadSavedReports();
+            } else {
+                alert('Error deleting report');
+            }
+        }
+
+        // Initialize on load
+        init();
+    </script>
+</body>
+</html>
