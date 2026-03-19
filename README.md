@@ -56,19 +56,6 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 | `firebase-storage.js` | Firestore backend logic (shared by all pages) |
 | `firestore.indexes.json` | Firestore database indexes configuration |
 
-### Firebase Configuration
-
-```javascript
-{
-  apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
-  authDomain: "starium-rafa-app.firebaseapp.com",
-  projectId: "starium-rafa-app",
-  storageBucket: "starium-rafa-app.firebasestorage.app",
-  messagingSenderId: "743583982928",
-  appId: "1:743583982928:web:e331aaa0b9e741a1537855"
-}
-```
-
 ---
 
 ## Two Modes of Operation
