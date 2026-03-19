@@ -831,8 +831,9 @@
                     </thead>
                     <tbody>
                         ${tests.map(test => {
-                            const density = test.density?.toFixed(3) || '--';
-                            const status = getDensityStatus(density);
+                            const densityNum = parseFloat(test.density) || 0;
+                            const density = densityNum.toFixed(3);
+                            const status = getDensityStatus(densityNum);
                             const time = formatTime(test.createdAt);
                             const appearance = test.appearance === 'A' ? 'OK' : (test.appearance === 'U' ? 'Issue' : '--');
                             return `
@@ -855,9 +856,9 @@
 
         function updateCurrentDensity(test) {
             lastTestData = test;
-            const density = test.density;
+            const density = parseFloat(test.density);
             
-            if (density === null || density === undefined) return;
+            if (isNaN(density)) return;
             
             const densityEl = document.getElementById('currentDensity');
             densityEl.textContent = density.toFixed(3);
