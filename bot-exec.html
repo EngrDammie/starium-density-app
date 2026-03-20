@@ -433,6 +433,12 @@
         @media (max-width: 768px) {
             .machine-grid {
                 grid-template-columns: repeat(6, 1fr);
+                gap: 8px;
+            }
+            
+            .machine-btn {
+                padding: 10px 4px;
+                font-size: 0.8rem;
             }
             
             .density-value {
@@ -452,14 +458,53 @@
             }
         }
 
-        @media (max-width: 400px) {
+        @media (max-width: 600px) {
             .machine-grid {
                 grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
             }
             
             .machine-btn {
                 padding: 8px 3px;
                 font-size: 0.75rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .machine-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 5px;
+                max-width: 100%;
+            }
+            
+            .machine-grid-container {
+                padding: 12px;
+            }
+            
+            .machine-btn {
+                padding: 8px 2px;
+                font-size: 0.7rem;
+                border-radius: 6px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .machine-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 4px;
+            }
+            
+            .machine-btn {
+                padding: 6px 1px;
+                font-size: 0.65rem;
+                border-radius: 4px;
+            }
+        }
+
+        @media (max-width: 320px) {
+            .machine-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 4px;
             }
         }
 
