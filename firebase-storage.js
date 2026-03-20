@@ -161,17 +161,89 @@ function notifyOnlineStatusListeners(status) {
 
 // ===== APP CONFIG =====
 const DEFAULT_CONFIG = {
+    // Density Settings
     level9MinDensity: 0.200,
     level9MaxDensity: 0.310,
     botMinDensity: 0.200,
     botMaxDensity: 0.240,
     level9Divisor: 1580,
     botDivisor: 1680,
+    
+    // Shift Settings
     dayShiftStart: 7,
     nightShiftStart: 19,
+    
+    // UI Settings
     showSettingsBtnIndex: true,
     showSettingsBtnLevel9Exec: true,
-    showSettingsBtnBotExec: true
+    showSettingsBtnBotExec: true,
+    
+    // Grid Configuration
+    machineGridColumns: 6,
+    
+    // Production Lines
+    productionLines: [
+        { id: "1A", name: "Line 1A", order: 1 },
+        { id: "1B", name: "Line 1B", order: 2 },
+        { id: "2A", name: "Line 2A", order: 3 },
+        { id: "2B", name: "Line 2B", order: 4 },
+        { id: "3A", name: "Line 3A", order: 5 },
+        { id: "3B", name: "Line 3B", order: 6 }
+    ],
+    
+    // Machine Configurations
+    machines: [
+        // Line 1A
+        { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
+        { id: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
+        { id: 3, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 3" },
+        { id: 4, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 4" },
+        { id: 5, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 5" },
+        
+        // Line 1B
+        { id: 6, gram: 125, min: 0.200, max: 0.270, line: "1B", name: "Machine 6" },
+        { id: 7, gram: 85, min: 0.240, max: 0.300, line: "1B", name: "Machine 7" },
+        { id: 8, gram: 850, min: 0.200, max: 0.270, line: "1B", name: "Machine 8" },
+        { id: 9, gram: 85, min: 0.240, max: 0.300, line: "1B", name: "Machine 9" },
+        { id: 10, gram: 22, min: 0.200, max: 0.310, line: "1B", name: "Machine 10" },
+        
+        // Line 2A
+        { id: 11, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 11" },
+        { id: 12, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 12" },
+        { id: 13, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 13" },
+        { id: 14, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 14" },
+        { id: 15, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 15" },
+        
+        // Line 2B
+        { id: 16, gram: 850, min: 0.200, max: 0.270, line: "2B", name: "Machine 16" },
+        { id: 17, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 17" },
+        { id: 18, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 18" },
+        { id: 19, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 19" },
+        { id: 20, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 20" },
+        
+        // Line 3A
+        { id: 21, gram: 850, min: 0.200, max: 0.270, line: "3A", name: "Machine 21" },
+        { id: 22, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 22" },
+        { id: 23, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 23" },
+        { id: 24, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 24" },
+        { id: 25, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 25" },
+        
+        // Line 3B
+        { id: 26, gram: 850, min: 0.200, max: 0.270, line: "3B", name: "Machine 26" },
+        { id: 27, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 27" },
+        { id: 28, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 28" },
+        { id: 29, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 29" },
+        { id: 30, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 30" }
+    ],
+    
+    // Gram Specifications
+    gramSpecs: {
+        "22": { min: 0.200, max: 0.310, piecesPerCarton: 162 },
+        "45": { min: 0.210, max: 0.310, piecesPerCarton: 84 },
+        "85": { min: 0.240, max: 0.300, piecesPerCarton: 52 },
+        "125": { min: 0.200, max: 0.270, piecesPerCarton: 31 },
+        "850": { min: 0.200, max: 0.270, piecesPerCarton: 7 }
+    }
 };
 
 // Cached config - used immediately, then updated from Firestore
@@ -279,6 +351,140 @@ function subscribeToConfig(callback) {
         });
     
     return configUnsubscribe;
+}
+
+// ===== MACHINE CONFIG HELPER FUNCTIONS =====
+
+/**
+ * Get all machines from config
+ * @returns {Array} - Array of machine objects
+ */
+function getMachines() {
+    const config = getConfig();
+    return config.machines || [];
+}
+
+/**
+ * Get machines that match a given density
+ * @param {number} density - The density value to match
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Array} - Array of matching machines
+ */
+function getMatchingMachines(density, mode = 'level9') {
+    const config = getConfig();
+    const machines = config.machines || [];
+    
+    const minDensity = mode === 'bot' ? config.botMinDensity : config.level9MinDensity;
+    const maxDensity = mode === 'bot' ? config.botMaxDensity : config.level9MaxDensity;
+    
+    return machines.filter(m => 
+        density >= m.min && 
+        density <= m.max &&
+        density >= minDensity &&
+        density <= maxDensity
+    );
+}
+
+/**
+ * Get a single machine by ID
+ * @param {number} id - Machine ID
+ * @returns {Object|null} - Machine object or null
+ */
+function getMachineById(id) {
+    const machines = getMachines();
+    return machines.find(m => m.id === id) || null;
+}
+
+/**
+ * Get gram specification for a gram value
+ * @param {number|string} gram - Gram setting
+ * @returns {Object|null} - Gram spec or null
+ */
+function getGramSpec(gram) {
+    const config = getConfig();
+    return config.gramSpecs?.[String(gram)] || null;
+}
+
+/**
+ * Get all machines for a specific production line
+ * @param {string} line - Line identifier (e.g., "1A", "1B")
+ * @returns {Array} - Array of machines in that line
+ */
+function getMachinesByLine(line) {
+    const machines = getMachines();
+    return machines.filter(m => m.line === line);
+}
+
+/**
+ * Get all unique production lines (auto-discovered from machines)
+ * @returns {Array} - Sorted array of line identifiers
+ */
+function getLines() {
+    const machines = getMachines();
+    const lines = [...new Set(machines.map(m => m.line))];
+    return lines.sort();
+}
+
+/**
+ * Get machines grouped by line
+ * @returns {Object} - { "1A": [machines], "1B": [machines], ... }
+ */
+function getMachinesByLines() {
+    const machines = getMachines();
+    const lines = getLines();
+    const grouped = {};
+    lines.forEach(line => {
+        grouped[line] = machines.filter(m => m.line === line);
+    });
+    return grouped;
+}
+
+/**
+ * Get grid column count
+ * @returns {number} - Number of columns for machine grid
+ */
+function getMachineGridColumns() {
+    return getConfig().machineGridColumns || 6;
+}
+
+/**
+ * Get production lines in order
+ * @returns {Array} - Sorted production lines
+ */
+function getProductionLines() {
+    const config = getConfig();
+    if (config.productionLines) {
+        return [...config.productionLines].sort((a, b) => a.order - b.order);
+    }
+    // Fallback to auto-discovered
+    return getLines().map((id, index) => ({ id, name: `Line ${id}`, order: index + 1 }));
+}
+
+/**
+ * Update machines configuration (admin function)
+ * @param {Array} newMachines - New machines array
+ * @returns {Promise<boolean>} - Success status
+ */
+async function updateMachines(newMachines) {
+    return updateConfig({ machines: newMachines });
+}
+
+/**
+ * Update gram specifications (admin function)
+ * @param {Object} newGramSpecs - New gram specs object
+ * @returns {Promise<boolean>} - Success status
+ */
+async function updateGramSpecs(newGramSpecs) {
+    return updateConfig({ gramSpecs: newGramSpecs });
+}
+
+/**
+ * Update grid columns (admin function)
+ * @param {number} columns - Number of columns
+ * @returns {Promise<boolean>} - Success status
+ */
+async function updateMachineGridColumns(columns) {
+    return updateConfig({ machineGridColumns: columns });
 }
 
 // ===== AUTO-SAVE CONFIGURATION =====

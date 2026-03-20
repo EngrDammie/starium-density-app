@@ -989,48 +989,13 @@
  // CONFIG is loaded from Firestore - see settings section below
 
  // ===== MACHINE DATA =====
- const machineData = [
- { id: 1, gram: 125, min: 0.200, max: 0.270 },
- { id: 2, gram: 85, min: 0.240, max: 0.300 },
- { id: 3, gram: 85, min: 0.240, max: 0.300 },
- { id: 4, gram: 85, min: 0.240, max: 0.300 },
- { id: 5, gram: 85, min: 0.240, max: 0.300 },
- { id: 6, gram: 125, min: 0.200, max: 0.270 },
- { id: 7, gram: 85, min: 0.240, max: 0.300 },
- { id: 8, gram: 850, min: 0.200, max: 0.270 },
- { id: 9, gram: 85, min: 0.240, max: 0.300 },
- { id: 10, gram: 22, min: 0.200, max: 0.310 },
- { id: 11, gram: 85, min: 0.240, max: 0.300 },
- { id: 12, gram: 85, min: 0.240, max: 0.300 },
- { id: 13, gram: 85, min: 0.240, max: 0.300 },
- { id: 14, gram: 85, min: 0.240, max: 0.300 },
- { id: 15, gram: 85, min: 0.240, max: 0.300 },
- { id: 16, gram: 850, min: 0.200, max: 0.270 },
- { id: 17, gram: 85, min: 0.240, max: 0.300 },
- { id: 18, gram: 85, min: 0.240, max: 0.300 },
- { id: 19, gram: 85, min: 0.240, max: 0.300 },
- { id: 20, gram: 85, min: 0.240, max: 0.300 },
- { id: 21, gram: 850, min: 0.200, max: 0.270 },
- { id: 22, gram: 45, min: 0.210, max: 0.310 },
- { id: 23, gram: 45, min: 0.210, max: 0.310 },
- { id: 24, gram: 45, min: 0.210, max: 0.310 },
- { id: 25, gram: 45, min: 0.210, max: 0.310 },
- { id: 26, gram: 850, min: 0.200, max: 0.270 },
- { id: 27, gram: 45, min: 0.210, max: 0.310 },
- { id: 28, gram: 45, min: 0.210, max: 0.310 },
- { id: 29, gram: 45, min: 0.210, max: 0.310 },
- { id: 30, gram: 45, min: 0.210, max: 0.310 }
- ];
-
- const lineMap = {
- 1: '1A', 2: '1A', 3: '1A', 4: '1A', 5: '1A',
- 6: '1B', 7: '1B', 8: '1B', 9: '1B', 10: '1B',
- 11: '2A', 12: '2A', 13: '2A', 14: '2A', 15: '2A',
- 16: '2B', 17: '2B', 18: '2B', 19: '2B', 20: '2B',
- 21: '3A', 22: '3A', 23: '3A', 24: '3A', 25: '3A',
- 26: '3B', 27: '3B', 28: '3B', 29: '3B', 30: '3B'
- };
-
+ // Machine data is now loaded from Firestore config via getMachines()
+ // See firebase-storage.js for configuration
+ // Legacy structure preserved for reference:
+ // { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" }
+ 
+ // Line mapping is now derived from machine data via getMachinesByLines()
+ 
  // ===== STATE =====
  let currentDensity = null;
  let selectedMachines = new Set();
@@ -1078,6 +1043,12 @@
 
  // ===== UTILITY FUNCTIONS =====
  function getCartonContent(gram) {
+ // Use config-based gram specs if available
+ const spec = getGramSpec(gram);
+ if (spec && spec.piecesPerCarton) {
+ return `${spec.piecesPerCarton} pieces`;
+ }
+ // Fallback to legacy values
  switch (gram) {
  case 22: return '162 pieces (27 strings × 6 pcs)';
  case 45: return '84 pieces (14 strings × 6 pcs)';
@@ -1457,9 +1428,8 @@
  currentDensity = (weight / CONFIG.LEVEL9_DIVISOR).toFixed(3);
  const density = parseFloat(currentDensity);
 
- const matchingMachines = machineData.filter(m =>
- density >= m.min && density <= m.max
- );
+ // Use config-based matching
+ const matchingMachines = getMatchingMachines(density, 'level9');
  const matchingIds = matchingMachines.map(m => m.id);
 
  // Determine density status class
@@ -1544,8 +1514,8 @@
 
  function showMachineModal(machineId, density, isMatching) {
  currentModalMachineId = machineId;
- const machine = machineData.find(m => m.id === machineId);
- const line = lineMap[machineId];
+ const machine = getMachineById(machineId);
+ const line = machine ? machine.line : 'Unknown';
  const isSelected = selectedMachines.has(machineId);
 
  document.getElementById('modal-machine-id').textContent = `M${machineId}`;

@@ -878,39 +878,8 @@
         const DENSITY_TOO_HIGH = 0.240; // BOT uses BOT_NORMAL_MAX (0.240) as upper threshold
         const BOT_NORMAL_MAX = 0.240;
 
-        // Machine data
-        const machineData = [
-            { id: 1, gram: 125, min: 0.200, max: 0.270 },
-            { id: 2, gram: 85, min: 0.240, max: 0.300 },
-            { id: 3, gram: 85, min: 0.240, max: 0.300 },
-            { id: 4, gram: 85, min: 0.240, max: 0.300 },
-            { id: 5, gram: 85, min: 0.240, max: 0.300 },
-            { id: 6, gram: 125, min: 0.200, max: 0.270 },
-            { id: 7, gram: 85, min: 0.240, max: 0.300 },
-            { id: 8, gram: 850, min: 0.200, max: 0.270 },
-            { id: 9, gram: 85, min: 0.240, max: 0.300 },
-            { id: 10, gram: 22, min: 0.200, max: 0.310 },
-            { id: 11, gram: 85, min: 0.240, max: 0.300 },
-            { id: 12, gram: 85, min: 0.240, max: 0.300 },
-            { id: 13, gram: 85, min: 0.240, max: 0.300 },
-            { id: 14, gram: 85, min: 0.240, max: 0.300 },
-            { id: 15, gram: 85, min: 0.240, max: 0.300 },
-            { id: 16, gram: 850, min: 0.200, max: 0.270 },
-            { id: 17, gram: 85, min: 0.240, max: 0.300 },
-            { id: 18, gram: 85, min: 0.240, max: 0.300 },
-            { id: 19, gram: 85, min: 0.240, max: 0.300 },
-            { id: 20, gram: 85, min: 0.240, max: 0.300 },
-            { id: 21, gram: 850, min: 0.200, max: 0.270 },
-            { id: 22, gram: 45, min: 0.210, max: 0.310 },
-            { id: 23, gram: 45, min: 0.210, max: 0.310 },
-            { id: 24, gram: 45, min: 0.210, max: 0.310 },
-            { id: 25, gram: 45, min: 0.210, max: 0.310 },
-            { id: 26, gram: 850, min: 0.200, max: 0.270 },
-            { id: 27, gram: 45, min: 0.210, max: 0.310 },
-            { id: 28, gram: 45, min: 0.210, max: 0.310 },
-            { id: 29, gram: 45, min: 0.210, max: 0.310 },
-            { id: 30, gram: 45, min: 0.210, max: 0.310 }
-        ];
+        // Machine data - now loaded from Firestore config via getMachines()
+        // See firebase-storage.js for configuration
 
         // State
         let currentApprovalId = null;
