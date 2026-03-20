@@ -590,6 +590,27 @@
             const sortSelect = document.getElementById('sortField');
             sortSelect.innerHTML = '<option value="">None</option>' + 
                 availableFields.map(f => `<option value="${f}">${f}</option>`).join('');
+            
+            // Update ALL filter field dropdowns (not just the sort)
+            document.querySelectorAll('.filter-field').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select Field</option>' + 
+                    availableFields.map(f => `<option value="${f}">${f}</option>`).join('');
+                // Restore selection if still valid
+                if (currentValue && availableFields.includes(currentValue)) {
+                    select.value = currentValue;
+                }
+            });
+            
+            // Update join field dropdowns too
+            document.querySelectorAll('.join-source-field, .join-target-field').forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select Field</option>' + 
+                    availableFields.map(f => `<option value="${f}">${f}</option>`).join('');
+                if (currentValue && availableFields.includes(currentValue)) {
+                    select.value = currentValue;
+                }
+            });
         }
 
         // Add filter row
