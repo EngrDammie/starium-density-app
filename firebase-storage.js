@@ -274,6 +274,28 @@ async function loadConfig() {
         if (doc.exists) {
             const data = doc.data();
             appConfig = { ...DEFAULT_CONFIG, ...data };
+            
+            // Check if there are new fields in DEFAULT_CONFIG that don't exist in Firestore
+            const newFields = {};
+            let hasNewFields = false;
+            for (const key in DEFAULT_CONFIG) {
+                if (!(key in data)) {
+                    newFields[key] = DEFAULT_CONFIG[key];
+                    hasNewFields = true;
+                }
+            }
+            
+            // If there are new fields, update Firestore with them
+            if (hasNewFields) {
+                await db.collection('config').doc('settings').update({
+                    ...newFields,
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('✅ Config updated with new fields:', newFields);
+                // Reload appConfig with new fields
+                appConfig = { ...DEFAULT_CONFIG, ...data };
+            }
+            
             console.log('✅ Config loaded from Firestore:', appConfig);
         } else {
             // Create default config document
