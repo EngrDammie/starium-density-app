@@ -848,8 +848,9 @@
             document.getElementById('machineForm').reset();
             document.getElementById('machineId').value = '';
             document.getElementById('machineGram').disabled = false;
-            document.getElementById('machineMin').disabled = false;
-            document.getElementById('machineMax').disabled = false;
+            // Keep min/max disabled - they auto-fill from Gram Settings
+            document.getElementById('machineMin').disabled = true;
+            document.getElementById('machineMax').disabled = true;
             document.getElementById('machineLine').innerHTML = productionLines.map(l => 
                 `<option value="${l.id}">${l.name} (${l.id})</option>`
             ).join('');
