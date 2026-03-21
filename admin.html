@@ -633,13 +633,14 @@
                     </div>
                     <div class="form-group">
                         <label>Gram Setting</label>
-                        <select id="machineGram" required>
+                        <select id="machineGram" required onchange="onGramChange()">
                             <option value="22">22g</option>
                             <option value="45">45g</option>
                             <option value="85">85g</option>
                             <option value="125">125g</option>
                             <option value="850">850g</option>
                         </select>
+                        <span class="help-text">Change gram in Gram Settings tab</span>
                     </div>
                 </div>
                 <div class="form-row">
@@ -862,10 +863,43 @@
             document.getElementById('machineLine').innerHTML = productionLines.map(l => 
                 `<option value="${l.id}" ${l.id === machine.line ? 'selected' : ''}>${l.name} (${l.id})</option>`
             ).join('');
-            document.getElementById('machineGram').value = machine.gram;
-            document.getElementById('machineMin').value = machine.min;
-            document.getElementById('machineMax').value = machine.max;
             
+            // Set gram dropdown and disable it
+            document.getElementById('machineGram').value = machine.gram;
+            document.getElementById('machineGram').disabled = true;
+            
+            // Auto-fill min/max from gramSpecs
+            const spec = gramSpecs[String(machine.gram)];
+            if (spec) {
+                document.getElementById('machineMin').value = spec.min;
+                document.getElementById('machineMax').value = spec.max;
+            } else {
+                document.getElementById('machineMin').value = machine.min;
+                document.getElementById('machineMax').value = machine.max;
+            }
+            
+            openModal('machineModal');
+        }
+
+        // Auto-fill min/max when gram is selected
+        function onGramChange() {
+            const gram = document.getElementById('machineGram').value;
+            const spec = gramSpecs[gram];
+            if (spec) {
+                document.getElementById('machineMin').value = spec.min;
+                document.getElementById('machineMax').value = spec.max;
+            }
+        }
+
+        // Reset form when adding new machine
+        function openAddMachineModal() {
+            document.getElementById('machineModalTitle').textContent = 'Add Machine';
+            document.getElementById('machineForm').reset();
+            document.getElementById('machineId').value = '';
+            document.getElementById('machineGram').disabled = false;
+            document.getElementById('machineLine').innerHTML = productionLines.map(l => 
+                `<option value="${l.id}">${l.name} (${l.id})</option>`
+            ).join('');
             openModal('machineModal');
         }
 
