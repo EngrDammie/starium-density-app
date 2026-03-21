@@ -476,6 +476,46 @@
             background: #555;
         }
 
+        /* Machine Details Modal */
+        .modal-info {
+            margin: 15px 0;
+            text-align: left;
+        }
+        .modal-info p {
+            margin: 12px 0;
+            font-size: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-info span {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .modal-close {
+            background-color: var(--primary);
+            color: #121212;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        .modal-close:hover {
+            background-color: var(--success);
+            transform: scale(1.05);
+        }
+        .machine-btn {
+            cursor: pointer;
+        }
+        .machine-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 188, 212, 0.4);
+        }
+
         /* Footer */
         footer {
             text-align: center;
@@ -860,6 +900,23 @@
         </div>
     </div>
 
+    <!-- Machine Details Modal -->
+    <div class="modal-overlay" id="machineDetailsModal">
+        <div class="modal">
+            <h2>🏭 Machine Details</h2>
+            <div class="modal-info">
+                <p>Machine ID: <span id="md-machine-id">--</span></p>
+                <p>Machine Name: <span id="md-machine-name">--</span></p>
+                <p>Line: <span id="md-line">--</span></p>
+                <p>Gram Setting: <span id="md-gram">--</span></p>
+                <p>Density Range: <span id="md-range">--</span></p>
+                <p>Carton Content: <span id="md-carton">--</span></p>
+                <p>Status: <span id="md-status">--</span></p>
+            </div>
+            <button class="modal-close" id="machineDetailsClose">Close</button>
+        </div>
+    </div>
+
     <!-- Settings Button -->
     <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
 
@@ -1028,6 +1085,7 @@
                 const m = getMachineById(id);
                 return m ? `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>` : '';
             }).join('');
+            addMachineClickHandlers();
         }
 
         async function loadQCStaffInfo() {
@@ -1419,6 +1477,78 @@
             if (settingsBtn) {
                 settingsBtn.style.display = config.showSettingsBtnLevel9Exec !== false ? 'flex' : 'none';
             }
+        });
+
+        // ===== MACHINE DETAILS MODAL =====
+        function openMachineDetails(machineId) {
+            const modal = document.getElementById('machineDetailsModal');
+            if (!modal) return;
+            
+            const machine = getMachineById(machineId);
+            if (!machine) return;
+            
+            const spec = getGramSpec(machine.gram);
+            const piecesPerCarton = spec ? spec.piecesPerCarton + ' pieces' : 'N/A';
+            
+            const densityText = document.getElementById('currentDensity')?.textContent;
+            const currentDensity = densityText ? parseFloat(densityText) : null;
+            let status = 'Unknown', statusColor = '#888';
+            
+            if (currentDensity && !isNaN(currentDensity)) {
+                const config = getConfig();
+                if (currentDensity < config.level9MinDensity) {
+                    status = '⚠️ Density Too Low'; statusColor = '#FF9800';
+                } else if (currentDensity > config.level9MaxDensity) {
+                    status = '❌ Density Too High'; statusColor = '#F44336';
+                } else if (currentDensity >= machine.min && currentDensity <= machine.max) {
+                    status = '✅ Matches'; statusColor = '#00E676';
+                } else {
+                    status = '⚠️ Out of Range'; statusColor = '#FF9800';
+                }
+            }
+            
+            document.getElementById('md-machine-id').textContent = machine.id;
+            document.getElementById('md-machine-name').textContent = machine.name || 'Machine ' + machine.id;
+            document.getElementById('md-line').textContent = machine.line || 'N/A';
+            document.getElementById('md-gram').textContent = machine.gram + 'g';
+            document.getElementById('md-range').textContent = machine.min.toFixed(3) + ' - ' + machine.max.toFixed(3) + ' g/mL';
+            document.getElementById('md-carton').textContent = piecesPerCarton;
+            
+            const statusEl = document.getElementById('md-status');
+            statusEl.textContent = status;
+            statusEl.style.color = statusColor;
+            
+            modal.classList.add('active');
+        }
+
+        function closeMachineDetailsModal() {
+            const modal = document.getElementById('machineDetailsModal');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function addMachineClickHandlers() {
+            const grid = document.getElementById('machineGrid');
+            if (!grid) return;
+            grid.querySelectorAll('.machine-btn').forEach(btn => {
+                const id = parseInt(btn.textContent.trim().replace('M', ''));
+                if (!isNaN(id)) {
+                    btn.onclick = function() { openMachineDetails(id); };
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const closeBtn = document.getElementById('machineDetailsClose');
+            if (closeBtn) closeBtn.onclick = closeMachineDetailsModal;
+            
+            const modal = document.getElementById('machineDetailsModal');
+            if (modal) {
+                modal.onclick = function(e) { if (e.target === modal) closeMachineDetailsModal(); };
+            }
+            
+            document.addEventListener('keydown', function(e) { 
+                if (e.key === 'Escape') closeMachineDetailsModal(); 
+            });
         });
     </script>
 </body>
