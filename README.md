@@ -19,7 +19,8 @@ A web-based quality control application for a detergent factory that records pow
 7. [Firestore Data Structure](#firestore-data-structure)
 8. [Offline Support](#offline-support)
 9. [Settings & Configuration](#settings--configuration)
-10. [User Preferences](#user-preferences)
+10. [Machine Admin Panel](#machine-admin-panel)
+11. [User Preferences](#user-preferences)
 11. [Shift Timing](#shift-timing)
 12. [Network Status Indicator](#network-status-indicator)
 13. [Configurable Constants](#configurable-constants)
@@ -54,6 +55,7 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 | `index.html` | Main QC data entry page (Level 9 + BOT modes) |
 | `level9-exec.html` | Executive view for Level 9 - monitoring & approvals |
 | `bot-exec.html` | Executive view for BOT - monitoring & approvals |
+| `admin.html` | **Machine Admin Panel** - Manage machines, lines, and settings |
 | `firebase-storage.js` | Firestore backend logic (shared by all pages) |
 | `firestore.indexes.json` | Firestore database indexes configuration |
 
@@ -99,6 +101,116 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 **Additional Fields:**
 - Appearance (Acceptable/Unacceptable)
 - Flow Property (Free Flowing / Not Free Flowing)
+
+---
+
+## Machine Admin Panel
+
+A powerful web-based admin interface for managing machines, production lines, gram specifications, and grid settings. All configurations are stored in Firestore and sync automatically to all devices.
+
+**Access:** Click the ⚙️ Settings button on any page, then click "Open Machine Admin Panel"
+
+**URL:** `admin.html`
+
+---
+
+### Features
+
+#### 1. Machine Management
+- **Add new machines** with ID, name, line, and gram setting
+- **Edit existing machines** - change name, line, or gram setting
+- **Delete machines** - remove machines from the system
+- **Search** - quickly find machines by name or ID
+- **Filter** - view machines by production line
+
+#### 2. Production Lines Management
+- **Add new production lines** with custom ID, name, and display order
+- **Edit lines** - update name and order
+- **Delete lines** - remove lines (machines will need reassignment)
+- **Auto-count** - shows how many machines are on each line
+
+#### 3. Gram Specifications
+- **Define density ranges** for each gram setting (22g, 45g, 85g, 125g, 850g)
+- **Set pieces per carton** for packaging calculations
+- **Auto-apply** - machines automatically use these ranges (no manual per-machine updates!)
+
+#### 4. Grid Settings
+- **Configure columns** - set how many columns in the machine grid display
+- **Real-time update** - changes apply immediately across all devices
+
+#### 5. Import/Export
+- **Export Configuration** - download all settings as JSON backup
+- **Import Configuration** - restore from a previous backup
+- **Reset to Defaults** - restore factory default settings
+
+---
+
+### How Machine Configuration Works
+
+Instead of hardcoding machine specs in the app, all configuration is stored in Firestore:
+
+```javascript
+// Firestore: config/settings document
+{
+  machines: [
+    { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
+    { id: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
+    // ... up to any number of machines
+  ],
+  
+  productionLines: [
+    { id: "1A", name: "Line 1A", order: 1 },
+    { id: "1B", name: "Line 1B", order: 2 },
+    // ... any number of lines
+  ],
+  
+  gramSpecs: {
+    "22": { min: 0.200, max: 0.310, piecesPerCarton: 162 },
+    "45": { min: 0.210, max: 0.310, piecesPerCarton: 84 },
+    "85": { min: 0.240, max: 0.300, piecesPerCarton: 52 },
+    "125": { min: 0.200, max: 0.270, piecesPerCarton: 31 },
+    "850": { min: 0.200, max: 0.270, piecesPerCarton: 7 }
+  },
+  
+  machineGridColumns: 6
+}
+```
+
+**Benefits:**
+- **Single source of truth** - All devices share the same configuration
+- **Real-time sync** - Changes propagate instantly
+- **No code changes** - Add machines/lines via admin panel
+- **Scalable** - Add any number of machines or lines
+- **Inheritance** - Machines automatically use gram spec ranges (update gram = updates all machines!)
+
+---
+
+### Workflow: Adding a New Machine
+
+1. Open the **Machine Admin Panel** (from Settings)
+2. Go to **Gram Settings** tab → ensure gram setting exists with correct density range
+3. Go to **Production Lines** tab → create the line if it doesn't exist
+4. Go to **Machines** tab → click "+ Add Machine"
+5. Enter:
+   - **Machine ID** (e.g., 31)
+   - **Machine Name** (e.g., Machine 31)
+   - **Production Line** (select from dropdown)
+   - **Gram Setting** (select - min/max auto-fills from Gram Settings)
+6. Click **Save**
+
+The new machine immediately appears in the main app!
+
+---
+
+### Workflow: Updating Density Ranges
+
+1. Open **Machine Admin Panel**
+2. Go to **Gram Settings** tab
+3. Edit the gram setting (e.g., 850g)
+4. Update min/max density values
+5. Click **Save**
+
+**Magic:** All machines using that gram setting automatically use the new ranges - no need to edit each machine!
 
 ---
 
@@ -289,6 +401,8 @@ Each document represents one shift's approval status:
 
 The app includes a Settings dialog that allows users to view and modify configuration values. All settings are stored in Firestore and automatically synced across all devices and browser tabs in real-time.
 
+> **Advanced Configuration:** For managing machines, production lines, gram specifications, and grid settings, use the **Machine Admin Panel** (accessible from Settings → Open Machine Admin Panel).
+
 ### Accessing Settings
 
 Click the ⚙️ gear button located at the bottom-left corner of any page.
@@ -324,14 +438,49 @@ Settings are stored in a `config` collection with document ID `settings`:
 
 ```javascript
 {
+  // Density Settings
   level9MinDensity: 0.200,
   level9MaxDensity: 0.310,
   level9Divisor: 1580,
   botMinDensity: 0.200,
   botMaxDensity: 0.240,
   botDivisor: 1680,
+  
+  // Shift Settings
   dayShiftStart: 7,
   nightShiftStart: 19,
+  
+  // UI Settings
+  showSettingsBtnIndex: true,
+  showSettingsBtnLevel9Exec: true,
+  showSettingsBtnBotExec: true,
+  
+  // Machine Configuration (Dynamic - managed via Machine Admin Panel)
+  machineGridColumns: 6,
+  
+  productionLines: [
+    { id: "1A", name: "Line 1A", order: 1 },
+    { id: "1B", name: "Line 1B", order: 2 },
+    { id: "2A", name: "Line 2A", order: 3 },
+    { id: "2B", name: "Line 2B", order: 4 },
+    { id: "3A", name: "Line 3A", order: 5 },
+    { id: "3B", name: "Line 3B", order: 6 }
+  ],
+  
+  machines: [
+    { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
+    { id: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
+    // ... all machines
+  ],
+  
+  gramSpecs: {
+    "22": { min: 0.200, max: 0.310, piecesPerCarton: 162 },
+    "45": { min: 0.210, max: 0.310, piecesPerCarton: 84 },
+    "85": { min: 0.240, max: 0.300, piecesPerCarton: 52 },
+    "125": { min: 0.200, max: 0.270, piecesPerCarton: 31 },
+    "850": { min: 0.200, max: 0.270, piecesPerCarton: 7 }
+  },
+  
   updatedAt: Timestamp
 }
 ```
@@ -342,6 +491,7 @@ Settings are stored in a `config` collection with document ID `settings`:
 - **Validation:** Prevents saving invalid configurations (e.g., min >= max)
 - **Default Values:** If no config exists in Firestore, default values are created automatically
 - **Persistent:** Settings survive browser cache clearing (stored in Firestore)
+- **Auto-merge:** When code updates add new config fields, they are automatically added to existing Firestore documents
 
 ---
 
@@ -378,7 +528,7 @@ All pages display online/offline status in the top-right corner:
 
 ## Configurable Constants
 
-> **Note:** These constants can now be modified via the Settings dialog (⚙️ button). The values below are the defaults.
+> **Note:** These constants can now be modified via the Settings dialog (⚙️ button). For advanced configuration (machines, production lines, gram specs), use the **Machine Admin Panel**.
 
 In `index.html` JavaScript, these constants control density calculations:
 
@@ -392,7 +542,9 @@ const CONFIG = {
 };
 ```
 
-To change these values, click the ⚙️ Settings button at the bottom-left of any page.
+To change basic settings, click the ⚙️ Settings button at the bottom-left of any page.
+
+To change machines, production lines, gram specifications, or grid columns, use the **Machine Admin Panel** (accessible from Settings).
 
 ---
 
