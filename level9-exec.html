@@ -1224,9 +1224,14 @@
 
         function updateMachineHighlights(density) {
             const machines = getMachines();
+            const config = getConfig();
             machines.forEach(m => {
                 const btn = document.getElementById(`machine-${m.id}`);
-                const inRange = density >= m.min && density <= m.max;
+                // Get min/max from gramSpecs
+                const spec = config.gramSpecs?.[String(m.gram)];
+                const min = spec ? spec.min : m.min;
+                const max = spec ? spec.max : m.max;
+                const inRange = density >= min && density <= max;
                 
                 btn.classList.toggle('match', inRange);
                 btn.classList.toggle('dimmed', !inRange);

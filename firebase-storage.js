@@ -390,7 +390,7 @@ function getMachines() {
  * Get machines that match a given density
  * @param {number} density - The density value to match
  * @param {string} mode - 'level9' or 'bot'
- * @returns {Array} - Array of matching machines
+ * @returns {Array} - Array of matching machines with min/max from gramSpecs
  */
 function getMatchingMachines(density, mode = 'level9') {
     const config = getConfig();
@@ -399,22 +399,36 @@ function getMatchingMachines(density, mode = 'level9') {
     const minDensity = mode === 'bot' ? config.botMinDensity : config.level9MinDensity;
     const maxDensity = mode === 'bot' ? config.botMaxDensity : config.level9MaxDensity;
     
-    return machines.filter(m => 
-        density >= m.min && 
-        density <= m.max &&
-        density >= minDensity &&
-        density <= maxDensity
-    );
+    return machines.filter(m => {
+        // Get min/max from gramSpecs
+        const spec = config.gramSpecs?.[String(m.gram)];
+        const machineMin = spec ? spec.min : m.min;
+        const machineMax = spec ? spec.max : m.max;
+        
+        return density >= machineMin && 
+               density <= machineMax &&
+               density >= minDensity &&
+               density <= maxDensity;
+    });
 }
 
 /**
  * Get a single machine by ID
  * @param {number} id - Machine ID
- * @returns {Object|null} - Machine object or null
+ * @returns {Object|null} - Machine object with min/max from gramSpecs
  */
 function getMachineById(id) {
     const machines = getMachines();
-    return machines.find(m => m.id === id) || null;
+    const machine = machines.find(m => m.id === id) || null;
+    
+    if (!machine) return null;
+    
+    // Get min/max from gramSpecs (always use current values)
+    const spec = getGramSpec(machine.gram);
+    const min = spec ? spec.min : machine.min;
+    const max = spec ? spec.max : machine.max;
+    
+    return { ...machine, min, max };
 }
 
 /**
