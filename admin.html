@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Starium Rafa QC</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <style>
+        :root {
+            --primary: #00BCD4;
+            --primary-dark: #0097A7;
+            --success: #00E676;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --bg-dark: #121212;
+            --bg-card: #1E1E1E;
+            --bg-card-hover: #252525;
+            --text: #ffffff;
+            --text-muted: #888;
+            --border: #333;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, #2d2d2d 100%);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--primary);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--bg-card);
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            z-index: 100;
+        }
+
+        .back-btn:hover {
+            background: var(--primary);
+            color: var(--bg-dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border-color: var(--primary);
+        }
+
+        /* Content Panels */
+        .panel {
+            background: var(--bg-card);
+            border-radius: 0 10px 10px 10px;
+            padding: 20px;
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .panel-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        /* Buttons */
+        .btn {
+            background: var(--primary);
+            color: var(--bg-dark);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--success);
+        }
+
+        .btn-secondary {
+            background: #444;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th {
+            background: var(--bg-dark);
+            color: var(--primary);
+            padding: 12px 10px;
+            text-align: left;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            border-bottom: 2px solid var(--primary);
+        }
+
+        td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--bg-card-hover);
+        }
+
+        /* Form Inputs */
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 120px;
+        }
+
+        .form-group label {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .form-group input, 
+        .form-group select {
+            background: var(--bg-dark);
+            color: var(--text);
+            border: 2px solid var(--border);
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Cards */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--bg-dark);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .card-title {
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+        /* Stats */
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: var(--bg-dark);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 25px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: var(--text);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--success);
+            color: var(--bg-dark);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-weight: bold;
+            transform: translateY(100px);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Sync Status */
+        .sync-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            z-index: 100;
+        }
+
+        .sync-status.online {
+            background: rgba(0, 230, 118, 0.2);
+            color: var(--success);
+        }
+
+        .sync-status.offline {
+            background: rgba(244, 67, 54, 0.2);
+            color: var(--danger);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-row {
+                flex-direction: column;
+            }
+            
+            .form-group {
+                width: 100%;
+            }
+            
+            .tabs {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+            }
+            
+            .tab-btn {
+                white-space: nowrap;
+            }
+        }
+
+        .help-text {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-btn">← Back to App</a>
+    <div class="sync-status online" id="syncStatus">🟢 Online</div>
+
+    <header>
+        <h1>⚙️ Admin Panel</h1>
+        <p class="subtitle">Manage machines, production lines, and app settings</p>
+    </header>
+
+    <div class="container">
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="machines">Machines</button>
+            <button class="tab-btn" data-tab="lines">Production Lines</button>
+            <button class="tab-btn" data-tab="gramspecs">Gram Specifications</button>
+            <button class="tab-btn" data-tab="settings">Grid Settings</button>
+            <button class="tab-btn" data-tab="importexport">Import/Export</button>
+        </div>
+
+        <!-- Machines Panel -->
+        <div class="panel active" id="machines-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">🏭 Machine Management</h2>
+                <button class="btn" onclick="openAddMachineModal()">+ Add Machine</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalMachines">0</div>
+                    <div class="stat-label">Total Machines</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalLines">0</div>
+                    <div class="stat-label">Production Lines</div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Filter by Line</label>
+                    <select id="machineLineFilter" onchange="renderMachines()">
+                        <option value="">All Lines</option>
+                    </select>
+                </div>
+                <div class="form-group" style="flex: 1;">
+                    <label>Search</label>
+                    <input type="text" id="machineSearch" placeholder="Search by name or ID..." oninput="renderMachines()">
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Line</th>
+                            <th>Gram</th>
+                            <th>Min Density</th>
+                            <th>Max Density</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="machinesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Production Lines Panel -->
+        <div class="panel" id="lines-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">📋 Production Lines</h2>
+                <button class="btn" onclick="openAddLineModal()">+ Add Line</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Order</th>
+                            <th>Line ID</th>
+                            <th>Name</th>
+                            <th>Machine Count</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="linesTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Gram Specifications Panel -->
+        <div class="panel" id="gramspecs-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">⚖️ Gram Specifications</h2>
+                <button class="btn" onclick="openAddGramSpecModal()">+ Add Gram Setting</button>
+            </div>
+
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Gram</th>
+                            <th>Min Density</th>
+                            <th>Max Density</th>
+                            <th>Pieces per Carton</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gramSpecsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Grid Settings Panel -->
+        <div class="panel" id="settings-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">🔧 Grid Settings</h2>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Machine Grid Columns</label>
+                    <input type="number" id="gridColumns" min="1" max="12" value="6">
+                    <span class="help-text">Number of columns in the machine grid</span>
+                </div>
+            </div>
+
+            <button class="btn" onclick="saveGridSettings()">Save Grid Settings</button>
+        </div>
+
+        <!-- Import/Export Panel -->
+        <div class="panel" id="importexport-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">📥 Import / Export</h2>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Export Configuration</span>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 15px;">Download current configuration as JSON for backup</p>
+                    <button class="btn" onclick="exportConfig()">📥 Download JSON</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Import Configuration</span>
+                    </div>
+                    <p class="help-text" style="margin-bottom: 15px;">Restore configuration from a JSON backup file</p>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importConfig(event)">
+                    <button class="btn" onclick="document.getElementById('importFile').click()">📤 Upload JSON</button>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-title">⚠️ Danger Zone</span>
+                </div>
+                <p class="help-text" style="margin-bottom: 15px;">Reset configuration to default values. This cannot be undone!</p>
+                <button class="btn btn-danger" onclick="resetConfig()">🔄 Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Machine Modal -->
+    <div class="modal-overlay" id="machineModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="machineModalTitle">Add Machine</h3>
+                <button class="modal-close" onclick="closeModal('machineModal')">&times;</button>
+            </div>
+            <form id="machineForm" onsubmit="saveMachine(event)">
+                <input type="hidden" id="machineId">
+                <div class="form-group" style="width: 100%;">
+                    <label>Machine ID</label>
+                    <input type="number" id="machineIdInput" required min="1" placeholder="e.g., 31">
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Machine Name</label>
+                    <input type="text" id="machineName" required placeholder="e.g., Machine 31">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Production Line</label>
+                        <select id="machineLine" required>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gram Setting</label>
+                        <select id="machineGram" required>
+                            <option value="22">22g</option>
+                            <option value="45">45g</option>
+                            <option value="85">85g</option>
+                            <option value="125">125g</option>
+                            <option value="850">850g</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Min Density</label>
+                        <input type="number" id="machineMin" required step="0.001" min="0" placeholder="0.200">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Density</label>
+                        <input type="number" id="machineMax" required step="0.001" min="0" placeholder="0.310">
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('machineModal')">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Line Modal -->
+    <div class="modal-overlay" id="lineModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="lineModalTitle">Add Production Line</h3>
+                <button class="modal-close" onclick="closeModal('lineModal')">&times;</button>
+            </div>
+            <form id="lineForm" onsubmit="saveLine(event)">
+                <input type="hidden" id="lineId">
+                <div class="form-group" style="width: 100%;">
+                    <label>Line ID</label>
+                    <input type="text" id="lineIdInput" required placeholder="e.g., 4A">
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Line Name</label>
+                    <input type="text" id="lineName" required placeholder="e.g., Line 4A">
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Display Order</label>
+                    <input type="number" id="lineOrder" required min="1" placeholder="e.g., 7">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('lineModal')">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Gram Spec Modal -->
+    <div class="modal-overlay" id="gramSpecModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 class="modal-title" id="gramSpecModalTitle">Add Gram Specification</h3>
+                <button class="modal-close" onclick="closeModal('gramSpecModal')">&times;</button>
+            </div>
+            <form id="gramSpecForm" onsubmit="saveGramSpec(event)">
+                <input type="hidden" id="gramSpecOld">
+                <div class="form-group" style="width: 100%;">
+                    <label>Gram Setting</label>
+                    <select id="gramSetting" required>
+                        <option value="22">22g</option>
+                        <option value="45">45g</option>
+                        <option value="85">85g</option>
+                        <option value="125">125g</option>
+                        <option value="850">850g</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Min Density</label>
+                        <input type="number" id="gramMin" required step="0.001" min="0" placeholder="0.200">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Density</label>
+                        <input type="number" id="gramMax" required step="0.001" min="0" placeholder="0.310">
+                    </div>
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Pieces per Carton</label>
+                    <input type="number" id="gramPieces" required min="1" placeholder="e.g., 162">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('gramSpecModal')">Cancel</button>
+                    <button type="submit" class="btn">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="firebase-storage.js"></script>
+    <script>
+        // ===== STATE =====
+        let currentConfig = null;
+        let machines = [];
+        let productionLines = [];
+        let gramSpecs = {};
+
+        // ===== INITIALIZATION =====
+        async function init() {
+            setupTabs();
+            setupNetworkStatus();
+            await loadConfig();
+            populateLineOptions();
+            renderAll();
+        }
+
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                    btn.classList.add('active');
+                    document.getElementById(`${btn.dataset.tab}-panel`).classList.add('active');
+                });
+            });
+        }
+
+        function setupNetworkStatus() {
+            function updateStatus() {
+                const statusEl = document.getElementById('syncStatus');
+                if (navigator.onLine) {
+                    statusEl.className = 'sync-status online';
+                    statusEl.textContent = '🟢 Online';
+                } else {
+                    statusEl.className = 'sync-status offline';
+                    statusEl.textContent = '📴 Offline';
+                }
+            }
+            
+            window.addEventListener('online', updateStatus);
+            window.addEventListener('offline', updateStatus);
+            updateStatus();
+        }
+
+        // ===== DATA LOADING =====
+        async function loadConfig() {
+            currentConfig = await loadConfig();
+            machines = currentConfig.machines || [];
+            productionLines = currentConfig.productionLines || [];
+            gramSpecs = currentConfig.gramSpecs || {};
+        }
+
+        function renderAll() {
+            renderMachineStats();
+            renderMachines();
+            renderLines();
+            renderGramSpecs();
+            loadGridSettings();
+        }
+
+        // ===== MACHINES =====
+        function renderMachineStats() {
+            document.getElementById('totalMachines').textContent = machines.length;
+            
+            const lines = [...new Set(machines.map(m => m.line))];
+            document.getElementById('totalLines').textContent = lines.length;
+        }
+
+        function renderMachines() {
+            const lineFilter = document.getElementById('machineLineFilter').value;
+            const search = document.getElementById('machineSearch').value.toLowerCase();
+            
+            let filtered = machines;
+            if (lineFilter) {
+                filtered = filtered.filter(m => m.line === lineFilter);
+            }
+            if (search) {
+                filtered = filtered.filter(m => 
+                    m.name.toLowerCase().includes(search) || 
+                    String(m.id).includes(search)
+                );
+            }
+
+            const tbody = document.getElementById('machinesTableBody');
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No machines found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(m => `
+                <tr>
+                    <td>${m.id}</td>
+                    <td>${m.name}</td>
+                    <td>${m.line}</td>
+                    <td>${m.gram}g</td>
+                    <td>${m.min.toFixed(3)}</td>
+                    <td>${m.max.toFixed(3)}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-secondary" onclick="editMachine(${m.id})">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteMachine(${m.id})">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddMachineModal() {
+            document.getElementById('machineModalTitle').textContent = 'Add Machine';
+            document.getElementById('machineForm').reset();
+            document.getElementById('machineId').value = '';
+            document.getElementById('machineLine').innerHTML = productionLines.map(l => 
+                `<option value="${l.id}">${l.name} (${l.id})</option>`
+            ).join('');
+            openModal('machineModal');
+        }
+
+        function editMachine(id) {
+            const machine = machines.find(m => m.id === id);
+            if (!machine) return;
+
+            document.getElementById('machineModalTitle').textContent = 'Edit Machine';
+            document.getElementById('machineId').value = machine.id;
+            document.getElementById('machineIdInput').value = machine.id;
+            document.getElementById('machineName').value = machine.name;
+            document.getElementById('machineLine').innerHTML = productionLines.map(l => 
+                `<option value="${l.id}" ${l.id === machine.line ? 'selected' : ''}>${l.name} (${l.id})</option>`
+            ).join('');
+            document.getElementById('machineGram').value = machine.gram;
+            document.getElementById('machineMin').value = machine.min;
+            document.getElementById('machineMax').value = machine.max;
+            
+            openModal('machineModal');
+        }
+
+        async function saveMachine(e) {
+            e.preventDefault();
+            
+            const id = parseInt(document.getElementById('machineIdInput').value);
+            const name = document.getElementById('machineName').value;
+            const line = document.getElementById('machineLine').value;
+            const gram = parseInt(document.getElementById('machineGram').value);
+            const min = parseFloat(document.getElementById('machineMin').value);
+            const max = parseFloat(document.getElementById('machineMax').value);
+
+            const existingIndex = machines.findIndex(m => m.id === id);
+            
+            const machineData = { id, name, line, gram, min, max };
+            
+            if (existingIndex >= 0) {
+                machines[existingIndex] = machineData;
+            } else {
+                machines.push(machineData);
+            }
+
+            const success = await updateMachines(machines);
+            if (success) {
+                showToast('Machine saved successfully!');
+                closeModal('machineModal');
+                renderAll();
+            } else {
+                showToast('Error saving machine', true);
+            }
+        }
+
+        async function deleteMachine(id) {
+            if (!confirm(`Delete machine ${id}?`)) return;
+            
+            machines = machines.filter(m => m.id !== id);
+            const success = await updateMachines(machines);
+            if (success) {
+                showToast('Machine deleted');
+                renderAll();
+            } else {
+                showToast('Error deleting machine', true);
+            }
+        }
+
+        // ===== PRODUCTION LINES =====
+        function renderLines() {
+            const tbody = document.getElementById('linesTableBody');
+            
+            const sortedLines = [...productionLines].sort((a, b) => a.order - b.order);
+            
+            if (sortedLines.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No production lines defined</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sortedLines.map(l => {
+                const count = machines.filter(m => m.line === l.id).length;
+                return `
+                    <tr>
+                        <td>${l.order}</td>
+                        <td>${l.id}</td>
+                        <td>${l.name}</td>
+                        <td>${count}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-secondary" onclick="editLine('${l.id}')">Edit</button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteLine('${l.id}')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function openAddLineModal() {
+            document.getElementById('lineModalTitle').textContent = 'Add Production Line';
+            document.getElementById('lineForm').reset();
+            document.getElementById('lineId').value = '';
+            document.getElementById('lineOrder').value = productionLines.length + 1;
+            openModal('lineModal');
+        }
+
+        function editLine(id) {
+            const line = productionLines.find(l => l.id === id);
+            if (!line) return;
+
+            document.getElementById('lineModalTitle').textContent = 'Edit Production Line';
+            document.getElementById('lineId').value = line.id;
+            document.getElementById('lineIdInput').value = line.id;
+            document.getElementById('lineName').value = line.name;
+            document.getElementById('lineOrder').value = line.order;
+            
+            openModal('lineModal');
+        }
+
+        async function saveLine(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('lineIdInput').value;
+            const name = document.getElementById('lineName').value;
+            const order = parseInt(document.getElementById('lineOrder').value);
+
+            const existingIndex = productionLines.findIndex(l => l.id === id);
+            
+            const lineData = { id, name, order };
+            
+            if (existingIndex >= 0) {
+                productionLines[existingIndex] = lineData;
+            } else {
+                productionLines.push(lineData);
+            }
+
+            const success = await updateConfig({ productionLines });
+            if (success) {
+                showToast('Production line saved!');
+                closeModal('lineModal');
+                renderAll();
+            } else {
+                showToast('Error saving line', true);
+            }
+        }
+
+        async function deleteLine(id) {
+            if (!confirm(`Delete production line ${id}? Machines on this line will need a new line.`)) return;
+            
+            productionLines = productionLines.filter(l => l.id !== id);
+            const success = await updateConfig({ productionLines });
+            if (success) {
+                showToast('Production line deleted');
+                renderAll();
+            } else {
+                showToast('Error deleting line', true);
+            }
+        }
+
+        // ===== GRAM SPECIFICATIONS =====
+        function renderGramSpecs() {
+            const tbody = document.getElementById('gramSpecsTableBody');
+            const specs = Object.entries(gramSpecs);
+            
+            if (specs.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No gram specifications defined</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = specs.map(([gram, spec]) => `
+                <tr>
+                    <td>${gram}g</td>
+                    <td>${spec.min.toFixed(3)}</td>
+                    <td>${spec.max.toFixed(3)}</td>
+                    <td>${spec.piecesPerCarton || 'N/A'}</td>
+                    <td>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-secondary" onclick="editGramSpec('${gram}')">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteGramSpec('${gram}')">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function openAddGramSpecModal() {
+            document.getElementById('gramSpecModalTitle').textContent = 'Add Gram Specification';
+            document.getElementById('gramSpecForm').reset();
+            document.getElementById('gramSpecOld').value = '';
+            openModal('gramSpecModal');
+        }
+
+        function editGramSpec(gram) {
+            const spec = gramSpecs[gram];
+            if (!spec) return;
+
+            document.getElementById('gramSpecModalTitle').textContent = 'Edit Gram Specification';
+            document.getElementById('gramSpecOld').value = gram;
+            document.getElementById('gramSetting').value = gram;
+            document.getElementById('gramMin').value = spec.min;
+            document.getElementById('gramMax').value = spec.max;
+            document.getElementById('gramPieces').value = spec.piecesPerCarton || '';
+            
+            openModal('gramSpecModal');
+        }
+
+        async function saveGramSpec(e) {
+            e.preventDefault();
+            
+            const oldGram = document.getElementById('gramSpecOld').value;
+            const gram = document.getElementById('gramSetting').value;
+            const min = parseFloat(document.getElementById('gramMin').value);
+            const max = parseFloat(document.getElementById('gramMax').value);
+            const pieces = parseInt(document.getElementById('gramPieces').value);
+
+            // Remove old entry if gram changed
+            if (oldGram && oldGram !== gram) {
+                delete gramSpecs[oldGram];
+            }
+
+            gramSpecs[gram] = { min, max, piecesPerCarton: pieces };
+
+            const success = await updateGramSpecs(gramSpecs);
+            if (success) {
+                showToast('Gram specification saved!');
+                closeModal('gramSpecModal');
+                renderAll();
+            } else {
+                showToast('Error saving gram spec', true);
+            }
+        }
+
+        async function deleteGramSpec(gram) {
+            if (!confirm(`Delete gram specification for ${gram}g?`)) return;
+            
+            delete gramSpecs[gram];
+            const success = await updateGramSpecs(gramSpecs);
+            if (success) {
+                showToast('Gram specification deleted');
+                renderAll();
+            } else {
+                showToast('Error deleting gram spec', true);
+            }
+        }
+
+        // ===== GRID SETTINGS =====
+        function loadGridSettings() {
+            document.getElementById('gridColumns').value = currentConfig.machineGridColumns || 6;
+        }
+
+        async function saveGridSettings() {
+            const columns = parseInt(document.getElementById('gridColumns').value);
+            const success = await updateMachineGridColumns(columns);
+            if (success) {
+                showToast('Grid settings saved!');
+            } else {
+                showToast('Error saving grid settings', true);
+            }
+        }
+
+        // ===== IMPORT/EXPORT =====
+        function exportConfig() {
+            const data = {
+                machines,
+                productionLines,
+                gramSpecs,
+                machineGridColumns: currentConfig.machineGridColumns,
+                exportedAt: new Date().toISOString()
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `starium-config-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast('Configuration exported!');
+        }
+
+        async function importConfig(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                if (!confirm('This will overwrite your current configuration. Continue?')) return;
+
+                if (data.machines) {
+                    await updateMachines(data.machines);
+                }
+                if (data.productionLines) {
+                    await updateConfig({ productionLines: data.productionLines });
+                }
+                if (data.gramSpecs) {
+                    await updateGramSpecs(data.gramSpecs);
+                }
+                if (data.machineGridColumns) {
+                    await updateMachineGridColumns(data.machineGridColumns);
+                }
+
+                showToast('Configuration imported!');
+                renderAll();
+            } catch (error) {
+                console.error('Import error:', error);
+                showToast('Error importing configuration', true);
+            }
+
+            e.target.value = '';
+        }
+
+        async function resetConfig() {
+            if (!confirm('⚠️ This will reset ALL configuration to defaults. This cannot be undone! Are you sure?')) return;
+            if (!confirm('Really reset? All custom machines, lines, and settings will be lost.')) return;
+
+            const success = await updateConfig({
+                machines: DEFAULT_CONFIG.machines,
+                productionLines: DEFAULT_CONFIG.productionLines,
+                gramSpecs: DEFAULT_CONFIG.gramSpecs,
+                machineGridColumns: DEFAULT_CONFIG.machineGridColumns
+            });
+
+            if (success) {
+                showToast('Configuration reset to defaults');
+                renderAll();
+            } else {
+                showToast('Error resetting configuration', true);
+            }
+        }
+
+        // ===== UTILITIES =====
+        function populateLineOptions() {
+            const select = document.getElementById('machineLineFilter');
+            const lines = [...new Set(machines.map(m => m.line))].sort();
+            select.innerHTML = '<option value="">All Lines</option>' + 
+                lines.map(l => `<option value="${l}">${l}</option>`).join('');
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                }
+            });
+        });
+
+        // Initialize on load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>
