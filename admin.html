@@ -745,7 +745,7 @@
         async function init() {
             setupTabs();
             setupNetworkStatus();
-            await loadConfig();
+            await loadAllConfig();
             populateLineOptions();
             renderAll();
         }
@@ -779,8 +779,8 @@
         }
 
         // ===== DATA LOADING =====
-        async function loadConfig() {
-            currentConfig = await loadConfig();
+        async function loadAllConfig() {
+            currentConfig = await window.loadConfig();
             machines = currentConfig.machines || [];
             productionLines = currentConfig.productionLines || [];
             gramSpecs = currentConfig.gramSpecs || {};
