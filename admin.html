@@ -640,17 +640,18 @@
                             <option value="125">125g</option>
                             <option value="850">850g</option>
                         </select>
-                        <span class="help-text">Change gram in Gram Settings tab</span>
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Min Density</label>
-                        <input type="number" id="machineMin" required step="0.001" min="0" placeholder="0.200">
+                        <input type="number" id="machineMin" required step="0.001" min="0" placeholder="0.200" disabled>
+                        <span class="help-text">Auto-filled from Gram Settings</span>
                     </div>
                     <div class="form-group">
                         <label>Max Density</label>
-                        <input type="number" id="machineMax" required step="0.001" min="0" placeholder="0.310">
+                        <input type="number" id="machineMax" required step="0.001" min="0" placeholder="0.310" disabled>
+                        <span class="help-text">Auto-filled from Gram Settings</span>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -846,6 +847,9 @@
             document.getElementById('machineModalTitle').textContent = 'Add Machine';
             document.getElementById('machineForm').reset();
             document.getElementById('machineId').value = '';
+            document.getElementById('machineGram').disabled = false;
+            document.getElementById('machineMin').disabled = false;
+            document.getElementById('machineMax').disabled = false;
             document.getElementById('machineLine').innerHTML = productionLines.map(l => 
                 `<option value="${l.id}">${l.name} (${l.id})</option>`
             ).join('');
@@ -864,11 +868,15 @@
                 `<option value="${l.id}" ${l.id === machine.line ? 'selected' : ''}>${l.name} (${l.id})</option>`
             ).join('');
             
-            // Set gram dropdown and disable it
+            // Gram dropdown enabled - user selects gram and min/max auto-fill
             document.getElementById('machineGram').value = machine.gram;
-            document.getElementById('machineGram').disabled = true;
+            document.getElementById('machineGram').disabled = false;
             
-            // Auto-fill min/max from gramSpecs
+            // Disable min/max - must be changed in Gram Settings
+            document.getElementById('machineMin').disabled = true;
+            document.getElementById('machineMax').disabled = true;
+            
+            // Auto-fill min/max from gramSpecs based on current gram
             const spec = gramSpecs[String(machine.gram)];
             if (spec) {
                 document.getElementById('machineMin').value = spec.min;
@@ -889,18 +897,6 @@
                 document.getElementById('machineMin').value = spec.min;
                 document.getElementById('machineMax').value = spec.max;
             }
-        }
-
-        // Reset form when adding new machine
-        function openAddMachineModal() {
-            document.getElementById('machineModalTitle').textContent = 'Add Machine';
-            document.getElementById('machineForm').reset();
-            document.getElementById('machineId').value = '';
-            document.getElementById('machineGram').disabled = false;
-            document.getElementById('machineLine').innerHTML = productionLines.map(l => 
-                `<option value="${l.id}">${l.name} (${l.id})</option>`
-            ).join('');
-            openModal('machineModal');
         }
 
         async function saveMachine(e) {
