@@ -769,7 +769,7 @@
                 ✅ Quality Control Manager
             </button>
             <button class="approval-btn" id="btnQcSupervisor" onclick="openApprovalModal('qcSupervisor')">
-                🔍 QC Supervisor
+                🔍 Quality Control Supervisor
             </button>
         </div>
     </div>
@@ -1008,7 +1008,7 @@
                 { type: 'plcOperator', btnId: 'btnPlcOperator', label: 'PLC Operator' },
                 { type: 'productionManager', btnId: 'btnProductionManager', label: 'Production Manager' },
                 { type: 'qcManager', btnId: 'btnQcManager', label: 'Quality Control Manager' },
-                { type: 'qcSupervisor', btnId: 'btnQcSupervisor', label: 'QC Supervisor' }
+                { type: 'qcSupervisor', btnId: 'btnQcSupervisor', label: 'Quality Control Supervisor' }
             ];
 
             approvers.forEach(({ type, btnId, label }) => {
@@ -1154,7 +1154,7 @@
                 plcOperator: 'PLC Operator Approval',
                 productionManager: 'Production Manager Approval',
                 qcManager: 'Quality Control Manager Approval',
-                qcSupervisor: 'QC Supervisor Approval'
+                qcSupervisor: 'Quality Control Supervisor Approval'
             };
             
             document.getElementById('modalTitle').textContent = titles[approverType];
@@ -1185,7 +1185,7 @@
                     plcOperator: 'PLC Operator',
                     productionManager: 'Production Manager',
                     qcManager: 'Quality Control Manager',
-                    qcSupervisor: 'QC Supervisor'
+                    qcSupervisor: 'Quality Control Supervisor'
                 };
                 const roleLabel = roleLabels[currentApproverType] || currentApproverType;
                 btn.innerHTML = `✓ ${roleLabel} ${name} has approved this shift`;

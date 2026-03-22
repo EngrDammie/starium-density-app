@@ -76,7 +76,7 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 2. PLC Operator
 3. Production Manager
 4. QC Manager
-5. QC Supervisor
+5. Quality Control Supervisor
 
 **Additional Fields:**
 - Buggy Number (e.g., B001)
@@ -98,7 +98,7 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 1. PLC Operator
 2. Production Manager
 3. QC Manager
-4. QC Supervisor
+4. Quality Control Supervisor
 
 **Additional Fields:**
 - Appearance (Acceptable/Unacceptable)
@@ -310,7 +310,7 @@ Click "💾 Save Test" to save to Firestore. Confirmation shows "✅ Saved!"
 
 Each shift (DAY/NIGHT) requires approval from specific personnel:
 
-1. Click your role button (Buggy Supervisor, PLC Operator, Production Manager, QC Manager, or QC Supervisor)
+1. Click your role button (Buggy Supervisor, PLC Operator, Production Manager, QC Manager, or Quality Control Supervisor)
 2. Enter your name in the modal
 3. Click Confirm
 4. Button changes to show approval status with your name
