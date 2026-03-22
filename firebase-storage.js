@@ -646,8 +646,8 @@ async function checkAndUpdateApprovalStatus(approvalId) {
     
     // Define required approvers based on mode
     const requiredApprovers = data.mode === 'bot' 
-        ? ['plcOperator', 'productionManager', 'qcManager']
-        : ['buggySupervisor', 'plcOperator', 'productionManager', 'qcManager'];
+        ? ['plcOperator', 'productionManager', 'qcManager', 'qcSupervisor']
+        : ['buggySupervisor', 'plcOperator', 'productionManager', 'qcManager', 'qcSupervisor'];
     
     // Check if all required approvers have approved
     const allApproved = requiredApprovers.every(approver => {

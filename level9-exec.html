@@ -871,6 +871,9 @@
             <button class="approval-btn" id="btnQcManager" onclick="openApprovalModal('qcManager')">
                 ✅ Quality Control Manager
             </button>
+            <button class="approval-btn" id="btnQcSupervisor" onclick="openApprovalModal('qcSupervisor')">
+                🔍 QC Supervisor
+            </button>
         </div>
     </div>
 
@@ -1146,7 +1149,8 @@
                 { type: 'buggySupervisor', btnId: 'btnBuggySupervisor', label: 'Buggy Supervisor' },
                 { type: 'plcOperator', btnId: 'btnPlcOperator', label: 'PLC Operator' },
                 { type: 'productionManager', btnId: 'btnProductionManager', label: 'Production Manager' },
-                { type: 'qcManager', btnId: 'btnQcManager', label: 'Quality Control Manager' }
+                { type: 'qcManager', btnId: 'btnQcManager', label: 'Quality Control Manager' },
+                { type: 'qcSupervisor', btnId: 'btnQcSupervisor', label: 'QC Supervisor' }
             ];
 
             approvers.forEach(({ type, btnId, label }) => {
@@ -1170,7 +1174,8 @@
                 buggySupervisor: '🔧',
                 plcOperator: '⚡',
                 productionManager: '🏭',
-                qcManager: '✅'
+                qcManager: '✅',
+                qcSupervisor: '🔍'
             };
             return `${icons[type] || '👤'} ${label}`;
         }
@@ -1339,7 +1344,8 @@
                 buggySupervisor: 'Buggy Supervisor Approval',
                 plcOperator: 'PLC Operator Approval',
                 productionManager: 'Production Manager Approval',
-                qcManager: 'Quality Control Manager Approval'
+                qcManager: 'Quality Control Manager Approval',
+                qcSupervisor: 'QC Supervisor Approval'
             };
             
             document.getElementById('modalTitle').textContent = titles[approverType];
@@ -1370,7 +1376,8 @@
                     buggySupervisor: 'Buggy Supervisor',
                     plcOperator: 'PLC Operator',
                     productionManager: 'Production Manager',
-                    qcManager: 'Quality Control Manager'
+                    qcManager: 'Quality Control Manager',
+                    qcSupervisor: 'QC Supervisor'
                 };
                 const roleLabel = roleLabels[currentApproverType] || currentApproverType;
                 btn.innerHTML = `✓ ${roleLabel} ${name} has approved this shift`;
