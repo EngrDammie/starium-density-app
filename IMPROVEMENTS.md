@@ -263,6 +263,39 @@ service cloud.firestore {
 }
 ```
 
+#### (Optional) Step 6: Add User Roles/Claims
+
+This is an **optional** extra layer of security. It lets you control WHO can do WHAT.
+
+##### What are "Claims"?
+
+Think of it like a **badge** that some people wear.
+
+- Regular staff get a **"staff"** badge → can submit tests
+- Admin gets an **"admin"** badge → can change settings
+
+The code `request.auth.token.admin == true` checks: "Does this user have an admin badge?"
+
+##### Why do we need this?
+
+Right now, anyone who logs in can:
+- Submit QC tests ✅ (fine)
+- Change machine settings ✅ (only admins should do this)
+- Delete data ✅ (only admins should do this)
+
+With claims, we can say:
+- **QC Staff** → Can only read/write QC tests
+- **Managers** → Can approve shifts
+- **Admin** → Can change all settings
+
+##### How to set it up:
+
+1. **You (the owner) become admin** - I'll write a small script that makes your account an admin. You'll run it **once**.
+
+2. **Make other people staff** - When you create accounts for staff, they'll automatically be "regular users" (not admin).
+
+3. **The rules will check the badge** - The security rules will check for the admin badge before allowing changes.
+
 ### What changes for users:
 1. First time they open the app → see a **login screen**
 2. Enter email + password → then see the main app
