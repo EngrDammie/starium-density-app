@@ -1502,7 +1502,14 @@
             if (!machine) return;
             
             const spec = getGramSpec(machine.gram);
-            const piecesPerCarton = spec ? spec.piecesPerCarton + ' pieces' : 'N/A';
+            let cartonContent = 'N/A';
+            if (spec && spec.piecesPerCarton) {
+                if (spec.piecesBreakdown) {
+                    cartonContent = `${spec.piecesPerCarton} pieces (${spec.piecesBreakdown})`;
+                } else {
+                    cartonContent = `${spec.piecesPerCarton} pieces`;
+                }
+            }
             
             const densityText = document.getElementById('currentDensity')?.textContent;
             const currentDensity = densityText ? parseFloat(densityText) : null;
@@ -1526,7 +1533,7 @@
             document.getElementById('md-line').textContent = machine.line || 'N/A';
             document.getElementById('md-gram').textContent = machine.gram + 'g';
             document.getElementById('md-range').textContent = machine.min.toFixed(3) + ' - ' + machine.max.toFixed(3) + ' g/mL';
-            document.getElementById('md-carton').textContent = piecesPerCarton;
+            document.getElementById('md-carton').textContent = cartonContent;
             
             const statusEl = document.getElementById('md-status');
             statusEl.textContent = status;

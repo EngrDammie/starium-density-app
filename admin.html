@@ -547,6 +547,7 @@
                             <th>Min Density</th>
                             <th>Max Density</th>
                             <th>Pieces per Carton</th>
+                            <th>Pieces Breakdown</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -723,6 +724,11 @@
                 <div class="form-group" style="width: 100%;">
                     <label>Pieces per Carton</label>
                     <input type="number" id="gramPieces" required min="1" placeholder="e.g., 162">
+                </div>
+                <div class="form-group" style="width: 100%;">
+                    <label>Pieces Breakdown</label>
+                    <input type="text" id="gramPiecesBreakdown" placeholder="e.g., 8 strings * 6 pcs + 4 pcs">
+                    <span class="help-text">Optional: e.g., "8 strings * 6 pcs + 4 pcs"</span>
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal('gramSpecModal')">Cancel</button>
@@ -1040,7 +1046,7 @@
             const specs = Object.entries(gramSpecs);
             
             if (specs.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No gram specifications defined</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No gram specifications defined</td></tr>';
                 return;
             }
 
@@ -1050,6 +1056,7 @@
                     <td>${spec.min.toFixed(3)}</td>
                     <td>${spec.max.toFixed(3)}</td>
                     <td>${spec.piecesPerCarton || 'N/A'}</td>
+                    <td>${spec.piecesBreakdown || '-'}</td>
                     <td>
                         <div class="btn-group">
                             <button class="btn btn-sm btn-secondary" onclick="editGramSpec('${gram}')">Edit</button>
@@ -1077,6 +1084,7 @@
             document.getElementById('gramMin').value = spec.min;
             document.getElementById('gramMax').value = spec.max;
             document.getElementById('gramPieces').value = spec.piecesPerCarton || '';
+            document.getElementById('gramPiecesBreakdown').value = spec.piecesBreakdown || '';
             
             openModal('gramSpecModal');
         }
@@ -1089,13 +1097,14 @@
             const min = parseFloat(document.getElementById('gramMin').value);
             const max = parseFloat(document.getElementById('gramMax').value);
             const pieces = parseInt(document.getElementById('gramPieces').value);
+            const piecesBreakdown = document.getElementById('gramPiecesBreakdown').value.trim();
 
             // Remove old entry if gram changed
             if (oldGram && oldGram !== gram) {
                 delete gramSpecs[oldGram];
             }
 
-            gramSpecs[gram] = { min, max, piecesPerCarton: pieces };
+            gramSpecs[gram] = { min, max, piecesPerCarton: pieces, piecesBreakdown };
 
             const success = await updateGramSpecs(gramSpecs);
             if (success) {

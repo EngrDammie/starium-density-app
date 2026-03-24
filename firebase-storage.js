@@ -238,11 +238,11 @@ const DEFAULT_CONFIG = {
     
     // Gram Specifications
     gramSpecs: {
-        "22": { min: 0.200, max: 0.310, piecesPerCarton: 162 },
-        "45": { min: 0.210, max: 0.310, piecesPerCarton: 84 },
-        "85": { min: 0.240, max: 0.300, piecesPerCarton: 52 },
-        "125": { min: 0.200, max: 0.270, piecesPerCarton: 31 },
-        "850": { min: 0.200, max: 0.270, piecesPerCarton: 7 }
+        "22": { min: 0.200, max: 0.310, piecesPerCarton: 162, piecesBreakdown: "27 strings * 6 pcs" },
+        "45": { min: 0.210, max: 0.310, piecesPerCarton: 84, piecesBreakdown: "14 strings * 6 pcs" },
+        "85": { min: 0.240, max: 0.300, piecesPerCarton: 52, piecesBreakdown: "8 strings * 6 pcs + 4 pcs" },
+        "125": { min: 0.200, max: 0.270, piecesPerCarton: 31, piecesBreakdown: "7 strings * 4 pcs + 3 pcs" },
+        "850": { min: 0.200, max: 0.270, piecesPerCarton: 7, piecesBreakdown: "" }
     }
 };
 

@@ -1053,6 +1053,9 @@
  // Use config-based gram specs if available
  const spec = getGramSpec(gram);
  if (spec && spec.piecesPerCarton) {
+ if (spec.piecesBreakdown) {
+ return `${spec.piecesPerCarton} pieces (${spec.piecesBreakdown})`;
+ }
  return `${spec.piecesPerCarton} pieces`;
  }
  // Fallback to legacy values
