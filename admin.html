@@ -635,11 +635,7 @@
                     <div class="form-group">
                         <label>Gram Setting</label>
                         <select id="machineGram" required onchange="onGramChange()">
-                            <option value="22">22g</option>
-                            <option value="45">45g</option>
-                            <option value="85">85g</option>
-                            <option value="125">125g</option>
-                            <option value="850">850g</option>
+                            <!-- Dynamically populated from gramSpecs -->
                         </select>
                     </div>
                 </div>
@@ -843,10 +839,20 @@
             `).join('');
         }
 
+        // Populate gram dropdown from gramSpecs
+        function populateGramDropdown(selectedGram = null) {
+            const gramSelect = document.getElementById('machineGram');
+            const grams = Object.keys(gramSpecs).sort((a, b) => Number(a) - Number(b));
+            gramSelect.innerHTML = grams.map(g => 
+                `<option value="${g}" ${g === String(selectedGram) ? 'selected' : ''}>${g}g</option>`
+            ).join('');
+        }
+
         function openAddMachineModal() {
             document.getElementById('machineModalTitle').textContent = 'Add Machine';
             document.getElementById('machineForm').reset();
             document.getElementById('machineId').value = '';
+            populateGramDropdown();
             document.getElementById('machineGram').disabled = false;
             // Keep min/max disabled - they auto-fill from Gram Settings
             document.getElementById('machineMin').disabled = true;
@@ -870,7 +876,7 @@
             ).join('');
             
             // Gram dropdown enabled - user selects gram and min/max auto-fill
-            document.getElementById('machineGram').value = machine.gram;
+            populateGramDropdown(machine.gram);
             document.getElementById('machineGram').disabled = false;
             
             // Disable min/max - must be changed in Gram Settings
