@@ -1,14 +1,17 @@
 // ===== FIREBASE CONFIGURATION =====
 
-// Define config - use existing if available (for pages that also define it)
-var firebaseConfig = {
-    apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
-    authDomain: "starium-rafa-app.firebaseapp.com",
-    projectId: "starium-rafa-app",
-    storageBucket: "starium-rafa-app.firebasestorage.app",
-    messagingSenderId: "743583982928",
-    appId: "1:743583982928:web:e331aaa0b9e741a1537855"
-};
+// Only define config once (guards against multiple script loads)
+if (!window._firebaseConfigDefined) {
+    var firebaseConfig = {
+        apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
+        authDomain: "starium-rafa-app.firebaseapp.com",
+        projectId: "starium-rafa-app",
+        storageBucket: "starium-rafa-app.firebasestorage.app",
+        messagingSenderId: "743583982928",
+        appId: "1:743583982928:web:e331aaa0b9e741a1537855"
+    };
+    window._firebaseConfigDefined = true;
+}
 
 // Initialize Firebase (only if not already initialized)
 let app, db;
