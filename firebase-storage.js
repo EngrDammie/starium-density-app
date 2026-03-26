@@ -1,6 +1,7 @@
 // ===== FIREBASE CONFIGURATION =====
 
-const firebaseConfig = {
+// Define config - use existing if available (for pages that also define it)
+var firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
     authDomain: "starium-rafa-app.firebaseapp.com",
     projectId: "starium-rafa-app",
