@@ -1,7 +1,8 @@
-// ===== GUARD: Skip if already loaded =====
-if (typeof requireAuth === 'function') {
-    console.log('firebase-storage.js already loaded');
+// ===== GUARD: Prevent multiple executions in same page load =====
+if (window._stariumStorageRunning) {
+    console.log('firebase-storage.js already running, skipping');
 } else {
+    window._stariumStorageRunning = true;
     window._firebaseStorageLoaded = true;
 
 // ===== FIREBASE CONFIGURATION =====
