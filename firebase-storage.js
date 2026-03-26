@@ -1,7 +1,7 @@
 // ===== FIREBASE CONFIGURATION =====
 
-// Use window properties to avoid redeclaration
-window.firebaseConfig = window.firebaseConfig || {
+// Store on window to prevent any redeclaration issues
+window.firebaseConfig = {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
     authDomain: "starium-rafa-app.firebaseapp.com",
     projectId: "starium-rafa-app",
@@ -10,46 +10,20 @@ window.firebaseConfig = window.firebaseConfig || {
     appId: "1:743583982928:web:e331aaa0b9e741a1537855"
 };
 
-if (!window.app) {
+// Initialize Firebase only once
+if (!window._firebaseInited) {
     try {
         window.app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(window.firebaseConfig);
         window.db = firebase.firestore();
+        window._firebaseInited = true;
     } catch (e) {
         console.error('Firebase initialization error:', e);
     }
 }
 
-// Make db available globally for other scripts
-var db = window.db;
-var app = window.app;
-
-// ===== LOCALSTORAGE OFFLINE QUEUE =====
-var OFFLINE_QUEUE_KEY = 'starium_offline_queue';
-
-// NOTE: Firebase IndexedDB persistence not working in v9.22.0 compat
-// Using localStorage-based offline queue instead
-/*
-if (db) {
-    db.enableIndexedDBPersistence({ synchronizeTabs: true })
-        .then(() => {
-            console.log('✅ IndexedDB persistence enabled - app works offline');
-        })
-        .catch((err) => {
-            if (err.code == 'failed-precondition') {
-                console.warn('⚠️ Persistence failed: Multiple tabs open');
-            } else if (err.code == 'unimplemented') {
-                console.warn('⚠️ Persistence not available in this browser');
-            } else {
-                console.warn('⚠️ Persistence error:', err.message);
-            }
-        });
-    
-    // Configure cache settings for better offline experience
-    db.settings({
-        cacheSizeBytes: firebase.firestore.CACHE_SIZE_UNLIMITED
-    });
-}
-*/
+// Shortcut references
+const db = window.db;
+const app = window.app;
 
 // ===== LOCALSTORAGE OFFLINE QUEUE =====
 const OFFLINE_QUEUE_KEY = 'starium_offline_queue';
@@ -427,18 +401,38 @@ function getMachineById(id) {
     
     if (!machine) return null;
     
-    // Get min/max from gramSpecs (always use current values)
-    const spec = getGramSpec(machine.gram);
-    const min = spec ? spec.min : machine.min;
-    const max = spec ? spec.max : machine.max;
+    // Get min/max from gramSpecs
+    const config = getConfig();
+    const spec = config.gramSpecs?.[String(machine.gram)];
     
-    return { ...machine, min, max };
+    return {
+        ...machine,
+        min: spec ? spec.min : machine.min,
+        max: spec ? spec.max : machine.max,
+        piecesPerCarton: spec ? spec.piecesPerCarton : null,
+        piecesBreakdown: spec ? spec.piecesBreakdown : null
+    };
 }
 
 /**
- * Get gram specification for a gram value
- * @param {number|string} gram - Gram setting
- * @returns {Object|null} - Gram spec or null
+ * Get machines grouped by production line
+ * @returns {Object} - Object with line IDs as keys and arrays of machines as values
+ */
+function getMachinesByLines() {
+    const config = getConfig();
+    const lines = {};
+    
+    config.productionLines.forEach(line => {
+        lines[line.id] = config.machines.filter(m => m.line === line.id);
+    });
+    
+    return lines;
+}
+
+/**
+ * Get gram specification for a given gram value
+ * @param {number|string} gram - The gram value
+ * @returns {Object|null} - Gram spec object
  */
 function getGramSpec(gram) {
     const config = getConfig();
@@ -446,261 +440,163 @@ function getGramSpec(gram) {
 }
 
 /**
- * Get all machines for a specific production line
- * @param {string} line - Line identifier (e.g., "1A", "1B")
- * @returns {Array} - Array of machines in that line
+ * Get current shift based on hour
+ * @returns {string} - 'DAY' or 'NIGHT'
  */
-function getMachinesByLine(line) {
-    const machines = getMachines();
-    return machines.filter(m => m.line === line);
-}
-
-/**
- * Get all unique production lines (auto-discovered from machines)
- * @returns {Array} - Sorted array of line identifiers
- */
-function getLines() {
-    const machines = getMachines();
-    const lines = [...new Set(machines.map(m => m.line))];
-    return lines.sort();
-}
-
-/**
- * Get machines grouped by line
- * @returns {Object} - { "1A": [machines], "1B": [machines], ... }
- */
-function getMachinesByLines() {
-    const machines = getMachines();
-    const lines = getLines();
-    const grouped = {};
-    lines.forEach(line => {
-        grouped[line] = machines.filter(m => m.line === line);
-    });
-    return grouped;
-}
-
-/**
- * Get grid column count
- * @returns {number} - Number of columns for machine grid
- */
-function getMachineGridColumns() {
-    return getConfig().machineGridColumns || 6;
-}
-
-/**
- * Get production lines in order
- * @returns {Array} - Sorted production lines
- */
-function getProductionLines() {
+function getCurrentShift() {
     const config = getConfig();
-    if (config.productionLines) {
-        return [...config.productionLines].sort((a, b) => a.order - b.order);
-    }
-    // Fallback to auto-discovered
-    return getLines().map((id, index) => ({ id, name: `Line ${id}`, order: index + 1 }));
+    const hour = new Date().getHours();
+    return (hour >= config.dayShiftStart && hour < config.nightShiftStart) ? 'DAY' : 'NIGHT';
 }
 
-/**
- * Update machines configuration (admin function)
- * @param {Array} newMachines - New machines array
- * @returns {Promise<boolean>} - Success status
- */
-async function updateMachines(newMachines) {
-    return updateConfig({ machines: newMachines });
-}
+// ===== QC TEST FUNCTIONS =====
 
 /**
- * Update gram specifications (admin function)
- * @param {Object} newGramSpecs - New gram specs object
- * @returns {Promise<boolean>} - Success status
- */
-async function updateGramSpecs(newGramSpecs) {
-    return updateConfig({ gramSpecs: newGramSpecs });
-}
-
-/**
- * Update grid columns (admin function)
- * @param {number} columns - Number of columns
- * @returns {Promise<boolean>} - Success status
- */
-async function updateMachineGridColumns(columns) {
-    return updateConfig({ machineGridColumns: columns });
-}
-
-// ===== AUTO-SAVE CONFIGURATION =====
-const AUTO_SAVE_CONFIG = {
-    delaySeconds: 10, // Configurable delay before auto-save
-    enableAutoSave: true
-};
-
-// ===== DATA MODEL =====
-
-/**
- * Save QC Test to Firestore
- * @param {Object} testData - The QC test data
- * @returns {Promise<string>} - The document ID
+ * Save QC test to Firestore
+ * @param {Object} testData - Test data object
+ * @returns {Promise<string>} - Test ID or 'offline-queued' if offline
  */
 async function saveQCTest(testData) {
     if (!db) {
-        throw new Error('Firebase not initialized');
+        console.error('Firestore not initialized');
+        return 'error';
     }
     
-    // Check if online - if not, save to localStorage queue
-    if (!navigator.onLine) {
-        console.log('📴 Offline - saving to local queue');
-        const success = saveToLocalQueue(testData);
-        if (success) {
-            return 'offline-queued';
-        }
-        throw new Error('Failed to save offline');
+    if (!isNetworkOnline()) {
+        // Save to local queue for later sync
+        const saved = saveToLocalQueue(testData);
+        return saved ? 'offline-queued' : 'error';
     }
     
-    const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-    
-    // Ensure approvalDocId is always stored (fallback to null if not provided)
-    const approvalDocId = testData.approvalDocId || null;
-    
-    const docRef = await db.collection('qc_tests').add({
-        ...testData,
-        approvalDocId: approvalDocId,
-        createdAt: timestamp
-    });
-    
-    return docRef.id;
-}
-
-/**
- * Get or create shift approval record
- * @param {string} mode - 'level9' or 'bot'
- * @param {string} shift - 'DAY' or 'NIGHT'
- * @param {string} date - YYYY-MM-DD format
- * @returns {Promise<Object>} - The shift approval document
- */
-async function getOrCreateShiftApproval(mode, shift, date) {
-    const querySnapshot = await db.collection('shift_approvals')
-        .where('mode', '==', mode)
-        .where('shift', '==', shift)
-        .where('date', '==', date)
-        .limit(1)
-        .get();
-    
-    if (!querySnapshot.empty) {
-        return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
-    }
-    
-    // Create new shift approval
-    const docRef = await db.collection('shift_approvals').add({
-        mode,
-        shift,
-        date,
-        buggySupervisor: null,
-        plcOperator: null,
-        productionManager: null,
-        qcManager: null,
-        status: 'pending',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    return { id: docRef.id, mode, shift, date, status: 'pending' };
-}
-
-/**
- * Get shift approval by document ID
- * @param {string} approvalDocId - The shift approval document ID
- * @returns {Promise<Object|null>} - The shift approval document or null
- */
-async function getShiftApprovalById(approvalDocId) {
-    if (!approvalDocId) return null;
-    
-    const doc = await db.collection('shift_approvals').doc(approvalDocId).get();
-    if (!doc.exists) return null;
-    
-    return { id: doc.id, ...doc.data() };
-}
-
-/**
- * Update approver for a shift
- * @param {string} approvalId - The shift approval document ID
- * @param {string} approverType - 'buggySupervisor' | 'plcOperator' | 'productionManager' | 'qcManager'
- * @param {string} approverName - Name of the approver
- */
-async function updateApprover(approvalId, approverType, approverName) {
-    await db.collection('shift_approvals').doc(approvalId).update({
-        [approverType]: {
-            name: approverName,
-            approvedAt: firebase.firestore.FieldValue.serverTimestamp()
-        },
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    
-    // Check if all required approvers have approved and update status
-    await checkAndUpdateApprovalStatus(approvalId);
-}
-
-/**
- * Check if all required approvers have approved and update status to completed
- * @param {string} approvalId - The shift approval document ID
- */
-async function checkAndUpdateApprovalStatus(approvalId) {
-    const doc = await db.collection('shift_approvals').doc(approvalId).get();
-    if (!doc.exists) return;
-    
-    const data = doc.data();
-    
-    // Define required approvers based on mode
-    const requiredApprovers = data.mode === 'bot' 
-        ? ['plcOperator', 'productionManager', 'qcManager', 'qcSupervisor']
-        : ['buggySupervisor', 'plcOperator', 'productionManager', 'qcManager', 'qcSupervisor'];
-    
-    // Check if all required approvers have approved
-    const allApproved = requiredApprovers.every(approver => {
-        return data[approver] && data[approver].name && data[approver].name.trim() !== '';
-    });
-    
-    if (allApproved) {
-        await db.collection('shift_approvals').doc(approvalId).update({
-            status: 'completed',
-            completedAt: firebase.firestore.FieldValue.serverTimestamp(),
-            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    try {
+        const docRef = await db.collection('qc_tests').add({
+            ...testData,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
+        console.log('✅ QC Test saved:', docRef.id);
+        return docRef.id;
+    } catch (error) {
+        console.error('Error saving QC test:', error);
+        
+        // If write fails, try saving to local queue
+        const saved = saveToLocalQueue(testData);
+        return saved ? 'offline-queued' : 'error';
     }
 }
 
-async function getRecentTests(mode, limit = 10) {
+/**
+ * Get QC tests for a specific mode
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Promise<Array>} - Array of test objects
+ */
+async function getTestsByMode(mode) {
+    if (!db) return [];
+    
     try {
         const querySnapshot = await db.collection('qc_tests')
             .where('mode', '==', mode)
-            .limit(limit)
+            .orderBy('createdAt', 'desc')
             .get();
         
-        return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date()
+        }));
     } catch (error) {
-        console.error('getRecentTests error:', error);
+        console.error('getTestsByMode error:', error);
         return [];
     }
 }
 
 /**
- * Get tests by approval document ID (direct link)
- * @param {string} approvalDocId - The shift approval document ID
- * @param {number} limit - Maximum number of tests to return
- * @returns {Promise<Array>} - Array of test documents
+ * Get QC tests for today
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Promise<Array>} - Array of test objects for today
  */
-async function getTestsByApprovalDoc(approvalDocId, limit = 50) {
-    if (!approvalDocId) return [];
+async function getTestsToday(mode) {
+    if (!db) return [];
     
-    console.log('getTestsByApprovalDoc - querying for approvalDocId:', approvalDocId);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    try {
+        const querySnapshot = await db.collection('qc_tests')
+            .where('mode', '==', mode)
+            .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(today))
+            .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(tomorrow))
+            .orderBy('createdAt', 'desc')
+            .get();
+        
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate() || new Date()
+        }));
+    } catch (error) {
+        console.error('getTestsToday error:', error);
+        return [];
+    }
+}
+
+/**
+ * Get QC test by ID
+ * @param {string} testId - Test document ID
+ * @returns {Promise<Object|null>} - Test object or null
+ */
+async function getTestById(testId) {
+    if (!db) return null;
+    
+    try {
+        const doc = await db.collection('qc_tests').doc(testId).get();
+        if (doc.exists) {
+            return { id: doc.id, ...doc.data() };
+        }
+        return null;
+    } catch (error) {
+        console.error('getTestById error:', error);
+        return null;
+    }
+}
+
+/**
+ * Delete QC test by ID
+ * @param {string} testId - Test document ID
+ * @returns {Promise<boolean>} - Success status
+ */
+async function deleteTest(testId) {
+    if (!db) return false;
+    
+    try {
+        await db.collection('qc_tests').doc(testId).delete();
+        console.log('✅ Test deleted:', testId);
+        return true;
+    } catch (error) {
+        console.error('deleteTest error:', error);
+        return false;
+    }
+}
+
+/**
+ * Get tests by approval document ID
+ * @param {string} approvalDocId - The shift approval document ID
+ * @returns {Promise<Array>} - Array of test objects
+ */
+async function getTestsByApprovalDoc(approvalDocId) {
+    if (!db) return [];
     
     try {
         const querySnapshot = await db.collection('qc_tests')
             .where('approvalDocId', '==', approvalDocId)
-            .limit(limit)
+            .orderBy('createdAt', 'desc')
             .get();
         
-        const tests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        console.log('getTestsByApprovalDoc - found tests:', tests.length, tests);
-        return tests;
+        return querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        }));
     } catch (error) {
         console.error('getTestsByApprovalDoc error:', error);
         return [];
@@ -858,6 +754,127 @@ async function getCurrentShiftApproval(mode) {
 }
 
 /**
+ * Get or create shift approval document
+ * @param {string} mode - 'level9' or 'bot'
+ * @param {string} shift - 'DAY' or 'NIGHT'
+ * @param {string} date - Date string (YYYY-MM-DD)
+ * @returns {Promise<Object>} - Shift approval document
+ */
+async function getOrCreateShiftApproval(mode, shift, date) {
+    const docId = `${mode}_${shift}_${date}`;
+    
+    try {
+        const doc = await db.collection('shift_approvals').doc(docId).get();
+        
+        if (doc.exists) {
+            return { id: doc.id, ...doc.data() };
+        }
+        
+        // Create new document
+        const newDoc = {
+            mode: mode,
+            shift: shift,
+            date: date,
+            status: 'pending',
+            createdAt: new Date(),
+            approvedBy: [],
+            approvals: {}
+        };
+        
+        await db.collection('shift_approvals').doc(docId).set(newDoc);
+        console.log('✅ Created new shift approval:', docId);
+        
+        return { id: docId, ...newDoc };
+    } catch (error) {
+        console.error('Error getting/creating shift approval:', error);
+        return null;
+    }
+}
+
+/**
+ * Update shift approval
+ * @param {string} approvalId - Approval document ID
+ * @param {Object} updates - Updates to apply
+ * @returns {Promise<boolean>} - Success status
+ */
+async function updateShiftApproval(approvalId, updates) {
+    if (!db) return false;
+    
+    try {
+        await db.collection('shift_approvals').doc(approvalId).update({
+            ...updates,
+            updatedAt: new Date()
+        });
+        console.log('✅ Shift approval updated:', approvalId);
+        return true;
+    } catch (error) {
+        console.error('Error updating shift approval:', error);
+        return false;
+    }
+}
+
+/**
+ * Add approver to shift approval
+ * @param {string} approvalId - Approval document ID
+ * @param {string} approverName - Name of the approver
+ * @param {string} approverRole - Role of the approver
+ * @returns {Promise<boolean>} - Success status
+ */
+async function addApprover(approvalId, approverName, approverRole) {
+    if (!db) return false;
+    
+    try {
+        const doc = await db.collection('shift_approvals').doc(approvalId).get();
+        
+        if (!doc.exists) {
+            console.error('Approval document not found');
+            return false;
+        }
+        
+        const data = doc.data();
+        const approvedBy = data.approvedBy || [];
+        const approvals = data.approvals || {};
+        
+        // Add to arrays if not already present
+        if (!approvedBy.includes(approverName)) {
+            approvedBy.push(approverName);
+        }
+        
+        approvals[approverName] = {
+            role: approverRole,
+            timestamp: new Date()
+        };
+        
+        // Check if all required approvers have approved
+        const requiredApprovers = getRequiredApprovers(data.mode);
+        const allApproved = requiredApprovers.every(a => approvedBy.includes(a));
+        
+        const updates = {
+            approvedBy: approvedBy,
+            approvals: approvals,
+            status: allApproved ? 'completed' : 'pending'
+        };
+        
+        return await updateShiftApproval(approvalId, updates);
+    } catch (error) {
+        console.error('Error adding approver:', error);
+        return false;
+    }
+}
+
+/**
+ * Get required approvers for a mode
+ * @param {string} mode - 'level9' or 'bot'
+ * @returns {Array} - Array of required approver names
+ */
+function getRequiredApprovers(mode) {
+    if (mode === 'level9') {
+        return ['Buggy Supervisor', 'PLC Operator', 'Production Manager', 'QC Manager'];
+    }
+    return ['PLC Operator', 'Production Manager', 'QC Manager'];
+}
+
+/**
  * Get QC staff info from localStorage
  */
 function getQCStaffInfo() {
@@ -872,6 +889,11 @@ function getQCStaffInfo() {
 }
 
 // ===== AUTO-SAVE FUNCTIONALITY =====
+
+const AUTO_SAVE_CONFIG = {
+    enableAutoSave: true,
+    delaySeconds: 5
+};
 
 let autoSaveTimer = null;
 
@@ -901,7 +923,7 @@ function cancelAutoSave() {
 function showAutoSaveProgress(elementId, delaySeconds = AUTO_SAVE_CONFIG.delaySeconds) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
+
     let remaining = delaySeconds;
     element.innerHTML = `Auto-saving in ${remaining}s...`;
     element.style.color = '#FFA500';
