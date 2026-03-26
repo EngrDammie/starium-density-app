@@ -1,6 +1,7 @@
-// Guard to prevent multiple executions
-if (window._stariumStorageGuard) { console.log('Script already loaded'); throw new Error('Script already loaded'); }
-window._stariumStorageGuard = true;
+// Guard to prevent multiple executions - silently skip if already loaded
+if (window._stariumStorageLoaded) { console.log('firebase-storage.js already loaded'); }
+else {
+    window._stariumStorageLoaded = true;
 
 // ===== FIREBASE CONFIGURATION =====
 window.firebaseConfig = window.firebaseConfig || {
@@ -462,4 +463,5 @@ async function requireAuth() {
             else { localStorage.setItem('userEmail', user.email); localStorage.setItem('userUid', user.uid); resolve(true); }
         });
     });
+}
 }
