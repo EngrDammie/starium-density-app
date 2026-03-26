@@ -838,11 +838,30 @@ service cloud.firestore {
 </div>
 
 <script>
+// Admin email - only this user can disable auth when enabled
+const ADMIN_EMAIL = 'dammieoptimus@gmail.com';
+
 async function toggleAuth(enabled) {
+    // Check current state
+    const doc = await db.collection('config').doc('auth_settings').get();
+    const currentState = doc.exists ? doc.data().authEnabled : false;
+    
+    // If trying to DISABLE (ON → OFF), only admin can do it
+    if (!enabled && currentState) {
+        const userEmail = localStorage.getItem('userEmail');
+        if (userEmail !== ADMIN_EMAIL) {
+            alert('Only admin can disable authentication');
+            document.getElementById('authToggle').checked = true;
+            return;
+        }
+    }
+    
+    // Anyone can enable (OFF → ON), only admin can disable
     await db.collection('config').doc('auth_settings').set({
         authEnabled: enabled,
         updatedAt: new Date()
     });
+    
     document.getElementById('authStatus').textContent = 
         'Auth is currently: ' + (enabled ? 'ENABLED' : 'DISABLED');
     alert('Auth ' + (enabled ? 'enabled' : 'disabled') + '! Refresh the page.');
