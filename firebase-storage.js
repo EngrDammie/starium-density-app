@@ -1,7 +1,7 @@
-// Guard to prevent multiple executions - silently skip if already loaded
-if (window._stariumStorageLoaded) { console.log('firebase-storage.js already loaded'); }
-else {
-    window._stariumStorageLoaded = true;
+// Guard: only run if functions not already defined
+if (typeof requireAuth === 'function') {
+    console.log('firebase-storage.js already loaded');
+} else {
 
 // ===== FIREBASE CONFIGURATION =====
 window.firebaseConfig = window.firebaseConfig || {
@@ -464,4 +464,4 @@ async function requireAuth() {
         });
     });
 }
-}
+} // End guard
