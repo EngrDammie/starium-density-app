@@ -1,14 +1,5 @@
-// ===== GUARD: Prevent multiple executions in same page load =====
-if (window._stariumStorageRunning) {
-    console.log('firebase-storage.js already running, skipping');
-} else {
-    window._stariumStorageRunning = true;
-    window._firebaseStorageLoaded = true;
-
 // ===== FIREBASE CONFIGURATION =====
-
-// Store on window to prevent any redeclaration issues
-window.firebaseConfig = {
+window.firebaseConfig = window.firebaseConfig || {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
     authDomain: "starium-rafa-app.firebaseapp.com",
     projectId: "starium-rafa-app",
@@ -17,156 +8,32 @@ window.firebaseConfig = {
     appId: "1:743583982928:web:e331aaa0b9e741a1537855"
 };
 
-// Initialize Firebase only once
-if (!window._firebaseInited) {
+if (!window.db) {
     try {
         window.app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(window.firebaseConfig);
         window.db = firebase.firestore();
-        window._firebaseInited = true;
     } catch (e) {
         console.error('Firebase initialization error:', e);
     }
 }
 
-// Shortcut references
-const db = window.db;
-const app = window.app;
-
 // ===== LOCALSTORAGE OFFLINE QUEUE =====
-const OFFLINE_QUEUE_KEY = 'starium_offline_queue';
-
-/**
- * Save data to localStorage queue (for offline use)
- */
-function saveToLocalQueue(testData) {
-    try {
-        const queue = getLocalQueue();
-        queue.push({
-            ...testData,
-            queuedAt: new Date().toISOString()
-        });
-        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue));
-        console.log('📱 Saved to local queue (offline)', queue.length, 'items');
-        return true;
-    } catch (e) {
-        console.error('Failed to save to local queue:', e);
-        return false;
-    }
-}
-
-/**
- * Get pending items from localStorage queue
- */
-function getLocalQueue() {
-    try {
-        const data = localStorage.getItem(OFFLINE_QUEUE_KEY);
-        return data ? JSON.parse(data) : [];
-    } catch (e) {
-        return [];
-    }
-}
-
-/**
- * Clear localStorage queue
- */
-function clearLocalQueue() {
-    localStorage.removeItem(OFFLINE_QUEUE_KEY);
-    console.log('🗑️ Cleared local queue');
-}
-
-/**
- * Sync local queue to Firestore
- */
-async function syncLocalQueue() {
-    const queue = getLocalQueue();
-    if (queue.length === 0) return;
-    
-    console.log('🔄 Syncing', queue.length, 'items from local queue...');
-    
-    for (const testData of queue) {
-        try {
-            await db.collection('qc_tests').add({
-                ...testData,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                syncedFromOffline: true
-            });
-        } catch (e) {
-            console.error('Failed to sync item:', e);
-        }
-    }
-    
-    clearLocalQueue();
-    console.log('✅ Local queue synced to Firestore');
-}
-
-// Listen for network restoration to sync
-window.addEventListener('online', () => {
-    console.log('📶 Network restored - syncing offline queue...');
-    syncLocalQueue();
-});
-
-// Track online/offline status
-let isOnline = navigator.onLine;
-let onlineStatusListeners = [];
-
-// Listen for network status changes
-window.addEventListener('online', () => {
-    isOnline = true;
-    console.log('📶 Network restored - syncing data...');
-    notifyOnlineStatusListeners(true);
-});
-
-window.addEventListener('offline', () => {
-    isOnline = false;
-    console.log('📴 Network lost - working offline');
-    notifyOnlineStatusListeners(false);
-});
-
-/**
- * Get current online status
- * @returns {boolean} - True if online
- */
-function isNetworkOnline() {
-    return isOnline;
-}
-
-/**
- * Add callback for online/offline status changes
- * @param {Function} callback - Called with true when online, false when offline
- */
-function onOnlineStatusChange(callback) {
-    onlineStatusListeners.push(callback);
-    // Immediately call with current status
-    callback(isOnline);
-}
-
-function notifyOnlineStatusListeners(status) {
-    onlineStatusListeners.forEach(cb => cb(status));
-}
+window.OFFLINE_QUEUE_KEY = window.OFFLINE_QUEUE_KEY || 'starium_offline_queue';
 
 // ===== APP CONFIG =====
-const DEFAULT_CONFIG = {
-    // Density Settings
+window.DEFAULT_CONFIG = window.DEFAULT_CONFIG || {
     level9MinDensity: 0.200,
     level9MaxDensity: 0.310,
     botMinDensity: 0.200,
     botMaxDensity: 0.240,
     level9Divisor: 1580,
     botDivisor: 1680,
-    
-    // Shift Settings
     dayShiftStart: 7,
     nightShiftStart: 19,
-    
-    // UI Settings
     showSettingsBtnIndex: true,
     showSettingsBtnLevel9Exec: true,
     showSettingsBtnBotExec: true,
-    
-    // Grid Configuration
     machineGridColumns: 6,
-    
-    // Production Lines
     productionLines: [
         { id: "1A", name: "Line 1A", order: 1 },
         { id: "1B", name: "Line 1B", order: 2 },
@@ -175,53 +42,38 @@ const DEFAULT_CONFIG = {
         { id: "3A", name: "Line 3A", order: 5 },
         { id: "3B", name: "Line 3B", order: 6 }
     ],
-    
-    // Machine Configurations
     machines: [
-        // Line 1A
         { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
         { id: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
         { id: 3, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 3" },
         { id: 4, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 4" },
         { id: 5, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 5" },
-        
-        // Line 1B
         { id: 6, gram: 125, min: 0.200, max: 0.270, line: "1B", name: "Machine 6" },
         { id: 7, gram: 85, min: 0.240, max: 0.300, line: "1B", name: "Machine 7" },
         { id: 8, gram: 850, min: 0.200, max: 0.270, line: "1B", name: "Machine 8" },
         { id: 9, gram: 85, min: 0.240, max: 0.300, line: "1B", name: "Machine 9" },
         { id: 10, gram: 22, min: 0.200, max: 0.310, line: "1B", name: "Machine 10" },
-        
-        // Line 2A
         { id: 11, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 11" },
         { id: 12, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 12" },
         { id: 13, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 13" },
         { id: 14, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 14" },
         { id: 15, gram: 85, min: 0.240, max: 0.300, line: "2A", name: "Machine 15" },
-        
-        // Line 2B
         { id: 16, gram: 850, min: 0.200, max: 0.270, line: "2B", name: "Machine 16" },
         { id: 17, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 17" },
         { id: 18, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 18" },
         { id: 19, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 19" },
         { id: 20, gram: 85, min: 0.240, max: 0.300, line: "2B", name: "Machine 20" },
-        
-        // Line 3A
         { id: 21, gram: 850, min: 0.200, max: 0.270, line: "3A", name: "Machine 21" },
         { id: 22, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 22" },
         { id: 23, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 23" },
         { id: 24, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 24" },
         { id: 25, gram: 45, min: 0.210, max: 0.310, line: "3A", name: "Machine 25" },
-        
-        // Line 3B
         { id: 26, gram: 850, min: 0.200, max: 0.270, line: "3B", name: "Machine 26" },
         { id: 27, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 27" },
         { id: 28, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 28" },
         { id: 29, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 29" },
         { id: 30, gram: 45, min: 0.210, max: 0.310, line: "3B", name: "Machine 30" }
     ],
-    
-    // Gram Specifications
     gramSpecs: {
         "22": { min: 0.200, max: 0.310, piecesPerCarton: 162, piecesBreakdown: "27 strings * 6 pcs" },
         "45": { min: 0.210, max: 0.310, piecesPerCarton: 84, piecesBreakdown: "14 strings * 6 pcs" },
@@ -231,95 +83,51 @@ const DEFAULT_CONFIG = {
     }
 };
 
-// Cached config - used immediately, then updated from Firestore
-let appConfig = { ...DEFAULT_CONFIG };
-let configUnsubscribe = null;
+window.appConfig = window.appConfig || { ...window.DEFAULT_CONFIG };
+window.configUnsubscribe = window.configUnsubscribe || null;
 
-/**
- * Get current app config (synchronous - returns cached value)
- * @returns {Object} - Current config
- */
+// ===== FUNCTIONS =====
+
 function getConfig() {
-    return { ...appConfig };
+    return { ...window.appConfig };
 }
 
-/**
- * Load config from Firestore
- * @returns {Promise<Object>} - Config from Firestore or defaults
- */
 async function loadConfig() {
+    const db = window.db;
     if (!db) {
         console.warn('Firebase not initialized, using default config');
-        return { ...DEFAULT_CONFIG };
+        return { ...window.DEFAULT_CONFIG };
     }
-    
     try {
         const doc = await db.collection('config').doc('settings').get();
-        
         if (doc.exists) {
             const data = doc.data();
-            appConfig = { ...DEFAULT_CONFIG, ...data };
-            
-            // Check if there are new fields in DEFAULT_CONFIG that don't exist in Firestore
-            const newFields = {};
-            let hasNewFields = false;
-            for (const key in DEFAULT_CONFIG) {
-                if (!(key in data)) {
-                    newFields[key] = DEFAULT_CONFIG[key];
-                    hasNewFields = true;
-                }
-            }
-            
-            // If there are new fields, update Firestore with them
-            if (hasNewFields) {
-                await db.collection('config').doc('settings').update({
-                    ...newFields,
-                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('✅ Config updated with new fields:', newFields);
-                // Reload appConfig with new fields
-                appConfig = { ...DEFAULT_CONFIG, ...data };
-            }
-            
-            console.log('✅ Config loaded from Firestore:', appConfig);
+            window.appConfig = { ...window.DEFAULT_CONFIG, ...data };
+            console.log('✅ Config loaded from Firestore');
         } else {
-            // Create default config document
             await db.collection('config').doc('settings').set({
-                ...DEFAULT_CONFIG,
+                ...window.DEFAULT_CONFIG,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp(),
                 updatedAt: firebase.firestore.FieldValue.serverTimestamp()
             });
-            appConfig = { ...DEFAULT_CONFIG };
-            console.log('✅ Default config created in Firestore');
+            window.appConfig = { ...window.DEFAULT_CONFIG };
         }
-        
-        return { ...appConfig };
+        return { ...window.appConfig };
     } catch (error) {
         console.error('Error loading config:', error);
-        return { ...DEFAULT_CONFIG };
+        return { ...window.DEFAULT_CONFIG };
     }
 }
 
-/**
- * Update config in Firestore
- * @param {Object} newConfig - New config values to merge
- * @returns {Promise<boolean>} - Success status
- */
 async function updateConfig(newConfig) {
-    if (!db) {
-        console.error('Firebase not initialized');
-        return false;
-    }
-    
+    const db = window.db;
+    if (!db) return false;
     try {
         await db.collection('config').doc('settings').update({
             ...newConfig,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         });
-        
-        // Update cached config
-        appConfig = { ...appConfig, ...newConfig };
-        console.log('✅ Config updated:', appConfig);
+        window.appConfig = { ...window.appConfig, ...newConfig };
         return true;
     } catch (error) {
         console.error('Error updating config:', error);
@@ -327,129 +135,60 @@ async function updateConfig(newConfig) {
     }
 }
 
-/**
- * Subscribe to config changes (real-time)
- * @param {Function} callback - Called with config object when it changes
- * @returns {Function} - Unsubscribe function
- */
 function subscribeToConfig(callback) {
-    if (!db) {
-        callback({ ...DEFAULT_CONFIG });
-        return () => {};
-    }
-    
-    // Unsubscribe from previous listener if exists
-    if (configUnsubscribe) {
-        configUnsubscribe();
-    }
-    
-    configUnsubscribe = db.collection('config').doc('settings')
-        .onSnapshot((doc) => {
-            if (doc.exists) {
-                const data = doc.data();
-                appConfig = { ...DEFAULT_CONFIG, ...data };
-                callback({ ...appConfig });
-            } else {
-                callback({ ...DEFAULT_CONFIG });
-            }
-        }, (error) => {
-            console.error('Error subscribing to config:', error);
-            callback({ ...appConfig });
-        });
-    
-    return configUnsubscribe;
+    const db = window.db;
+    if (!db) { callback({ ...window.DEFAULT_CONFIG }); return () => {}; }
+    if (window.configUnsubscribe) window.configUnsubscribe();
+    window.configUnsubscribe = db.collection('config').doc('settings').onSnapshot((doc) => {
+        if (doc.exists) {
+            window.appConfig = { ...window.DEFAULT_CONFIG, ...doc.data() };
+            callback({ ...window.appConfig });
+        } else {
+            callback({ ...window.DEFAULT_CONFIG });
+        }
+    }, (error) => { console.error('Error subscribing to config:', error); callback({ ...window.appConfig }); });
+    return window.configUnsubscribe;
 }
 
-// ===== MACHINE CONFIG HELPER FUNCTIONS =====
-
-/**
- * Get all machines from config
- * @returns {Array} - Array of machine objects
- */
 function getMachines() {
     const config = getConfig();
     return config.machines || [];
 }
 
-/**
- * Get machines that match a given density
- * @param {number} density - The density value to match
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Array} - Array of matching machines with min/max from gramSpecs
- */
-function getMatchingMachines(density, mode = 'level9') {
+function getMatchingMachines(density, mode) {
     const config = getConfig();
     const machines = config.machines || [];
-    
     const minDensity = mode === 'bot' ? config.botMinDensity : config.level9MinDensity;
     const maxDensity = mode === 'bot' ? config.botMaxDensity : config.level9MaxDensity;
-    
     return machines.filter(m => {
-        // Get min/max from gramSpecs
         const spec = config.gramSpecs?.[String(m.gram)];
         const machineMin = spec ? spec.min : m.min;
         const machineMax = spec ? spec.max : m.max;
-        
-        return density >= machineMin && 
-               density <= machineMax &&
-               density >= minDensity &&
-               density <= maxDensity;
+        return density >= machineMin && density <= machineMax && density >= minDensity && density <= maxDensity;
     });
 }
 
-/**
- * Get a single machine by ID
- * @param {number} id - Machine ID
- * @returns {Object|null} - Machine object with min/max from gramSpecs
- */
 function getMachineById(id) {
     const machines = getMachines();
-    const machine = machines.find(m => m.id === id) || null;
-    
+    const machine = machines.find(m => m.id === id);
     if (!machine) return null;
-    
-    // Get min/max from gramSpecs
     const config = getConfig();
     const spec = config.gramSpecs?.[String(machine.gram)];
-    
-    return {
-        ...machine,
-        min: spec ? spec.min : machine.min,
-        max: spec ? spec.max : machine.max,
-        piecesPerCarton: spec ? spec.piecesPerCarton : null,
-        piecesBreakdown: spec ? spec.piecesBreakdown : null
-    };
+    return { ...machine, min: spec ? spec.min : machine.min, max: spec ? spec.max : machine.max, piecesPerCarton: spec ? spec.piecesPerCarton : null };
 }
 
-/**
- * Get machines grouped by production line
- * @returns {Object} - Object with line IDs as keys and arrays of machines as values
- */
 function getMachinesByLines() {
     const config = getConfig();
     const lines = {};
-    
-    config.productionLines.forEach(line => {
-        lines[line.id] = config.machines.filter(m => m.line === line.id);
-    });
-    
+    config.productionLines.forEach(line => { lines[line.id] = config.machines.filter(m => m.line === line.id); });
     return lines;
 }
 
-/**
- * Get gram specification for a given gram value
- * @param {number|string} gram - The gram value
- * @returns {Object|null} - Gram spec object
- */
 function getGramSpec(gram) {
     const config = getConfig();
     return config.gramSpecs?.[String(gram)] || null;
 }
 
-/**
- * Get current shift based on hour
- * @returns {string} - 'DAY' or 'NIGHT'
- */
 function getCurrentShift() {
     const config = getConfig();
     const hour = new Date().getHours();
@@ -458,566 +197,265 @@ function getCurrentShift() {
 
 // ===== QC TEST FUNCTIONS =====
 
-/**
- * Save QC test to Firestore
- * @param {Object} testData - Test data object
- * @returns {Promise<string>} - Test ID or 'offline-queued' if offline
- */
+let isOnline = navigator.onLine;
+let onlineStatusListeners = [];
+
+function saveToLocalQueue(testData) {
+    try {
+        const queue = getLocalQueue();
+        queue.push({ ...testData, queuedAt: new Date().toISOString() });
+        localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        return true;
+    } catch (e) { return false; }
+}
+
+function getLocalQueue() {
+    try { const data = localStorage.getItem(window.OFFLINE_QUEUE_KEY); return data ? JSON.parse(data) : []; } catch (e) { return []; }
+}
+
+function clearLocalQueue() {
+    localStorage.removeItem(window.OFFLINE_QUEUE_KEY);
+}
+
+async function syncLocalQueue() {
+    const queue = getLocalQueue();
+    if (queue.length === 0) return;
+    const db = window.db;
+    for (const testData of queue) {
+        try { await db.collection('qc_tests').add({ ...testData, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (e) { console.error('Sync error:', e); }
+    }
+    clearLocalQueue();
+}
+
+window.addEventListener('online', () => { isOnline = true; notifyOnlineStatusListeners(true); syncLocalQueue(); });
+window.addEventListener('offline', () => { isOnline = false; notifyOnlineStatusListeners(false); });
+
+function isNetworkOnline() { return isOnline; }
+function onOnlineStatusChange(callback) { onlineStatusListeners.push(callback); callback(isOnline); }
+function notifyOnlineStatusListeners(status) { onlineStatusListeners.forEach(cb => cb(status)); }
+
 async function saveQCTest(testData) {
-    if (!db) {
-        console.error('Firestore not initialized');
-        return 'error';
-    }
-    
-    if (!isNetworkOnline()) {
-        // Save to local queue for later sync
-        const saved = saveToLocalQueue(testData);
-        return saved ? 'offline-queued' : 'error';
-    }
-    
+    const db = window.db;
+    if (!db) return 'error';
+    if (!isNetworkOnline()) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
     try {
-        const docRef = await db.collection('qc_tests').add({
-            ...testData,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
-        console.log('✅ QC Test saved:', docRef.id);
+        const docRef = await db.collection('qc_tests').add({ ...testData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         return docRef.id;
-    } catch (error) {
-        console.error('Error saving QC test:', error);
-        
-        // If write fails, try saving to local queue
-        const saved = saveToLocalQueue(testData);
-        return saved ? 'offline-queued' : 'error';
-    }
+    } catch (error) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
 }
 
-/**
- * Get QC tests for a specific mode
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Promise<Array>} - Array of test objects
- */
 async function getTestsByMode(mode) {
+    const db = window.db;
     if (!db) return [];
-    
     try {
-        const querySnapshot = await db.collection('qc_tests')
-            .where('mode', '==', mode)
-            .orderBy('createdAt', 'desc')
-            .get();
-        
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt?.toDate() || new Date()
-        }));
-    } catch (error) {
-        console.error('getTestsByMode error:', error);
-        return [];
-    }
+        const snapshot = await db.collection('qc_tests').where('mode', '==', mode).orderBy('createdAt', 'desc').get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) { return []; }
 }
 
-/**
- * Get QC tests for today
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Promise<Array>} - Array of test objects for today
- */
 async function getTestsToday(mode) {
+    const db = window.db;
     if (!db) return [];
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1);
     try {
-        const querySnapshot = await db.collection('qc_tests')
-            .where('mode', '==', mode)
-            .where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(today))
-            .where('createdAt', '<', firebase.firestore.Timestamp.fromDate(tomorrow))
-            .orderBy('createdAt', 'desc')
-            .get();
-        
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data(),
-            createdAt: doc.data().createdAt?.toDate() || new Date()
-        }));
-    } catch (error) {
-        console.error('getTestsToday error:', error);
-        return [];
-    }
+        const snapshot = await db.collection('qc_tests').where('mode', '==', mode).where('createdAt', '>=', firebase.firestore.Timestamp.fromDate(today)).where('createdAt', '<', firebase.firestore.Timestamp.fromDate(tomorrow)).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) { return []; }
 }
 
-/**
- * Get QC test by ID
- * @param {string} testId - Test document ID
- * @returns {Promise<Object|null>} - Test object or null
- */
 async function getTestById(testId) {
+    const db = window.db;
     if (!db) return null;
-    
     try {
         const doc = await db.collection('qc_tests').doc(testId).get();
-        if (doc.exists) {
-            return { id: doc.id, ...doc.data() };
-        }
-        return null;
-    } catch (error) {
-        console.error('getTestById error:', error);
-        return null;
-    }
+        return doc.exists ? { id: doc.id, ...doc.data() } : null;
+    } catch (error) { return null; }
 }
 
-/**
- * Delete QC test by ID
- * @param {string} testId - Test document ID
- * @returns {Promise<boolean>} - Success status
- */
 async function deleteTest(testId) {
+    const db = window.db;
     if (!db) return false;
-    
-    try {
-        await db.collection('qc_tests').doc(testId).delete();
-        console.log('✅ Test deleted:', testId);
-        return true;
-    } catch (error) {
-        console.error('deleteTest error:', error);
-        return false;
-    }
+    try { await db.collection('qc_tests').doc(testId).delete(); return true; } catch (error) { return false; }
 }
 
-/**
- * Get tests by approval document ID
- * @param {string} approvalDocId - The shift approval document ID
- * @returns {Promise<Array>} - Array of test objects
- */
 async function getTestsByApprovalDoc(approvalDocId) {
+    const db = window.db;
     if (!db) return [];
-    
     try {
-        const querySnapshot = await db.collection('qc_tests')
-            .where('approvalDocId', '==', approvalDocId)
-            .orderBy('createdAt', 'desc')
-            .get();
-        
-        return querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    } catch (error) {
-        console.error('getTestsByApprovalDoc error:', error);
-        return [];
-    }
+        const snapshot = await db.collection('qc_tests').where('approvalDocId', '==', approvalDocId).get();
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (error) { return []; }
 }
 
-/**
- * Subscribe to tests by approval document ID (real-time)
- * @param {string} approvalDocId - The shift approval document ID
- * @param {Function} callback - Callback function receiving array of tests
- * @returns {Function} - Unsubscribe function
- */
 function subscribeToTestsByApprovalDoc(approvalDocId, callback) {
-    if (!approvalDocId) {
-        callback([]);
-        return () => {};
-    }
-    
-    return db.collection('qc_tests')
-        .where('approvalDocId', '==', approvalDocId)
-        .onSnapshot((snapshot) => {
-            const tests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            callback(tests);
-        }, (error) => {
-            console.error('Error subscribing to tests by approvalDoc:', error);
-            callback([]);
-        });
+    const db = window.db;
+    if (!approvalDocId) { callback([]); return () => {}; }
+    return db.collection('qc_tests').where('approvalDocId', '==', approvalDocId).onSnapshot((snapshot) => {
+        callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => { callback([]); });
 }
 
-/**
- * Get the latest QC test for a mode (efficient single query)
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Promise<Object|null>} - Latest test document or null
- */
 async function getLatestTest(mode) {
-    const querySnapshot = await db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .get();
-    
-    if (querySnapshot.empty) return null;
-    
-    // Find the most recent
-    let latestDoc = null;
-    let latestDate = null;
-    
-    querySnapshot.forEach(doc => {
-        const data = doc.data();
-        if (data.createdAt) {
-            const docDate = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
-            if (!latestDate || docDate > latestDate) {
-                latestDate = docDate;
-                latestDoc = { id: doc.id, ...data };
+    const db = window.db;
+    if (!db) return null;
+    try {
+        const snapshot = await db.collection('qc_tests').where('mode', '==', mode).get();
+        if (snapshot.empty) return null;
+        let latest = null, latestDate = null;
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.createdAt) {
+                const date = data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt);
+                if (!latestDate || date > latestDate) { latestDate = date; latest = { id: doc.id, ...data }; }
             }
-        }
-    });
-    
-    return latestDoc;
+        });
+        return latest;
+    } catch (error) { return null; }
 }
 
-/**
- * Get real-time listener for latest test
- * @param {string} mode - 'level9' or 'bot'
- * @param {Function} callback - Callback function receiving test data
- * @returns {Function} - Unsubscribe function
- */
 function subscribeToLatestTest(mode, callback) {
-    // Get most recent test by sorting by createdAt descending
-    return db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .orderBy('createdAt', 'desc')
-        .limit(1)
-        .onSnapshot((snapshot) => {
-            console.log('subscribeToLatestTest: received', snapshot.size, 'tests');
-            
-            if (snapshot.empty) {
-                callback(null);
-                return;
-            }
-            
-            // Get the most recent document (first after sorting by createdAt desc)
-            const firstDoc = snapshot.docs[0];
-            const data = { id: firstDoc.id, ...firstDoc.data() };
-            console.log('subscribeToLatestTest: most recent doc data:', data);
-            callback(data);
-        }, (error) => {
-            console.error('Error subscribing to latest test:', error);
-            callback(null);
-        });
+    const db = window.db;
+    return db.collection('qc_tests').where('mode', '==', mode).orderBy('createdAt', 'desc').limit(1).onSnapshot((snapshot) => {
+        callback(snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() });
+    }, (error) => { callback(null); });
 }
 
-/**
- * Get count of tests for today
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Promise<number>} - Count of tests today
- */
 async function getTestsTodayCount(mode) {
-    // Get all tests for this mode - no date filter
-    const querySnapshot = await db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .get();
-    
-    return querySnapshot.size;
+    const db = window.db;
+    if (!db) return 0;
+    try {
+        const snapshot = await db.collection('qc_tests').where('mode', '==', mode).get();
+        return snapshot.size;
+    } catch (error) { return 0; }
 }
 
-/**
- * Subscribe to tests today count
- * @param {string} mode - 'level9' or 'bot'
- * @param {Function} callback - Callback function receiving count
- * @returns {Function} - Unsubscribe function
- */
 function subscribeToTestsTodayCount(mode, callback) {
-    // Simple approach: get all and count - no date filter
-    return db.collection('qc_tests')
-        .where('mode', '==', mode)
-        .onSnapshot((snapshot) => {
-            callback(snapshot.size);
-        }, (error) => {
-            console.error('Error subscribing to tests count:', error);
-            callback(0);
-        });
+    const db = window.db;
+    return db.collection('qc_tests').where('mode', '==', mode).onSnapshot((snapshot) => { callback(snapshot.size); }, (error) => { callback(0); });
 }
 
-/**
- * Subscribe to shift approval changes (real-time)
- * @param {string} approvalId - The shift approval document ID
- * @param {Function} callback - Callback function receiving approval data
- * @returns {Function} - Unsubscribe function
- */
 function subscribeToShiftApproval(approvalId, callback) {
-    return db.collection('shift_approvals').doc(approvalId)
-        .onSnapshot((doc) => {
-            if (doc.exists) {
-                callback({ id: doc.id, ...doc.data() });
-            } else {
-                callback(null);
-            }
-        }, (error) => {
-            console.error('Error subscribing to shift approval:', error);
-            callback(null);
-        });
+    const db = window.db;
+    return db.collection('shift_approvals').doc(approvalId).onSnapshot((doc) => { callback(doc.exists ? { id: doc.id, ...doc.data() } : null); }, (error) => { callback(null); });
 }
 
-/**
- * Get shift approval for current shift
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Promise<Object>} - Current shift approval
- */
 async function getCurrentShiftApproval(mode) {
     const now = new Date();
     const date = now.toISOString().split('T')[0];
-    const hour = now.getHours();
-    const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
-    
+    const shift = (now.getHours() >= 7 && now.getHours() < 19) ? 'DAY' : 'NIGHT';
     return getOrCreateShiftApproval(mode, shift, date);
 }
 
-/**
- * Get or create shift approval document
- * @param {string} mode - 'level9' or 'bot'
- * @param {string} shift - 'DAY' or 'NIGHT'
- * @param {string} date - Date string (YYYY-MM-DD)
- * @returns {Promise<Object>} - Shift approval document
- */
 async function getOrCreateShiftApproval(mode, shift, date) {
+    const db = window.db;
     const docId = `${mode}_${shift}_${date}`;
-    
     try {
         const doc = await db.collection('shift_approvals').doc(docId).get();
-        
-        if (doc.exists) {
-            return { id: doc.id, ...doc.data() };
-        }
-        
-        // Create new document
-        const newDoc = {
-            mode: mode,
-            shift: shift,
-            date: date,
-            status: 'pending',
-            createdAt: new Date(),
-            approvedBy: [],
-            approvals: {}
-        };
-        
+        if (doc.exists) return { id: doc.id, ...doc.data() };
+        const newDoc = { mode, shift, date, status: 'pending', createdAt: new Date(), approvedBy: [], approvals: {} };
         await db.collection('shift_approvals').doc(docId).set(newDoc);
-        console.log('✅ Created new shift approval:', docId);
-        
         return { id: docId, ...newDoc };
-    } catch (error) {
-        console.error('Error getting/creating shift approval:', error);
-        return null;
-    }
+    } catch (error) { return null; }
 }
 
-/**
- * Update shift approval
- * @param {string} approvalId - Approval document ID
- * @param {Object} updates - Updates to apply
- * @returns {Promise<boolean>} - Success status
- */
 async function updateShiftApproval(approvalId, updates) {
+    const db = window.db;
     if (!db) return false;
-    
-    try {
-        await db.collection('shift_approvals').doc(approvalId).update({
-            ...updates,
-            updatedAt: new Date()
-        });
-        console.log('✅ Shift approval updated:', approvalId);
-        return true;
-    } catch (error) {
-        console.error('Error updating shift approval:', error);
-        return false;
-    }
+    try { await db.collection('shift_approvals').doc(approvalId).update({ ...updates, updatedAt: new Date() }); return true; } catch (error) { return false; }
 }
 
-/**
- * Add approver to shift approval
- * @param {string} approvalId - Approval document ID
- * @param {string} approverName - Name of the approver
- * @param {string} approverRole - Role of the approver
- * @returns {Promise<boolean>} - Success status
- */
 async function addApprover(approvalId, approverName, approverRole) {
+    const db = window.db;
     if (!db) return false;
-    
     try {
         const doc = await db.collection('shift_approvals').doc(approvalId).get();
-        
-        if (!doc.exists) {
-            console.error('Approval document not found');
-            return false;
-        }
-        
+        if (!doc.exists) return false;
         const data = doc.data();
         const approvedBy = data.approvedBy || [];
         const approvals = data.approvals || {};
-        
-        // Add to arrays if not already present
-        if (!approvedBy.includes(approverName)) {
-            approvedBy.push(approverName);
-        }
-        
-        approvals[approverName] = {
-            role: approverRole,
-            timestamp: new Date()
-        };
-        
-        // Check if all required approvers have approved
+        if (!approvedBy.includes(approverName)) approvedBy.push(approverName);
+        approvals[approverName] = { role: approverRole, timestamp: new Date() };
         const requiredApprovers = getRequiredApprovers(data.mode);
         const allApproved = requiredApprovers.every(a => approvedBy.includes(a));
-        
-        const updates = {
-            approvedBy: approvedBy,
-            approvals: approvals,
-            status: allApproved ? 'completed' : 'pending'
-        };
-        
-        return await updateShiftApproval(approvalId, updates);
-    } catch (error) {
-        console.error('Error adding approver:', error);
-        return false;
-    }
+        return await updateShiftApproval(approvalId, { approvedBy, approvals, status: allApproved ? 'completed' : 'pending' });
+    } catch (error) { return false; }
 }
 
-/**
- * Get required approvers for a mode
- * @param {string} mode - 'level9' or 'bot'
- * @returns {Array} - Array of required approver names
- */
 function getRequiredApprovers(mode) {
-    if (mode === 'level9') {
-        return ['Buggy Supervisor', 'PLC Operator', 'Production Manager', 'QC Manager'];
-    }
-    return ['PLC Operator', 'Production Manager', 'QC Manager'];
+    return mode === 'level9' ? ['Buggy Supervisor', 'PLC Operator', 'Production Manager', 'QC Manager'] : ['PLC Operator', 'Production Manager', 'QC Manager'];
 }
 
-/**
- * Get QC staff info from localStorage
- */
 function getQCStaffInfo() {
-    return {
-        name: localStorage.getItem('qcName') || '',
-        team: localStorage.getItem('qcTeam') || '',
-        shift: (() => {
-            const hour = new Date().getHours();
-            return (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
-        })()
-    };
+    return { name: localStorage.getItem('qcName') || '', team: localStorage.getItem('qcTeam') || '', shift: getCurrentShift() };
 }
 
-// ===== AUTO-SAVE FUNCTIONALITY =====
-
-const AUTO_SAVE_CONFIG = {
-    enableAutoSave: true,
-    delaySeconds: 5
-};
-
+// ===== AUTO-SAVE =====
+window.AUTO_SAVE_CONFIG = { enableAutoSave: true, delaySeconds: 5 };
 let autoSaveTimer = null;
 
-function startAutoSave(callback, delaySeconds = AUTO_SAVE_CONFIG.delaySeconds) {
-    if (!AUTO_SAVE_CONFIG.enableAutoSave) return;
-    
-    // Clear any existing timer
-    if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
-    }
-    
-    // Start new timer
-    autoSaveTimer = setTimeout(() => {
-        callback();
-    }, delaySeconds * 1000);
+function startAutoSave(callback, delaySeconds) {
+    delaySeconds = delaySeconds || window.AUTO_SAVE_CONFIG.delaySeconds;
+    if (!window.AUTO_SAVE_CONFIG.enableAutoSave) return;
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(callback, delaySeconds * 1000);
 }
 
 function cancelAutoSave() {
-    if (autoSaveTimer) {
-        clearTimeout(autoSaveTimer);
-        autoSaveTimer = null;
-    }
+    if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
 }
 
-// ===== UI FEEDBACK FUNCTIONS =====
-
-function showAutoSaveProgress(elementId, delaySeconds = AUTO_SAVE_CONFIG.delaySeconds) {
+function showAutoSaveProgress(elementId, delaySeconds) {
+    delaySeconds = delaySeconds || window.AUTO_SAVE_CONFIG.delaySeconds;
     const element = document.getElementById(elementId);
     if (!element) return;
-
     let remaining = delaySeconds;
     element.innerHTML = `Auto-saving in ${remaining}s...`;
     element.style.color = '#FFA500';
-    
     const interval = setInterval(() => {
         remaining--;
-        if (remaining > 0) {
-            element.innerHTML = `Auto-saving in ${remaining}s...`;
-        } else {
-            clearInterval(interval);
-            element.innerHTML = 'Saving...';
-        }
+        if (remaining > 0) element.innerHTML = `Auto-saving in ${remaining}s...`;
+        else { clearInterval(interval); element.innerHTML = 'Saving...'; }
     }, 1000);
 }
 
 function showSavedFeedback(elementId) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
     element.innerHTML = '✓ Saved';
     element.style.color = '#00E676';
-    
-    setTimeout(() => {
-        element.innerHTML = '';
-    }, 3000);
+    setTimeout(() => { element.innerHTML = ''; }, 3000);
 }
 
 function showOfflineFeedback(elementId) {
     const element = document.getElementById(elementId);
     if (!element) return;
-    
     element.innerHTML = '📴 Offline - Will sync when online';
     element.style.color = '#FF5722';
 }
 
-// ===== AUTH TOGGLE FUNCTIONS =====
-
-/**
- * Check if authentication is enabled in config
- * @returns {Promise<boolean>} - True if auth is enabled
- */
+// ===== AUTH FUNCTIONS =====
 async function isAuthEnabled() {
+    const db = window.db;
     if (!db) return false;
-    
     try {
-        // Try to read auth_settings - if it fails due to permissions, 
-        // assume auth is disabled to avoid redirect loop
         const doc = await db.collection('config').doc('auth_settings').get();
-        if (doc.exists) {
-            return doc.data().authEnabled === true;
-        }
-    } catch (e) {
-        // If we can't read (permissions error when auth enabled but user not logged in),
-        // assume auth is DISABLED to allow the page to load
-        console.log('Cannot read auth settings, assuming auth disabled');
-    }
-    return false; // Default: auth disabled
+        if (doc.exists) return doc.data().authEnabled === true;
+    } catch (e) { console.log('Cannot read auth settings, assuming disabled'); }
+    return false;
 }
 
-/**
- * Require authentication - redirect to login if auth enabled and user not logged in
- * @returns {Promise<boolean>} - True if auth passes (disabled or logged in)
- */
 async function requireAuth() {
     const authEnabled = await isAuthEnabled();
-    
     if (!authEnabled) {
-        // Auth disabled - allow access
-        localStorage.setItem('userRole', 'admin'); // Full access for development
+        localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userEmail', 'development@local');
         return true;
     }
-    
-    // Auth enabled - check if user is logged in
     return new Promise((resolve) => {
         firebase.auth().onAuthStateChanged((user) => {
-            if (!user) {
-                // Not logged in, redirect to login
-                window.location.href = 'login.html';
-                resolve(false);
-            } else {
-                // Logged in - store user info
-                localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('userUid', user.uid);
-                resolve(true);
-            }
+            if (!user) { window.location.href = 'login.html'; resolve(false); }
+            else { localStorage.setItem('userEmail', user.email); localStorage.setItem('userUid', user.uid); resolve(true); }
         });
     });
-}
 }
