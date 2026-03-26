@@ -1,3 +1,7 @@
+// Guard to prevent multiple executions
+if (window._stariumStorageGuard) { console.log('Script already loaded'); throw new Error('Script already loaded'); }
+window._stariumStorageGuard = true;
+
 // ===== FIREBASE CONFIGURATION =====
 window.firebaseConfig = window.firebaseConfig || {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
