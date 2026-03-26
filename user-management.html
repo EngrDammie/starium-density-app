@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management - Starium QC</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-storage.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 20px; background: #12121a; border-radius: 12px; margin-bottom: 20px;
+        }
+        header h1 { color: #FF6B00; font-size: 24px; }
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .user-info { color: #888; font-size: 14px; }
+        .logout-btn {
+            background: #333; color: #fff; border: none; padding: 8px 16px;
+            border-radius: 6px; cursor: pointer;
+        }
+        .logout-btn:hover { background: #444; }
+        
+        /* Back link */
+        .back-link { color: #FF6B00; text-decoration: none; margin-bottom: 20px; display: inline-block; }
+        .back-link:hover { text-decoration: underline; }
+        
+        /* Access Denied */
+        .access-denied {
+            text-align: center; padding: 100px 20px;
+        }
+        .access-denied h2 { color: #FF1744; margin-bottom: 10px; }
+        
+        /* Add User Form */
+        .add-user-section {
+            background: #12121a; padding: 20px; border-radius: 12px; margin-bottom: 20px;
+        }
+        .add-user-section h2 { margin-bottom: 15px; color: #FF6B00; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px; }
+        .form-row input, .form-row select {
+            flex: 1; min-width: 200px; padding: 12px; background: #1a1a25;
+            border: 1px solid #2a2a3a; color: #fff; border-radius: 8px;
+        }
+        .form-row input:focus, .form-row select:focus {
+            outline: none; border-color: #FF6B00;
+        }
+        .add-btn {
+            background: #FF6B00; color: #fff; border: none; padding: 12px 24px;
+            border-radius: 8px; cursor: pointer; font-weight: bold;
+        }
+        .add-btn:hover { background: #e55f00; }
+        
+        /* Users Table */
+        .users-section { background: #12121a; padding: 20px; border-radius: 12px; }
+        .users-section h2 { margin-bottom: 15px; color: #FF6B00; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2a3a; }
+        th { color: #888; font-weight: 500; }
+        td { color: #fff; }
+        
+        .role-badge {
+            padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+        }
+        .role-admin { background: #FF6B00; color: #fff; }
+        .role-manager { background: #2196F3; color: #fff; }
+        .role-staff { background: #555; color: #fff; }
+        
+        .action-cell { display: flex; gap: 10px; }
+        .edit-btn, .delete-btn {
+            padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;
+        }
+        .edit-btn { background: #2196F3; color: #fff; }
+        .delete-btn { background: #FF1744; color: #fff; }
+        
+        .edit-select {
+            padding: 6px; background: #1a1a25; color: #fff;
+            border: 1px solid #2a2a3a; border-radius: 6px;
+        }
+        
+        /* Modal */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8); z-index: 1000;
+            justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #12121a; padding: 30px; border-radius: 12px; max-width: 400px; width: 90%;
+        }
+        .modal h3 { color: #FF6B00; margin-bottom: 20px; }
+        .modal input {
+            width: 100%; padding: 12px; margin-bottom: 15px;
+            background: #1a1a25; border: 1px solid #2a2a3a;
+            color: #fff; border-radius: 8px;
+        }
+        .modal-buttons { display: flex; gap: 10px; }
+        .modal-buttons button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px; cursor: pointer;
+        }
+        .modal-save { background: #FF6B00; color: #fff; }
+        .modal-cancel { background: #333; color: #fff; }
+        
+        /* Message */
+        .message { padding: 12px; border-radius: 8px; margin-bottom: 20px; }
+        .message.success { background: #00E67620; color: #00E676; }
+        .message.error { background: #FF174420; color: #FF1744; }
+        
+        /* Date */
+        .date-cell { color: #888; font-size: 13px; }
+        
+        @media (max-width: 600px) {
+            .form-row { flex-direction: column; }
+            .action-cell { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="admin.html" class="back-link">← Back to Admin</a>
+        
+        <header>
+            <h1>🔐 User Management</h1>
+            <div class="header-actions">
+                <span class="user-info" id="userEmail"></span>
+                <button class="logout-btn" onclick="logoutUser()">Logout</button>
+            </div>
+        </header>
+        
+        <div id="message"></div>
+        
+        <!-- Access Check -->
+        <div id="accessDenied" class="access-denied" style="display: none;">
+            <h2>⛔ Access Denied</h2>
+            <p>Only administrators can access this page.</p>
+        </div>
+        
+        <!-- Main Content -->
+        <div id="mainContent">
+            <!-- Add User Section -->
+            <div class="add-user-section">
+                <h2>➕ Add New User</h2>
+                <div class="form-row">
+                    <input type="email" id="newUserEmail" placeholder="Email Address" required>
+                    <input type="password" id="newUserPassword" placeholder="Temporary Password" required minlength="6">
+                    <select id="newUserRole">
+                        <option value="staff">Staff</option>
+                        <option value="manager">Manager</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                    <button class="add-btn" onclick="addUser()">Add User</button>
+                </div>
+            </div>
+            
+            <!-- Users List -->
+            <div class="users-section">
+                <h2>👥 All Users</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <h3>🗑️ Delete User</h3>
+            <p id="deleteUserEmail" style="margin-bottom: 20px; color: #ccc;"></p>
+            <p style="color: #FF1744; margin-bottom: 20px;">This will remove the user from the system.</p>
+            <div class="modal-buttons">
+                <button class="modal-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="delete-btn" onclick="confirmDelete()">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const ADMIN_EMAIL = 'dammieoptimus@gmail.com';
+        let currentUserEmail = '';
+        let deleteUserId = '';
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkAuth();
+        });
+        
+        async function checkAuth() {
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                // Check if auth is enabled
+                try {
+                    const authDoc = await db.collection('config').doc('auth_settings').get();
+                    const authEnabled = authDoc.exists && authDoc.data().authEnabled;
+                    
+                    if (authEnabled) {
+                        window.location.href = 'login.html';
+                        return;
+                    } else {
+                        // Auth disabled - allow access
+                        currentUserEmail = 'development@local';
+                        localStorage.setItem('userRole', 'admin');
+                        localStorage.setItem('userEmail', currentUserEmail);
+                    }
+                } catch (e) {
+                    currentUserEmail = 'development@local';
+                    localStorage.setItem('userRole', 'admin');
+                    localStorage.setItem('userEmail', currentUserEmail);
+                }
+            } else {
+                currentUserEmail = user.email;
+            }
+            
+            document.getElementById('userEmail').textContent = currentUserEmail;
+            
+            // Check if admin
+            const userRole = localStorage.getItem('userRole');
+            if (userRole !== 'admin' && currentUserEmail !== ADMIN_EMAIL) {
+                document.getElementById('accessDenied').style.display = 'block';
+                document.getElementById('mainContent').style.display = 'none';
+                return;
+            }
+            
+            loadUsers();
+        }
+        
+        async function loadUsers() {
+            try {
+                const snapshot = await db.collection('user_roles').get();
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = '';
+                
+                if (snapshot.empty) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #888;">No users found</td></tr>';
+                    return;
+                }
+                
+                snapshot.forEach(doc => {
+                    const user = doc.data();
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.email}</td>
+                        <td><span class="role-badge role-${user.role}">${user.role}</span></td>
+                        <td class="date-cell">${user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
+                        <td class="action-cell">
+                            <select class="edit-select" onchange="updateRole('${doc.id}', this.value)">
+                                <option value="staff" ${user.role === 'staff' ? 'selected' : ''}>Staff</option>
+                                <option value="manager" ${user.role === 'manager' ? 'selected' : ''}>Manager</option>
+                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Admin</option>
+                            </select>
+                            <button class="delete-btn" onclick="openDeleteModal('${doc.id}', '${user.email}')">Delete</button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                showMessage('Error loading users: ' + error.message, 'error');
+            }
+        }
+        
+        async function addUser() {
+            const email = document.getElementById('newUserEmail').value.trim();
+            const password = document.getElementById('newUserPassword').value;
+            const role = document.getElementById('newUserRole').value;
+            
+            if (!email || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters', 'error');
+                return;
+            }
+            
+            try {
+                showMessage('Creating user...', 'success');
+                
+                // Create user in Firebase Auth
+                const userRecord = await firebase.auth().createUserWithEmailAndPassword(email, password);
+                
+                // Add to user_roles collection
+                await db.collection('user_roles').doc(userRecord.user.uid).set({
+                    email: email,
+                    role: role,
+                    createdAt: new Date(),
+                    createdBy: currentUserEmail
+                });
+                
+                // Clear form
+                document.getElementById('newUserEmail').value = '';
+                document.getElementById('newUserPassword').value = '';
+                document.getElementById('newUserRole').value = 'staff';
+                
+                showMessage('User created successfully!', 'success');
+                loadUsers();
+            } catch (error) {
+                showMessage('Error: ' + error.message, 'error');
+            }
+        }
+        
+        async function updateRole(userId, newRole) {
+            try {
+                await db.collection('user_roles').doc(userId).update({
+                    role: newRole,
+                    updatedAt: new Date(),
+                    updatedBy: currentUserEmail
+                });
+                showMessage('Role updated!', 'success');
+            } catch (error) {
+                showMessage('Error updating role: ' + error.message, 'error');
+            }
+        }
+        
+        function openDeleteModal(userId, email) {
+            deleteUserId = userId;
+            document.getElementById('deleteUserEmail').textContent = email;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+            deleteUserId = '';
+        }
+        
+        async function confirmDelete() {
+            if (!deleteUserId) return;
+            
+            try {
+                // Remove from user_roles
+                await db.collection('user_roles').doc(deleteUserId).delete();
+                
+                showMessage('User deleted!', 'success');
+                closeDeleteModal();
+                loadUsers();
+            } catch (error) {
+                showMessage('Error deleting user: ' + error.message, 'error');
+            }
+        }
+        
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.innerHTML = `<div class="message ${type}">${text}</div>`;
+            setTimeout(() => msg.innerHTML = '', 5000);
+        }
+        
+        function logoutUser() {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userUid');
+                localStorage.removeItem('userRole');
+                window.location.href = 'login.html';
+            });
+        }
+    </script>
+</body>
+</html>
