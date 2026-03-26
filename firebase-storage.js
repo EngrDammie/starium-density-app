@@ -943,12 +943,16 @@ async function isAuthEnabled() {
     if (!db) return false;
     
     try {
+        // Try to read auth_settings - if it fails due to permissions, 
+        // assume auth is disabled to avoid redirect loop
         const doc = await db.collection('config').doc('auth_settings').get();
         if (doc.exists) {
             return doc.data().authEnabled === true;
         }
     } catch (e) {
-        console.log('Auth settings not found, defaulting to disabled');
+        // If we can't read (permissions error when auth enabled but user not logged in),
+        // assume auth is DISABLED to allow the page to load
+        console.log('Cannot read auth settings, assuming auth disabled');
     }
     return false; // Default: auth disabled
 }
