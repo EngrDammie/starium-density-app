@@ -118,6 +118,25 @@
  box-shadow: none;
  }
 
+ .secondary-btn {
+ width: 100%;
+ padding: 12px;
+ background: transparent;
+ color: #FF6B00;
+ border: 2px solid #FF6B00;
+ border-radius: 8px;
+ font-size: 0.9rem;
+ font-weight: bold;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ margin-top: 10px;
+ }
+
+ .secondary-btn:hover {
+ background: #FF6B00;
+ color: #ffffff;
+ }
+
  .error-message {
  color: #ff4444;
  background-color: rgba(255, 68, 68, 0.1);
@@ -136,6 +155,18 @@
  75% { transform: translateX(10px); }
  }
 
+ .success-message {
+ color: #00c853;
+ background-color: rgba(0, 200, 83, 0.1);
+ border: 1px solid #00c853;
+ padding: 12px;
+ border-radius: 8px;
+ margin-bottom: 20px;
+ text-align: center;
+ display: none;
+ animation: fadeIn 0.5s ease;
+ }
+
  .back-link {
  text-align: center;
  margin-top: 20px;
@@ -151,6 +182,109 @@
  .back-link a:hover {
  color: #FF6B00;
  }
+
+ .links-row {
+ display: flex;
+ justify-content: space-between;
+ margin-top: 15px;
+ }
+
+ .links-row a {
+ color: #888;
+ text-decoration: none;
+ font-size: 0.85rem;
+ transition: color 0.3s ease;
+ }
+
+ .links-row a:hover {
+ color: #FF6B00;
+ }
+
+ /* Modal Styles */
+ .modal-overlay {
+ display: none;
+ position: fixed;
+ top: 0;
+ left: 0;
+ width: 100%;
+ height: 100%;
+ background: rgba(0, 0, 0, 0.8);
+ z-index: 1000;
+ justify-content: center;
+ align-items: center;
+ animation: fadeIn 0.3s ease;
+ }
+
+ .modal-overlay.active {
+ display: flex;
+ }
+
+ .modal {
+ background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+ padding: 30px 40px;
+ border-radius: 15px;
+ border: 2px solid #FF6B00;
+ box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
+ max-width: 400px;
+ width: 90%;
+ animation: fadeIn 0.3s ease;
+ }
+
+ .modal h2 {
+ color: #FF6B00;
+ font-size: 1.4rem;
+ margin-bottom: 10px;
+ text-align: center;
+ }
+
+ .modal p {
+ color: #888;
+ text-align: center;
+ margin-bottom: 20px;
+ font-size: 0.9rem;
+ }
+
+ .modal-buttons {
+ display: flex;
+ gap: 10px;
+ margin-top: 20px;
+ }
+
+ .modal-buttons button {
+ flex: 1;
+ padding: 12px;
+ border-radius: 8px;
+ font-size: 0.9rem;
+ font-weight: bold;
+ cursor: pointer;
+ transition: all 0.3s ease;
+ }
+
+ .modal-cancel {
+ background: transparent;
+ color: #888;
+ border: 2px solid #444;
+ }
+
+ .modal-cancel:hover {
+ border-color: #666;
+ color: #fff;
+ }
+
+ .modal-confirm {
+ background: #FF6B00;
+ color: #fff;
+ border: none;
+ }
+
+ .modal-confirm:hover {
+ background: #ff7a1a;
+ }
+
+ .modal-confirm:disabled {
+ background: #444;
+ cursor: not-allowed;
+ }
  </style>
 </head>
 
@@ -160,6 +294,7 @@
  <p class="subtitle">Quality Control Tool</p>
  
  <div id="errorMessage" class="error-message"></div>
+ <div id="successMessage" class="success-message"></div>
  
  <form id="loginForm">
  <div class="form-group">
@@ -175,8 +310,34 @@
  <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
  </form>
  
+ <div class="links-row">
+ <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+ <a href="change-password.html">Change Password</a>
+ </div>
+ 
  <div class="back-link">
  <a href="index.html">← Back to App</a>
+ </div>
+ </div>
+
+ <!-- Forgot Password Modal -->
+ <div class="modal-overlay" id="forgotPasswordModal">
+ <div class="modal">
+ <h2>Reset Password</h2>
+ <p>Enter your email address and we'll send you a link to reset your password.</p>
+ 
+ <div id="modalErrorMessage" class="error-message"></div>
+ <div id="modalSuccessMessage" class="success-message"></div>
+ 
+ <div class="form-group">
+ <label for="resetEmail">Email Address</label>
+ <input type="email" id="resetEmail" placeholder="Enter your registered email" required>
+ </div>
+ 
+ <div class="modal-buttons">
+ <button type="button" class="modal-cancel" id="cancelResetBtn">Cancel</button>
+ <button type="button" class="modal-confirm" id="sendResetBtn">Send Reset Link</button>
+ </div>
  </div>
  </div>
 
@@ -201,22 +362,124 @@
  const passwordInput = document.getElementById('password');
  const loginBtn = document.getElementById('loginBtn');
  const errorMessage = document.getElementById('errorMessage');
+ const successMessage = document.getElementById('successMessage');
+ 
+ // Modal Elements
+ const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+ const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+ const cancelResetBtn = document.getElementById('cancelResetBtn');
+ const sendResetBtn = document.getElementById('sendResetBtn');
+ const resetEmailInput = document.getElementById('resetEmail');
+ const modalErrorMessage = document.getElementById('modalErrorMessage');
+ const modalSuccessMessage = document.getElementById('modalSuccessMessage');
 
  // Show error message
- function showError(message) {
- errorMessage.textContent = message;
- errorMessage.style.display = 'block';
+ function showError(message, element = errorMessage) {
+ element.textContent = message;
+ element.style.display = 'block';
  }
 
  // Hide error message
- function hideError() {
- errorMessage.style.display = 'none';
+ function hideError(element = errorMessage) {
+ element.style.display = 'none';
  }
+
+ // Show success message
+ function showSuccess(message, element = successMessage) {
+ element.textContent = message;
+ element.style.display = 'block';
+ }
+
+ // Hide success message
+ function hideSuccess(element = successMessage) {
+ element.style.display = 'none';
+ }
+
+ // Open modal
+ function openModal() {
+ forgotPasswordModal.classList.add('active');
+ resetEmailInput.value = '';
+ hideError(modalErrorMessage);
+ hideSuccess(modalSuccessMessage);
+ sendResetBtn.disabled = false;
+ sendResetBtn.textContent = 'Send Reset Link';
+ }
+
+ // Close modal
+ function closeModal() {
+ forgotPasswordModal.classList.remove('active');
+ }
+
+ // Handle forgot password link click
+ forgotPasswordLink.addEventListener('click', (e) => {
+ e.preventDefault();
+ openModal();
+ });
+
+ // Handle cancel button
+ cancelResetBtn.addEventListener('click', closeModal);
+
+ // Close modal on overlay click
+ forgotPasswordModal.addEventListener('click', (e) => {
+ if (e.target === forgotPasswordModal) {
+ closeModal();
+ }
+ });
+
+ // Handle password reset
+ sendResetBtn.addEventListener('click', async () => {
+ const email = resetEmailInput.value.trim();
+ 
+ if (!email) {
+ showError('Please enter your email address.', modalErrorMessage);
+ return;
+ }
+ 
+ sendResetBtn.disabled = true;
+ sendResetBtn.textContent = 'Sending...';
+ hideError(modalErrorMessage);
+ hideSuccess(modalSuccessMessage);
+ 
+ try {
+ await auth.sendPasswordResetEmail(email);
+ showSuccess('Password reset link sent! Check your email for instructions.', modalSuccessMessage);
+ sendResetBtn.disabled = true;
+ sendResetBtn.textContent = 'Sent!';
+ 
+ // Close modal after 3 seconds
+ setTimeout(() => {
+ closeModal();
+ }, 3000);
+ } catch (error) {
+ sendResetBtn.disabled = false;
+ sendResetBtn.textContent = 'Send Reset Link';
+ 
+ let errorMsg = 'Failed to send reset email. Please try again.';
+ 
+ switch (error.code) {
+ case 'auth/invalid-email':
+ errorMsg = 'Invalid email address format.';
+ break;
+ case 'auth/user-not-found':
+ errorMsg = 'No account found with this email.';
+ break;
+ case 'auth/too-many-requests':
+ errorMsg = 'Too many requests. Please try again later.';
+ break;
+ case 'auth/network-request-failed':
+ errorMsg = 'Network error. Please check your connection.';
+ break;
+ }
+ 
+ showError(errorMsg, modalErrorMessage);
+ }
+ });
 
  // Handle form submission
  loginForm.addEventListener('submit', async (e) => {
  e.preventDefault();
  hideError();
+ hideSuccess();
  
  const email = emailInput.value.trim();
  const password = passwordInput.value;
