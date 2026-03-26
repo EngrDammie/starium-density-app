@@ -1,3 +1,9 @@
+// ===== GUARD: Skip if already loaded =====
+if (window._firebaseStorageLoaded) {
+    console.log('firebase-storage.js already loaded');
+} else {
+    window._firebaseStorageLoaded = true;
+
 // ===== FIREBASE CONFIGURATION =====
 
 // Store on window to prevent any redeclaration issues
@@ -1012,4 +1018,6 @@ async function requireAuth() {
             }
         });
     });
+}
+// End guard
 }
