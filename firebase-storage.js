@@ -1,8 +1,3 @@
-// Guard: only run if functions not already defined
-if (typeof requireAuth === 'function') {
-    console.log('firebase-storage.js already loaded');
-} else {
-
 // ===== FIREBASE CONFIGURATION =====
 window.firebaseConfig = window.firebaseConfig || {
     apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
@@ -464,4 +459,3 @@ async function requireAuth() {
         });
     });
 }
-} // End guard
