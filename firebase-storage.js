@@ -197,8 +197,8 @@ function getCurrentShift() {
 
 // ===== QC TEST FUNCTIONS =====
 
-let isOnline = navigator.onLine;
-let onlineStatusListeners = [];
+window.isOnline = window.isOnline || navigator.onLine;
+window.onlineStatusListeners = window.onlineStatusListeners || [];
 
 function saveToLocalQueue(testData) {
     try {
@@ -227,17 +227,17 @@ async function syncLocalQueue() {
     clearLocalQueue();
 }
 
-window.addEventListener('online', () => { isOnline = true; notifyOnlineStatusListeners(true); syncLocalQueue(); });
-window.addEventListener('offline', () => { isOnline = false; notifyOnlineStatusListeners(false); });
+window.addEventListener('online', () => { window.isOnline = true; notifyOnlineStatusListeners(true); syncLocalQueue(); });
+window.addEventListener('offline', () => { window.isOnline = false; notifyOnlineStatusListeners(false); });
 
-function isNetworkOnline() { return isOnline; }
-function onOnlineStatusChange(callback) { onlineStatusListeners.push(callback); callback(isOnline); }
-function notifyOnlineStatusListeners(status) { onlineStatusListeners.forEach(cb => cb(status)); }
+function isNetworkOnline() { return window.isOnline; }
+function onOnlineStatusChange(callback) { window.onlineStatusListeners.push(callback); callback(window.isOnline); }
+function notifyOnlineStatusListeners(status) { window.onlineStatusListeners.forEach(cb => cb(status)); }
 
 async function saveQCTest(testData) {
     const db = window.db;
     if (!db) return 'error';
-    if (!isNetworkOnline()) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
+    if (!window.isOnline) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
     try {
         const docRef = await db.collection('qc_tests').add({ ...testData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
         return docRef.id;
@@ -391,18 +391,18 @@ function getQCStaffInfo() {
 }
 
 // ===== AUTO-SAVE =====
-window.AUTO_SAVE_CONFIG = { enableAutoSave: true, delaySeconds: 5 };
-let autoSaveTimer = null;
+window.AUTO_SAVE_CONFIG = window.AUTO_SAVE_CONFIG || { enableAutoSave: true, delaySeconds: 5 };
+window.autoSaveTimer = window.autoSaveTimer || null;
 
 function startAutoSave(callback, delaySeconds) {
     delaySeconds = delaySeconds || window.AUTO_SAVE_CONFIG.delaySeconds;
     if (!window.AUTO_SAVE_CONFIG.enableAutoSave) return;
-    if (autoSaveTimer) clearTimeout(autoSaveTimer);
-    autoSaveTimer = setTimeout(callback, delaySeconds * 1000);
+    if (window.autoSaveTimer) clearTimeout(window.autoSaveTimer);
+    window.autoSaveTimer = setTimeout(callback, delaySeconds * 1000);
 }
 
 function cancelAutoSave() {
-    if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+    if (window.autoSaveTimer) { clearTimeout(window.autoSaveTimer); window.autoSaveTimer = null; }
 }
 
 function showAutoSaveProgress(elementId, delaySeconds) {
