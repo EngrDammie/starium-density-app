@@ -14,16 +14,18 @@ if (!window._firebaseConfigDefined) {
 }
 
 // Initialize Firebase (only if not already initialized)
-let app, db;
-try {
-    if (!firebase.apps.length) {
-        app = firebase.initializeApp(firebaseConfig);
-    } else {
-        app = firebase.app();
+if (!window._firebaseInitialized) {
+    try {
+        if (!firebase.apps.length) {
+            var app = firebase.initializeApp(firebaseConfig);
+        } else {
+            var app = firebase.app();
+        }
+        var db = firebase.firestore();
+        window._firebaseInitialized = true;
+    } catch (e) {
+        console.error('Firebase initialization error:', e);
     }
-    db = firebase.firestore();
-} catch (e) {
-    console.error('Firebase initialization error:', e);
 }
 
 // NOTE: Firebase IndexedDB persistence not working in v9.22.0 compat
