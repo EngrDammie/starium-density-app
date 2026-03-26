@@ -1,32 +1,27 @@
-// ===== GUARD: Prevent multiple executions =====
-if (typeof window._stariumStorageLoaded === 'undefined') {
-    window._stariumStorageLoaded = true;
-
 // ===== FIREBASE CONFIGURATION =====
 
-// Guard all declarations against duplicate errors (script may load multiple times)
-if (typeof firebaseConfig === 'undefined') {
-    var firebaseConfig = {
-        apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
-        authDomain: "starium-rafa-app.firebaseapp.com",
-        projectId: "starium-rafa-app",
-        storageBucket: "starium-rafa-app.firebasestorage.app",
-        messagingSenderId: "743583982928",
-        appId: "1:743583982928:web:e331aaa0b9e741a1537855"
-    };
-}
+// Use window properties to avoid redeclaration
+window.firebaseConfig = window.firebaseConfig || {
+    apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
+    authDomain: "starium-rafa-app.firebaseapp.com",
+    projectId: "starium-rafa-app",
+    storageBucket: "starium-rafa-app.firebasestorage.app",
+    messagingSenderId: "743583982928",
+    appId: "1:743583982928:web:e331aaa0b9e741a1537855"
+};
 
-if (typeof app === 'undefined' || typeof db === 'undefined') {
+if (!window.app) {
     try {
-        if (!firebase.apps.length) {
-            if (typeof app === 'undefined') var app = firebase.initializeApp(firebaseConfig);
-        }
-        if (typeof app === 'undefined') var app = firebase.app();
-        if (typeof db === 'undefined') var db = firebase.firestore();
+        window.app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(window.firebaseConfig);
+        window.db = firebase.firestore();
     } catch (e) {
         console.error('Firebase initialization error:', e);
     }
 }
+
+// Make db available globally for other scripts
+var db = window.db;
+var app = window.app;
 
 // ===== LOCALSTORAGE OFFLINE QUEUE =====
 var OFFLINE_QUEUE_KEY = 'starium_offline_queue';
@@ -995,6 +990,4 @@ async function requireAuth() {
             }
         });
     });
-}
-// End guard
 }
