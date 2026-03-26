@@ -1,7 +1,11 @@
+// ===== GUARD: Prevent multiple executions =====
+if (typeof window._stariumStorageLoaded === 'undefined') {
+    window._stariumStorageLoaded = true;
+
 // ===== FIREBASE CONFIGURATION =====
 
-// Only define config once (guards against multiple script loads)
-if (!window._firebaseConfigDefined) {
+// Guard all declarations against duplicate errors (script may load multiple times)
+if (typeof firebaseConfig === 'undefined') {
     var firebaseConfig = {
         apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
         authDomain: "starium-rafa-app.firebaseapp.com",
@@ -10,23 +14,22 @@ if (!window._firebaseConfigDefined) {
         messagingSenderId: "743583982928",
         appId: "1:743583982928:web:e331aaa0b9e741a1537855"
     };
-    window._firebaseConfigDefined = true;
 }
 
-// Initialize Firebase (only if not already initialized)
-if (!window._firebaseInitialized) {
+if (typeof app === 'undefined' || typeof db === 'undefined') {
     try {
         if (!firebase.apps.length) {
-            var app = firebase.initializeApp(firebaseConfig);
-        } else {
-            var app = firebase.app();
+            if (typeof app === 'undefined') var app = firebase.initializeApp(firebaseConfig);
         }
-        var db = firebase.firestore();
-        window._firebaseInitialized = true;
+        if (typeof app === 'undefined') var app = firebase.app();
+        if (typeof db === 'undefined') var db = firebase.firestore();
     } catch (e) {
         console.error('Firebase initialization error:', e);
     }
 }
+
+// ===== LOCALSTORAGE OFFLINE QUEUE =====
+var OFFLINE_QUEUE_KEY = 'starium_offline_queue';
 
 // NOTE: Firebase IndexedDB persistence not working in v9.22.0 compat
 // Using localStorage-based offline queue instead
@@ -992,4 +995,6 @@ async function requireAuth() {
             }
         });
     });
+}
+// End guard
 }
