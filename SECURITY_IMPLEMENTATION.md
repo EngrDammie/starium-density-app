@@ -709,3 +709,188 @@ requireAuth();
 - **Implementation:** ~45 minutes total, all free
 
 This gives you enterprise-grade security at no cost!
+
+---
+
+## 12. Toggleable Authentication (Enable/Disable Auth)
+
+This section adds a **master toggle** to enable or disable authentication. When disabled, the app works like before (no login required). When enabled, full auth kicks in.
+
+### Why This Matters
+
+- **Development:** Test features without constant login
+- **Production flexibility:** Enable auth when ready
+- **Gradual rollout:** Enable for different teams incrementally
+
+### Implementation
+
+**Step 1: Add Config Setting**
+
+In Firestore `config` collection, add a document:
+
+```json
+{
+  "id": "auth_settings",
+  "authEnabled": false
+}
+```
+
+**Step 2: Update firebase-storage.js**
+
+```javascript
+// Check if auth is enabled
+async function isAuthEnabled() {
+    try {
+        const doc = await db.collection('config').doc('auth_settings').get();
+        if (doc.exists) {
+            return doc.data().authEnabled === true;
+        }
+    } catch (e) {
+        console.log('Config not found, defaulting to auth disabled');
+    }
+    return false; // Default: auth disabled
+}
+
+// Check auth with toggle support
+async function requireAuth() {
+    const authEnabled = await isAuthEnabled();
+    
+    if (!authEnabled) {
+        // Auth disabled - allow access
+        localStorage.setItem('userRole', 'admin'); // Full access
+        localStorage.setItem('userEmail', 'development@local');
+        return;
+    }
+    
+    // Auth enabled - enforce login
+    firebase.auth().onAuthStateChanged((user) => {
+        if (!user) {
+            window.location.href = 'login.html';
+        } else {
+            localStorage.setItem('userEmail', user.email);
+            localStorage.setItem('userUid', user.uid);
+        }
+    });
+}
+```
+
+**Step 3: Update Security Rules**
+
+```javascript
+// In Firestore rules - handle both modes
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Get the auth toggle setting
+    function isAuthEnabled() {
+      return get(/databases/$(database)/documents/config/auth_settings).data.authEnabled == true;
+    }
+    
+    // QC Tests
+    match /qc_tests/{testId} {
+      allow read:   if !isAuthEnabled() || request.auth != null;
+      allow create: if !isAuthEnabled() || request.auth != null;
+      allow update: if !isAuthEnabled() || request.auth != null;
+      allow delete: if !isAuthEnabled() || request.auth.token.admin == true;
+    }
+    
+    // Shift Approvals
+    match /shift_approvals/{approvalId} {
+      allow read:   if !isAuthEnabled() || request.auth != null;
+      allow create: if !isAuthEnabled() || request.auth != null;
+      allow update: if !isAuthEnabled() || request.auth != null;
+      allow delete: if !isAuthEnabled() || request.auth.token.admin == true;
+    }
+    
+    // Config (admin only when enabled)
+    match /config/{docId} {
+      allow read: if !isAuthEnabled() || request.auth != null;
+      allow write: if !isAuthEnabled() || request.auth.token.admin == true;
+    }
+    
+    // Machines (admin only when enabled)
+    match /machines/{machineId} {
+      allow read: if !isAuthEnabled() || request.auth != null;
+      allow write: if !isAuthEnabled() || request.auth.token.admin == true;
+    }
+    
+    // User Roles
+    match /user_roles/{userId} {
+      allow read: if !isAuthEnabled() || (request.auth != null && request.auth.uid == userId);
+      allow write: if !isAuthEnabled() || request.auth.token.admin == true;
+    }
+  }
+}
+```
+
+**Step 4: Add Toggle UI in admin.html**
+
+```html
+<!-- Add in admin panel -->
+<div class="admin-section">
+    <h3>🔐 Authentication Settings</h3>
+    <label class="toggle">
+        <input type="checkbox" id="authToggle" onchange="toggleAuth(this.checked)">
+        <span class="slider"></span>
+    </label>
+    <p id="authStatus">Auth is currently: DISABLED</p>
+</div>
+
+<script>
+async function toggleAuth(enabled) {
+    await db.collection('config').doc('auth_settings').set({
+        authEnabled: enabled,
+        updatedAt: new Date()
+    });
+    document.getElementById('authStatus').textContent = 
+        'Auth is currently: ' + (enabled ? 'ENABLED' : 'DISABLED');
+    alert('Auth ' + (enabled ? 'enabled' : 'disabled') + '! Refresh the page.');
+}
+
+async function loadAuthSettings() {
+    const doc = await db.collection('config').doc('auth_settings').get();
+    if (doc.exists) {
+        const enabled = doc.data().authEnabled;
+        document.getElementById('authToggle').checked = enabled;
+        document.getElementById('authStatus').textContent = 
+            'Auth is currently: ' + (enabled ? 'ENABLED' : 'DISABLED');
+    }
+}
+</script>
+
+<style>
+.toggle { position: relative; display: inline-block; width: 60px; height: 34px; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc; transition: .4s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 26px; width: 26px;
+    left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;
+}
+input:checked + .slider { background-color: #FF6B00; }
+input:checked + .slider:before { transform: translateX(26px); }
+</style>
+```
+
+### How to Use
+
+1. **Default:** Auth is DISABLED (app works like before)
+2. **Enable:** Go to Admin Panel → Toggle Auth ON → Confirm
+3. **Effect:** All pages now require login
+4. **Disable again:** Toggle OFF to return to open mode
+
+### Quick Toggle via URL (Development)
+
+For quick testing, add this to any page:
+
+```javascript
+// Quick toggle for dev - add in firebase-storage.js
+if (new URLSearchParams(window.location.search).get('auth') === 'force') {
+    requireAuth();
+}
+```
+
+Use: `index.html?auth=force` to test auth on any page
