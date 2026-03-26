@@ -1,5 +1,5 @@
 // ===== GUARD: Skip if already loaded =====
-if (window._firebaseStorageLoaded) {
+if (typeof requireAuth === 'function') {
     console.log('firebase-storage.js already loaded');
 } else {
     window._firebaseStorageLoaded = true;
@@ -1019,5 +1019,4 @@ async function requireAuth() {
         });
     });
 }
-// End guard
 }
