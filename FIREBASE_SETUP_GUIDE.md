@@ -85,7 +85,10 @@ service cloud.firestore {
     // ─── Helper Functions ───────────────────────────────────
 
     // Check if auth is globally enabled via config collection
+    // CRITICAL: This document MUST be readable even when not logged in
+    // so the app can determine if auth is required
     function isAuthEnabled() {
+      // Use get() without data to check if doc exists - won't throw on missing
       return get(/databases/$(database)/documents/config/auth_settings).data.authEnabled == true;
     }
 
@@ -112,9 +115,17 @@ service cloud.firestore {
         (resource.data.email == currentEmail() && resource.data.role == 'admin');
     }
 
-    // ─── config collection ──────────────────────────────────
-    // Only admins can write to config. Auth rule depends on toggle.
+    // ─── config/auth_settings ───────────────────────────────
+    // CRITICAL: This MUST be publicly readable so the app can check 
+    // if auth is enabled BEFORE requiring login (avoids permission loops)
+    match /config/auth_settings {
+      allow read: if true;  // Anyone can check auth status
+      allow write: if isAdmin();  // Only admins can modify
+    }
+
+    // ─── config collection (other docs) ─────────────────────
     match /config/{docId} {
+      // Don't match auth_settings - that's handled above
       allow read: if !isAuthEnabled() || isAuthenticated();
       allow write: if !isAuthEnabled() || isAdmin();
     }
@@ -126,6 +137,41 @@ service cloud.firestore {
       // Only admins can manage roles (or anyone if auth is disabled)
       allow write: if !isAuthEnabled() || isAdmin();
     }
+
+    // ─── qc_tests collection ─────────────────────────────────
+    match /qc_tests/{testId} {
+      allow read: if !isAuthEnabled() || isAuthenticated();
+      allow create: if !isAuthEnabled() || isAuthenticated();
+      allow update: if !isAuthEnabled() || isAuthenticated();
+      allow delete: if !isAuthEnabled() || isAdmin();
+    }
+
+    // ─── shift_approvals collection ────────────────────────
+    match /shift_approvals/{approvalId} {
+      allow read: if !isAuthEnabled() || isAuthenticated();
+      allow create: if !isAuthEnabled() || isAuthenticated();
+      allow update: if !isAuthEnabled() || isAuthenticated();
+      allow delete: if !isAuthEnabled() || isAdmin();
+    }
+
+    // ─── Default catch-all ─────────────────────────────────
+    // When auth is DISABLED → full access
+    // When auth is ENABLED  → read: authenticated, write: admin only
+    match /{document=**} {
+      allow read: if !isAuthEnabled() || isAuthenticated();
+      allow write: if !isAuthEnabled() || isAdmin();
+    }
+  }
+}
+```
+
+### ⚠️ Important Rule Notes
+
+1. **`config/auth_settings` must be publicly readable** — This is critical! The app needs to check this document to determine if auth is required. If this blocks reads when not logged in, you get a permission loop.
+
+2. **How the toggle works:**
+   - When `authEnabled: false` → All access allowed (development mode)
+   - When `authEnabled: true` → Read needs login, Write needs admin
 
     // ─── Default catch-all ─────────────────────────────────
     // When auth is DISABLED → full access
