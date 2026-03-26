@@ -932,3 +932,54 @@ function showOfflineFeedback(elementId) {
     element.innerHTML = '📴 Offline - Will sync when online';
     element.style.color = '#FF5722';
 }
+
+// ===== AUTH TOGGLE FUNCTIONS =====
+
+/**
+ * Check if authentication is enabled in config
+ * @returns {Promise<boolean>} - True if auth is enabled
+ */
+async function isAuthEnabled() {
+    if (!db) return false;
+    
+    try {
+        const doc = await db.collection('config').doc('auth_settings').get();
+        if (doc.exists) {
+            return doc.data().authEnabled === true;
+        }
+    } catch (e) {
+        console.log('Auth settings not found, defaulting to disabled');
+    }
+    return false; // Default: auth disabled
+}
+
+/**
+ * Require authentication - redirect to login if auth enabled and user not logged in
+ * @returns {Promise<boolean>} - True if auth passes (disabled or logged in)
+ */
+async function requireAuth() {
+    const authEnabled = await isAuthEnabled();
+    
+    if (!authEnabled) {
+        // Auth disabled - allow access
+        localStorage.setItem('userRole', 'admin'); // Full access for development
+        localStorage.setItem('userEmail', 'development@local');
+        return true;
+    }
+    
+    // Auth enabled - check if user is logged in
+    return new Promise((resolve) => {
+        firebase.auth().onAuthStateChanged((user) => {
+            if (!user) {
+                // Not logged in, redirect to login
+                window.location.href = 'login.html';
+                resolve(false);
+            } else {
+                // Logged in - store user info
+                localStorage.setItem('userEmail', user.email);
+                localStorage.setItem('userUid', user.uid);
+                resolve(true);
+            }
+        });
+    });
+}

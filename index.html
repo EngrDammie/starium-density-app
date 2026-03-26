@@ -7,6 +7,8 @@
  <title>Starium Rafa Quality Control Tool</title>
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+ <script src="firebase-storage.js"></script>
  <style>
  /* ===== CONFIGURABLE CONSTANTS ===== */
  :root {
@@ -770,10 +772,49 @@
  .settings-status.success { color: #00E676; }
  .settings-status.error { color: #FF1744; }
  .settings-status.loading { color: #FFA500; }
+
+ /* User Auth Bar */
+ .auth-bar {
+ position: fixed;
+ top: 0;
+ right: 0;
+ display: flex;
+ align-items: center;
+ gap: 15px;
+ padding: 10px 20px;
+ background: rgba(0, 0, 0, 0.7);
+ z-index: 1000;
+ }
+
+ .auth-bar .user-email {
+ color: #00BCD4;
+ font-size: 0.9rem;
+ }
+
+ .auth-bar .logout-btn {
+ background: #FF1744;
+ color: #fff;
+ border: none;
+ padding: 8px 16px;
+ border-radius: 6px;
+ cursor: pointer;
+ font-size: 0.85rem;
+ transition: all 0.3s ease;
+ }
+
+ .auth-bar .logout-btn:hover {
+ background: #ff4444;
+ }
  </style>
 </head>
 
 <body>
+ <!-- Auth Bar -->
+ <div class="auth-bar" id="authBar">
+ <span class="user-email" id="userEmail">Loading...</span>
+ <button class="logout-btn" id="logoutBtn">Logout</button>
+ </div>
+
  <div class="sync-status online" id="syncStatus">🟢 Online</div>
 
  <header>
@@ -993,6 +1034,43 @@
 
  <script src="firebase-storage.js"></script>
  <script>
+ // ===== AUTH CHECK =====
+ // Check if auth is enabled, if so require login
+ requireAuth();
+
+ // Setup user display and logout after auth check
+ firebase.auth().onAuthStateChanged((user) => {
+     if (user) {
+         // User is logged in, show email and setup logout
+         const userEmailEl = document.getElementById('userEmail');
+         if (userEmailEl) {
+             userEmailEl.textContent = user.email;
+         }
+         
+         // Store user info in localStorage for role checking
+         localStorage.setItem('userEmail', user.email);
+         localStorage.setItem('userUid', user.uid);
+     }
+ });
+
+ // Logout function (if logout button exists)
+ const logoutBtn = document.getElementById('logoutBtn');
+ if (logoutBtn) {
+     logoutBtn.addEventListener('click', () => {
+         firebase.auth().signOut().then(() => {
+             localStorage.removeItem('userEmail');
+             localStorage.removeItem('userRole');
+             localStorage.removeItem('userUid');
+             window.location.href = 'login.html';
+         }).catch((error) => {
+             console.error('Logout error:', error);
+         });
+     });
+ }
+ console.error('Logout error:', error);
+ });
+ });
+
  // CONFIG is loaded from Firestore - see settings section below
 
  // ===== MACHINE DATA =====

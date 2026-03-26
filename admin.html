@@ -6,6 +6,9 @@
     <title>Machine Admin - Starium Rafa QC</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="firebase-storage.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --primary: #00BCD4;
@@ -437,6 +440,48 @@
             font-size: 0.8rem;
             margin-top: 5px;
         }
+
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+            vertical-align: middle;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #FF6B00;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
     </style>
 </head>
 <body>
@@ -456,6 +501,7 @@
             <button class="tab-btn" data-tab="gramspecs">Gram Specifications</button>
             <button class="tab-btn" data-tab="settings">Grid Settings</button>
             <button class="tab-btn" data-tab="importexport">Import/Export</button>
+            <button class="tab-btn" data-tab="auth">Authentication</button>
         </div>
 
         <!-- Machines Panel -->
@@ -607,6 +653,35 @@
                 <button class="btn btn-danger" onclick="resetConfig()">🔄 Reset to Defaults</button>
             </div>
         </div>
+
+        <!-- Authentication Settings Panel -->
+        <div class="panel" id="auth-panel">
+            <div class="panel-header">
+                <h2 class="panel-title">🔐 Authentication Settings</h2>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label class="toggle">
+                    <input type="checkbox" id="authToggle" onchange="toggleAuth()">
+                    <span class="slider"></span>
+                </label>
+                <span style="margin-left: 15px; font-size: 1.1rem;" id="authStatus">Auth is currently: DISABLED</span>
+            </div>
+
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <span class="card-title">ℹ️ How it works</span>
+                </div>
+                <ul style="margin-top: 10px; margin-left: 20px; color: var(--text-muted);">
+                    <li>When <strong>disabled</strong>: Anyone can access the app without login</li>
+                    <li>When <strong>enabled</strong>: Users must log in to access the app</li>
+                    <li>Anyone can <strong>turn auth ON</strong> (OFF → ON)</li>
+                    <li>Only admin (<strong>dammieoptimus@gmail.com</strong>) can <strong>turn auth OFF</strong> (ON → OFF)</li>
+                </ul>
+            </div>
+
+            <div id="authMessage" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
+        </div>
     </div>
 
     <!-- Machine Modal -->
@@ -741,11 +816,15 @@
 
         // ===== INITIALIZATION =====
         async function init() {
+            // Check auth before allowing access
+            await requireAuth();
+            
             setupTabs();
             setupNetworkStatus();
             await loadAllConfig();
             populateLineOptions();
             renderAll();
+            await loadAuthSettings();
         }
 
         function setupTabs() {
@@ -1249,6 +1328,70 @@
                 }
             });
         });
+
+        // ===== AUTH TOGGLE FUNCTIONS =====
+        const ADMIN_EMAIL = 'dammieoptimus@gmail.com';
+
+        async function loadAuthSettings() {
+            try {
+                const doc = await db.collection('config').doc('auth_settings').get();
+                const authEnabled = doc.exists ? doc.data().authEnabled : false;
+                document.getElementById('authToggle').checked = authEnabled;
+                document.getElementById('authStatus').textContent = 
+                    'Auth is currently: ' + (authEnabled ? 'ENABLED' : 'DISABLED');
+            } catch (e) {
+                console.log('Auth settings not found, using defaults');
+                document.getElementById('authToggle').checked = false;
+                document.getElementById('authStatus').textContent = 'Auth is currently: DISABLED';
+            }
+        }
+
+        async function toggleAuth() {
+            const toggle = document.getElementById('authToggle');
+            const newState = toggle.checked;
+            const messageEl = document.getElementById('authMessage');
+            
+            try {
+                // Get current state
+                const doc = await db.collection('config').doc('auth_settings').get();
+                const currentState = doc.exists ? doc.data().authEnabled : false;
+                
+                // If trying to DISABLE (ON → OFF), check if user is admin
+                if (!newState && currentState) {
+                    const userEmail = localStorage.getItem('userEmail');
+                    if (userEmail !== ADMIN_EMAIL) {
+                        // Not admin - revert the toggle
+                        toggle.checked = true;
+                        messageEl.style.display = 'block';
+                        messageEl.style.background = '#F44336';
+                        messageEl.style.color = '#fff';
+                        messageEl.textContent = '⚠️ Only admin (dammieoptimus@gmail.com) can disable authentication!';
+                        setTimeout(() => messageEl.style.display = 'none', 4000);
+                        return;
+                    }
+                }
+                
+                // Save new state - anyone can enable, only admin can disable
+                await db.collection('config').doc('auth_settings').set({
+                    authEnabled: newState,
+                    updatedAt: new Date()
+                });
+                
+                document.getElementById('authStatus').textContent = 
+                    'Auth is currently: ' + (newState ? 'ENABLED' : 'DISABLED');
+                
+                messageEl.style.display = 'block';
+                messageEl.style.background = newState ? '#4CAF50' : '#FF9800';
+                messageEl.style.color = '#fff';
+                messageEl.textContent = '✅ Authentication ' + (newState ? 'enabled' : 'disabled') + '! Users will ' + (newState ? 'now' : 'no longer') + ' need to log in.';
+                setTimeout(() => messageEl.style.display = 'none', 4000);
+                
+            } catch (e) {
+                console.error('Error toggling auth:', e);
+                toggle.checked = currentState;
+                showToast('Error updating auth settings', true);
+            }
+        }
 
         // Initialize on load
         window.addEventListener('load', init);
