@@ -154,6 +154,15 @@ service cloud.firestore {
       allow delete: if !isAuthEnabled() || isAdmin();
     }
 
+    // ─── report_configs collection ─────────────────────────
+    // Used by reports.html to store/retrieve saved report configs
+    match /report_configs/{reportId} {
+      allow read: if !isAuthEnabled() || isAuthenticated();
+      allow create: if !isAuthEnabled() || isAuthenticated();
+      allow update: if !isAuthEnabled() || isAuthenticated();
+      allow delete: if !isAuthEnabled() || isAdmin();
+    }
+
     // ─── Default catch-all ─────────────────────────────────
     // When auth is DISABLED → full access
     // When auth is ENABLED  → read: authenticated, write: admin only
