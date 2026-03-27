@@ -1249,7 +1249,11 @@
 
         async function loadCurrentShiftApproval() {
             const now = new Date();
-            const date = now.toISOString().split('T')[0];
+            // Use local date (not UTC)
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const date = `${year}-${month}-${day}`;
             const hour = now.getHours();
             const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
 

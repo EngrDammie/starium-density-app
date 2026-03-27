@@ -342,8 +342,16 @@ function subscribeToShiftApproval(approvalId, callback) {
 
 async function getCurrentShiftApproval(mode) {
     const now = new Date();
-    const date = now.toISOString().split('T')[0];
-    const shift = (now.getHours() >= 7 && now.getHours() < 19) ? 'DAY' : 'NIGHT';
+    // Use local date (not UTC)
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const date = `${year}-${month}-${day}`;
+    
+    // Use local time for shift (7am-7pm = DAY, 7pm-7am = NIGHT)
+    const hour = now.getHours();
+    const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+    
     return getOrCreateShiftApproval(mode, shift, date);
 }
 
