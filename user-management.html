@@ -9,6 +9,32 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="firebase-storage.js"></script>
     <style>
+        /* User Auth Bar */
+        .auth-bar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .auth-bar .user-email {
+            color: #FF6B00;
+            font-size: 0.9rem;
+        }
+        .auth-bar .logout-btn {
+            background: #FF1744;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             background: #0a0a0a; color: #fff; font-family: system-ui, -apple-system, sans-serif;
@@ -125,6 +151,12 @@
     </style>
 </head>
 <body>
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="authBar">
+        <span class="user-email" id="authUserEmail">Loading...</span>
+        <button class="logout-btn" id="authLogoutBtn">Logout</button>
+    </div>
+
     <div class="container">
         <a href="admin.html" class="back-link">← Back to Admin</a>
         
@@ -201,6 +233,9 @@
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            // Check auth before allowing access
+            await requireAuth();
+            
             await checkAuth();
         });
         
@@ -231,6 +266,23 @@
             }
             
             document.getElementById('userEmail').textContent = currentUserEmail;
+            
+            // Also update auth bar
+            const authUserEmail = document.getElementById('authUserEmail');
+            if (authUserEmail) authUserEmail.textContent = currentUserEmail;
+            
+            // Setup logout button
+            const authLogoutBtn = document.getElementById('authLogoutBtn');
+            if (authLogoutBtn) {
+                authLogoutBtn.addEventListener('click', () => {
+                    firebase.auth().signOut().then(() => {
+                        localStorage.removeItem('userEmail');
+                        localStorage.removeItem('userUid');
+                        localStorage.removeItem('userRole');
+                        window.location.href = 'login.html';
+                    });
+                });
+            }
             
             // Check if admin
             const userRole = localStorage.getItem('userRole');
