@@ -320,6 +320,17 @@
                 }
             } else {
                 currentUserEmail = user.email;
+                
+                // Check user role from Firestore
+                try {
+                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+                    const userRole = roleDoc.exists ? roleDoc.data().role : 'staff';
+                    localStorage.setItem('userRole', userRole);
+                    console.log('✅ User logged in:', user.email, '| Role:', userRole);
+                } catch (e) {
+                    console.log('Could not fetch user role:', e);
+                    localStorage.setItem('userRole', 'staff');
+                }
             }
             
             document.getElementById('userEmail').textContent = currentUserEmail;

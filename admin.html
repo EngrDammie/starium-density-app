@@ -1394,10 +1394,29 @@
                 localStorage.setItem('userRole', currentUserRole);
                 console.log('✅ User logged in:', user.email, '| Role:', currentUserRole, '| isAdmin:', isAdmin);
                 
+                // Block non-admins from accessing admin page
+                if (!isAdmin) {
+                    showAccessDenied();
+                    return;
+                }
+                
                 // Apply role-based UI after init is called
                 setTimeout(() => applyRoleBasedUI(), 100);
             }
         });
+        
+        // Show access denied message
+        function showAccessDenied() {
+            document.body.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #121212; color: #fff; text-align: center; padding: 20px;">
+                    <div>
+                        <h2 style="color: #F44336; margin-bottom: 10px;">⛔ Access Denied</h2>
+                        <p style="color: #888;">Only administrators can access this page.</p>
+                        <a href="index.html" style="color: #00BCD4; margin-top: 20px; display: inline-block;">← Back to App</a>
+                    </div>
+                </div>
+            `;
+        }
 
         // Logout function
         document.getElementById('logoutBtn').addEventListener('click', () => {
