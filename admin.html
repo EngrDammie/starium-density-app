@@ -1428,11 +1428,10 @@
             console.log('Role-based UI applied. isAdmin:', isAdmin);
         }
 
-        // ===== INIT =====
-
+        // ===== AUTH SETTINGS =====
         const ADMIN_EMAIL = 'dammieoptimus@gmail.com';
 
-        async function init() {
+        async function loadAuthSettingsOnly() {
             try {
                 const doc = await db.collection('config').doc('auth_settings').get();
                 const authEnabled = doc.exists ? doc.data().authEnabled : false;
