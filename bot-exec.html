@@ -1288,12 +1288,17 @@
                 return;
             }
 
-            await addApprover(currentApprovalId, name, currentApproverType);
+            const result = await addApprover(currentApprovalId, name, currentApproverType);
+            
+            if (!result) {
+                alert('Failed to save approval. Please try again.');
+                return;
+            }
+            
             closeApprovalModal();
             
             // Show approval message on button and disable it
-            const btnId = 'btn' + currentApproverType.charAt(0).toUpperCase() + currentApproverType.slice(1);
-            const btn = document.getElementById(btnId);
+            const btn = document.getElementById('btn' + currentApproverType.charAt(0).toUpperCase() + currentApproverType.slice(1));
             if (btn) {
                 const roleLabels = {
                     plcOperator: 'PLC Operator',

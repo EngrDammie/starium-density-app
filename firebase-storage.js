@@ -367,10 +367,17 @@ async function updateShiftApproval(approvalId, updates) {
 
 async function addApprover(approvalId, approverName, approverRole) {
     const db = window.db;
-    if (!db) return false;
+    if (!db) {
+        console.error('Firestore not initialized');
+        return false;
+    }
     try {
+        console.log('Adding approver:', { approvalId, approverName, approverRole });
         const doc = await db.collection('shift_approvals').doc(approvalId).get();
-        if (!doc.exists) return false;
+        if (!doc.exists) {
+            console.error('Approval document not found:', approvalId);
+            return false;
+        }
         const data = doc.data();
         const approvedBy = data.approvedBy || [];
         const approvals = data.approvals || {};
@@ -378,8 +385,13 @@ async function addApprover(approvalId, approverName, approverRole) {
         approvals[approverName] = { role: approverRole, timestamp: new Date() };
         const requiredApprovers = getRequiredApprovers(data.mode);
         const allApproved = requiredApprovers.every(a => approvedBy.includes(a));
-        return await updateShiftApproval(approvalId, { approvedBy, approvals, status: allApproved ? 'completed' : 'pending' });
-    } catch (error) { return false; }
+        const result = await updateShiftApproval(approvalId, { approvedBy, approvals, status: allApproved ? 'completed' : 'pending' });
+        console.log('Approver added successfully:', result);
+        return result;
+    } catch (error) {
+        console.error('Error adding approver:', error);
+        return false;
+    }
 }
 
 function getRequiredApprovers(mode) {
