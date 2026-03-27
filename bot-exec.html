@@ -1288,7 +1288,7 @@
                 return;
             }
 
-            await updateApprover(currentApprovalId, currentApproverType, name);
+            await addApprover(currentApprovalId, name, currentApproverType);
             closeApprovalModal();
             
             // Show approval message on button and disable it
