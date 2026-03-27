@@ -6,6 +6,8 @@
     <title>Level 9 Executive View - Starium Rafa QC</title>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="firebase-storage.js"></script>
     <style>
         :root {
             --primary: #00BCD4;
@@ -800,9 +802,45 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* User Auth Bar */
+        .auth-bar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .auth-bar .user-email {
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+        .auth-bar .logout-btn {
+            background: #FF1744;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .auth-bar .logout-btn:hover {
+            background: #ff4444;
+        }
     </style>
 </head>
 <body>
+<!-- Auth Bar -->
+<div class="auth-bar" id="authBar">
+    <span class="user-email" id="userEmail">Loading...</span>
+    <button class="logout-btn" id="logoutBtn">Logout</button>
+</div>
+
     <div class="sync-status online" id="syncStatus">🟢 Online</div>
 
     <header>
@@ -1000,6 +1038,38 @@
 
     <script src="firebase-storage.js"></script>
     <script>
+        // ===== AUTH CHECK =====
+        // Check if user is authenticated, redirect to login if not
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // No user logged in, redirect to login
+                window.location.href = 'login.html';
+            } else {
+                // User is logged in, show email and setup logout
+                document.getElementById('userEmail').textContent = user.email;
+                
+                // Store user info in localStorage for role checking
+                localStorage.setItem('userEmail', user.email);
+                
+                // Check user role (default to 'user' if not set)
+                const idTokenResult = await user.getIdTokenResult();
+                const role = idTokenResult.claims.role || 'user';
+                localStorage.setItem('userRole', role);
+                console.log('User logged in:', user.email, 'Role:', role);
+            }
+        });
+
+        // Logout function
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userRole');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+            });
+        });
+
         // ===== CONFIG =====
         // These constants match index.html - density thresholds for Level 9 mode
         const MODE = 'level9';

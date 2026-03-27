@@ -8,7 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="firebase-storage.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <style>
         :root {
             --primary: #00BCD4;
@@ -482,9 +481,45 @@
         input:checked + .slider:before {
             transform: translateX(26px);
         }
+
+        /* User Auth Bar */
+        .auth-bar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .auth-bar .user-email {
+            color: #00BCD4;
+            font-size: 0.9rem;
+        }
+        .auth-bar .logout-btn {
+            background: #FF1744;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .auth-bar .logout-btn:hover {
+            background: #ff4444;
+        }
     </style>
 </head>
 <body>
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="authBar">
+        <span class="user-email" id="userEmail">Loading...</span>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+
     <a href="index.html" class="back-btn">← Back to App</a>
     <div class="sync-status online" id="syncStatus">🟢 Online</div>
 
@@ -1329,10 +1364,80 @@
             });
         });
 
-        // ===== AUTH TOGGLE FUNCTIONS =====
+        // ===== AUTH CHECK AND ROLE-BASED UI =====
+        let currentUserRole = 'user';
+        let isAdmin = false;
+
+        // Check if user is authenticated, redirect to login if not
+        firebase.auth().onAuthStateChanged(async (user) => {
+            if (!user) {
+                // No user logged in, redirect to login
+                window.location.href = 'login.html';
+            } else {
+                // User is logged in, show email and setup logout
+                document.getElementById('userEmail').textContent = user.email;
+                
+                // Store user info in localStorage for role checking
+                localStorage.setItem('userEmail', user.email);
+                
+                // Check user role (default to 'user' if not set)
+                try {
+                    const idTokenResult = await user.getIdTokenResult();
+                    currentUserRole = idTokenResult.claims.role || 'user';
+                    isAdmin = currentUserRole === 'admin';
+                } catch (e) {
+                    currentUserRole = 'user';
+                    isAdmin = false;
+                }
+                localStorage.setItem('userRole', currentUserRole);
+                console.log('User logged in:', user.email, 'Role:', currentUserRole);
+                
+                // Apply role-based UI after init is called
+                setTimeout(() => applyRoleBasedUI(), 100);
+            }
+        });
+
+        // Logout function
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userRole');
+                window.location.href = 'login.html';
+            }).catch((error) => {
+                console.error('Logout error:', error);
+            });
+        });
+
+        // Apply role-based UI - hide admin-only sections for non-admin users
+        function applyRoleBasedUI() {
+            // Hide the auth tab for non-admin users
+            const authTabBtn = document.querySelector('[data-tab="auth"]');
+            if (authTabBtn) {
+                authTabBtn.style.display = isAdmin ? '' : 'none';
+            }
+            
+            // If not admin and on auth tab, redirect to machines tab
+            if (!isAdmin) {
+                const authPanel = document.getElementById('auth-panel');
+                if (authPanel && authPanel.classList.contains('active')) {
+                    const machinesTab = document.querySelector('[data-tab="machines"]');
+                    if (machinesTab) machinesTab.click();
+                }
+            }
+            
+            console.log('Role-based UI applied. isAdmin:', isAdmin);
+        }
+
+        // ===== INIT =====
+        let machines = [];
+        let productionLines = [];
+        let gramSpecs = {};
+        let currentConfig = {};
+        let editingMachineId = null;
+
         const ADMIN_EMAIL = 'dammieoptimus@gmail.com';
 
-        async function loadAuthSettings() {
+        async function init() {
             try {
                 const doc = await db.collection('config').doc('auth_settings').get();
                 const authEnabled = doc.exists ? doc.data().authEnabled : false;
