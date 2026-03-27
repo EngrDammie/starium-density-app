@@ -8,6 +8,19 @@
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
  <style>
+ :root {
+ --primary: #00BCD4;
+ --primary-dark: #0097A7;
+ --success: #00E676;
+ --danger: #F44336;
+ --warning: #FF9800;
+ --bg-dark: #121212;
+ --bg-card: #1E1E1E;
+ --text: #ffffff;
+ --text-muted: #888;
+ --border: #333;
+ }
+
  * {
  margin: 0;
  padding: 0;
@@ -29,7 +42,7 @@
  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
  padding: 40px 50px;
  border-radius: 15px;
- border: 2px solid #FF6B00;
+ border: 2px solid var(--primary);
  box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
  max-width: 400px;
  width: 90%;
@@ -42,7 +55,7 @@
  }
 
  h1 {
- color: #FF6B00;
+ color: var(--primary);
  font-size: 1.8rem;
  margin-bottom: 10px;
  text-transform: uppercase;
@@ -63,7 +76,7 @@
 
  .form-group label {
  display: block;
- color: #FF6B00;
+ color: var(--primary);
  font-weight: bold;
  margin-bottom: 8px;
  font-size: 0.9rem;
@@ -86,14 +99,14 @@
  }
 
  .form-group input:focus {
- border-color: #FF6B00;
+ border-color: var(--primary);
  box-shadow: 0 0 10px rgba(255, 107, 0, 0.3);
  }
 
  .login-btn {
  width: 100%;
  padding: 14px;
- background: linear-gradient(135deg, #FF6B00 0%, #e55a00 100%);
+ background: linear-gradient(135deg, var(--primary) 0%, #e55a00 100%);
  color: #ffffff;
  border: none;
  border-radius: 8px;
@@ -106,7 +119,7 @@
  }
 
  .login-btn:hover {
- background: linear-gradient(135deg, #ff7a1a 0%, #FF6B00 100%);
+ background: linear-gradient(135deg, #ff7a1a 0%, var(--primary) 100%);
  box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
  transform: translateY(-2px);
  }
@@ -122,8 +135,8 @@
  width: 100%;
  padding: 12px;
  background: transparent;
- color: #FF6B00;
- border: 2px solid #FF6B00;
+ color: var(--primary);
+ border: 2px solid var(--primary);
  border-radius: 8px;
  font-size: 0.9rem;
  font-weight: bold;
@@ -133,7 +146,7 @@
  }
 
  .secondary-btn:hover {
- background: #FF6B00;
+ background: var(--primary);
  color: #ffffff;
  }
 
@@ -180,7 +193,7 @@
  }
 
  .back-link a:hover {
- color: #FF6B00;
+ color: var(--primary);
  }
 
  .links-row {
@@ -197,7 +210,7 @@
  }
 
  .links-row a:hover {
- color: #FF6B00;
+ color: var(--primary);
  }
 
  /* Modal Styles */
@@ -223,7 +236,7 @@
  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
  padding: 30px 40px;
  border-radius: 15px;
- border: 2px solid #FF6B00;
+ border: 2px solid var(--primary);
  box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
  max-width: 400px;
  width: 90%;
@@ -231,7 +244,7 @@
  }
 
  .modal h2 {
- color: #FF6B00;
+ color: var(--primary);
  font-size: 1.4rem;
  margin-bottom: 10px;
  text-align: center;
@@ -272,7 +285,7 @@
  }
 
  .modal-confirm {
- background: #FF6B00;
+ background: var(--primary);
  color: #fff;
  border: none;
  }
