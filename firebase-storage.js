@@ -386,11 +386,13 @@ async function addApprover(approvalId, approverName, approverRole) {
         const updateData = {};
         updateData[approverRole] = approverData;
         
-        const result = await db.collection('shift_approvals').doc(approvalId).update(updateData);
-        console.log('Approver added successfully:', result);
-        return result;
+        console.log('Update data:', updateData);
+        
+        await db.collection('shift_approvals').doc(approvalId).update(updateData);
+        console.log('Approver added successfully');
+        return true;
     } catch (error) {
-        console.error('Error adding approver:', error);
+        console.error('Error adding approver:', error.code, error.message);
         return false;
     }
 }
