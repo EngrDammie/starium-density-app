@@ -1050,12 +1050,18 @@
                 
                 // Store user info in localStorage for role checking
                 localStorage.setItem('userEmail', user.email);
+                localStorage.setItem('userUid', user.uid);
                 
-                // Check user role (default to 'user' if not set)
-                const idTokenResult = await user.getIdTokenResult();
-                const role = idTokenResult.claims.role || 'user';
-                localStorage.setItem('userRole', role);
-                console.log('User logged in:', user.email, 'Role:', role);
+                // Check user role from Firestore user_roles collection
+                try {
+                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+                    const role = roleDoc.exists ? roleDoc.data().role : 'staff';
+                    localStorage.setItem('userRole', role);
+                    console.log('✅ User logged in:', user.email, '| Role:', role);
+                } catch (e) {
+                    console.log('Could not fetch user role:', e);
+                    localStorage.setItem('userRole', 'staff');
+                }
             }
         });
 

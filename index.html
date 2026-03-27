@@ -1063,6 +1063,7 @@
              const roleDoc = await db.collection('user_roles').doc(user.uid).get();
              const role = roleDoc.exists ? roleDoc.data().role : 'staff';
              localStorage.setItem('userRole', role);
+             console.log('✅ User logged in:', user.email, '| Role:', role);
              
              // Apply role-based UI visibility
              applyRoleBasedUI(role);

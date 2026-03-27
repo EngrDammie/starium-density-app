@@ -1379,18 +1379,20 @@
                 
                 // Store user info in localStorage for role checking
                 localStorage.setItem('userEmail', user.email);
+                localStorage.setItem('userUid', user.uid);
                 
-                // Check user role (default to 'user' if not set)
+                // Check user role from Firestore user_roles collection
                 try {
-                    const idTokenResult = await user.getIdTokenResult();
-                    currentUserRole = idTokenResult.claims.role || 'user';
+                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+                    currentUserRole = roleDoc.exists ? roleDoc.data().role : 'staff';
                     isAdmin = currentUserRole === 'admin';
                 } catch (e) {
-                    currentUserRole = 'user';
+                    console.log('Could not fetch user role from Firestore:', e);
+                    currentUserRole = 'staff';
                     isAdmin = false;
                 }
                 localStorage.setItem('userRole', currentUserRole);
-                console.log('User logged in:', user.email, 'Role:', currentUserRole);
+                console.log('✅ User logged in:', user.email, '| Role:', currentUserRole, '| isAdmin:', isAdmin);
                 
                 // Apply role-based UI after init is called
                 setTimeout(() => applyRoleBasedUI(), 100);
