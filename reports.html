@@ -271,6 +271,41 @@
             gap: 10px;
         }
 
+        .column-selector {
+            position: relative;
+            display: inline-block;
+        }
+
+        .column-options {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 100;
+            min-width: 200px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .column-options label {
+            display: block;
+            padding: 8px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .column-options label:hover {
+            background: var(--bg-card-hover);
+        }
+
+        .column-options input {
+            margin-right: 8px;
+        }
+
         .table-container {
             overflow-x: auto;
             max-height: 500px;
@@ -487,6 +522,12 @@
                     <button class="btn btn-secondary" onclick="exportCSV()">📥 CSV</button>
                     <button class="btn btn-secondary" onclick="exportJSON()">📥 JSON</button>
                 </div>
+                <div class="column-selector" id="columnSelector">
+                    <button class="btn btn-secondary" onclick="toggleColumnSelector()">☑️ Columns</button>
+                    <div class="column-options" id="columnOptions" style="display: none;">
+                        <!-- Column checkboxes will be populated here -->
+                    </div>
+                </div>
             </div>
             <div class="table-container" id="resultsTableContainer">
                 <!-- Table rendered here -->
@@ -540,6 +581,40 @@
         let currentReportData = [];
         let currentCollection = '';
         let availableFields = [];
+        let selectedColumns = new Set(); // Track selected columns
+        
+        // Toggle column selector visibility
+        function toggleColumnSelector() {
+            const options = document.getElementById('columnOptions');
+            options.style.display = options.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Populate column selector with available fields
+        function updateColumnSelector(columns) {
+            selectedColumns = new Set(columns); // Default: all selected
+            const container = document.getElementById('columnOptions');
+            let html = '<strong>Select Columns</strong><br><br>';
+            html += '<label><input type="checkbox" id="selectAllColumns" checked onchange="toggleAllColumns(this.checked)"> Select All</label><br>';
+            columns.forEach(col => {
+                html += `<label><input type="checkbox" class="col-checkbox" value="${col}" checked onchange="updateVisibleColumns()"> ${col}</label><br>`;
+            });
+            container.innerHTML = html;
+        }
+        
+        // Toggle all columns
+        function toggleAllColumns(checked) {
+            document.querySelectorAll('.col-checkbox').forEach(cb => {
+                cb.checked = checked;
+            });
+            updateVisibleColumns();
+        }
+        
+        // Update visible columns based on selections
+        function updateVisibleColumns() {
+            const checkboxes = document.querySelectorAll('.col-checkbox:checked');
+            selectedColumns = new Set(Array.from(checkboxes).map(cb => cb.value));
+            renderResults(currentReportData); // Re-render with new column selection
+        }
 
         // Initialize
         async function init() {
@@ -846,7 +921,17 @@
                     }
                 });
             });
-            const columns = Array.from(allKeys).sort();
+            const allColumns = Array.from(allKeys).sort();
+            
+            // Update column selector if this is first render
+            if (selectedColumns.size === 0) {
+                updateColumnSelector(allColumns);
+            }
+            
+            // Use selected columns, or all if none selected
+            const columns = selectedColumns.size > 0 
+                ? allColumns.filter(col => selectedColumns.has(col))
+                : allColumns;
 
             // Build table
             let html = '<table><thead><tr>';
@@ -882,7 +967,19 @@
                 alert('No data to export');
                 return;
             }
-            exportToCSV(currentReportData, 'report.csv');
+            // Filter data to only include selected columns
+            const filteredData = currentReportData.map(row => {
+                const filtered = {};
+                if (selectedColumns.size > 0) {
+                    selectedColumns.forEach(col => {
+                        filtered[col] = row[col];
+                    });
+                } else {
+                    return row;
+                }
+                return filtered;
+            });
+            exportToCSV(filteredData, 'report.csv');
         }
 
         function exportJSON() {
@@ -890,7 +987,19 @@
                 alert('No data to export');
                 return;
             }
-            exportToJSON(currentReportData, 'report.json');
+            // Filter data to only include selected columns
+            const filteredData = currentReportData.map(row => {
+                const filtered = {};
+                if (selectedColumns.size > 0) {
+                    selectedColumns.forEach(col => {
+                        filtered[col] = row[col];
+                    });
+                } else {
+                    return row;
+                }
+                return filtered;
+            });
+            exportToJSON(filteredData, 'report.json');
         }
 
         // Save current report
