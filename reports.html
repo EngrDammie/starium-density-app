@@ -504,6 +504,9 @@
 
         // Initialize
         async function init() {
+            // Check auth before allowing access
+            await requireAuth();
+            
             renderTemplates();
             await loadSavedReports();
             setupNetworkStatus();
