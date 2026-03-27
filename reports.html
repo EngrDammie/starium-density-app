@@ -496,6 +496,45 @@
 
     <script src="firebase-storage.js"></script>
     <script src="reports.js"></script>
+    <style>
+        /* User Auth Bar */
+        .auth-bar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+        }
+        .auth-bar .user-email {
+            color: #00BCD4;
+            font-size: 0.9rem;
+        }
+        .auth-bar .logout-btn {
+            background: #FF1744;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .auth-bar .logout-btn:hover {
+            background: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="authBar">
+        <span class="user-email" id="userEmail">Loading...</span>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+
     <script>
         // State
         let currentReportData = [];
@@ -506,6 +545,19 @@
         async function init() {
             // Check auth before allowing access
             await requireAuth();
+            
+            // Setup auth bar
+            const user = firebase.auth().currentUser;
+            if (user) {
+                document.getElementById('userEmail').textContent = user.email;
+                document.getElementById('logoutBtn').addEventListener('click', () => {
+                    firebase.auth().signOut().then(() => {
+                        localStorage.removeItem('userEmail');
+                        localStorage.removeItem('userRole');
+                        window.location.href = 'login.html';
+                    });
+                });
+            }
             
             renderTemplates();
             await loadSavedReports();
