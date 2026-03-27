@@ -972,6 +972,44 @@
 
         // ===== INITIALIZE =====
         async function init() {
+            // Check auth before allowing access
+            await requireAuth();
+            
+            // Check role - only admin and manager can access executive views
+            const userRole = localStorage.getItem('userRole');
+            const user = firebase.auth().currentUser;
+            
+            // Get role from Firestore if not in localStorage
+            if (!userRole && user) {
+                try {
+                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+                    const role = roleDoc.exists ? roleDoc.data().role : 'staff';
+                    localStorage.setItem('userRole', role);
+                    if (role === 'staff') {
+                        showAccessDenied();
+                        return;
+                    }
+                } catch (e) {
+                    showAccessDenied();
+                    return;
+                }
+            } else if (userRole === 'staff') {
+                showAccessDenied();
+                return;
+            }
+            
+            function showAccessDenied() {
+                document.body.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #121212; color: #fff; text-align: center; padding: 20px;">
+                        <div>
+                            <h2 style="color: #F44336; margin-bottom: 10px;">⛔ Access Denied</h2>
+                            <p style="color: #888;">Only administrators and managers can access executive views.</p>
+                            <a href="index.html" style="color: #00BCD4; margin-top: 20px; display: inline-block;">← Back to App</a>
+                        </div>
+                    </div>
+                `;
+            }
+            
             updateDateTime();
             
             // First, load the current shift approval to get currentApprovalId
