@@ -476,6 +476,24 @@
                 <div id="filtersContainer"></div>
                 <button class="btn btn-secondary btn-sm" onclick="addFilter()">+ Add Filter</button>
             </div>
+            
+            <!-- Date Range Filter -->
+            <div class="date-range-container" style="margin-top: 15px;">
+                <label style="color: var(--text-muted); text-transform: uppercase; font-size: 0.85rem; display: block; margin-bottom: 8px;">Date Range</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <input type="date" id="dateFrom" style="padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text); border-radius: 6px;">
+                    <span style="color: var(--text-muted);">to</span>
+                    <input type="date" id="dateTo" style="padding: 8px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text); border-radius: 6px;">
+                    <button class="btn btn-secondary btn-sm" onclick="applyDateFilter()">Apply</button>
+                    <button class="btn btn-secondary btn-sm" onclick="clearDateFilter()">Clear</button>
+                </div>
+                <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-sm" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border);" onclick="setQuickDate('today')">Today</button>
+                    <button class="btn btn-sm" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border);" onclick="setQuickDate('week')">This Week</button>
+                    <button class="btn btn-sm" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border);" onclick="setQuickDate('month')">This Month</button>
+                    <button class="btn btn-sm" style="background: var(--bg-card); color: var(--text); border: 1px solid var(--border);" onclick="setQuickDate('shift')">This Shift</button>
+                </div>
+            </div>
 
             <!-- Sort & Limit -->
             <div class="form-row" style="margin-top: 20px;">
@@ -779,6 +797,109 @@
             });
         }
 
+        // Date Range Filter Functions
+        let dateFilterRange = { from: null, to: null };
+        
+        function applyDateFilter() {
+            const fromDate = document.getElementById('dateFrom').value;
+            const toDate = document.getElementById('dateTo').value;
+            
+            if (!fromDate && !toDate) {
+                alert('Please select a date range');
+                return;
+            }
+            
+            dateFilterRange = {
+                from: fromDate ? new Date(fromDate + 'T00:00:00') : null,
+                to: toDate ? new Date(toDate + 'T23:59:59') : null
+            };
+            
+            // Trigger re-query with date filter
+            runReport();
+        }
+        
+        function clearDateFilter() {
+            document.getElementById('dateFrom').value = '';
+            document.getElementById('dateTo').value = '';
+            dateFilterRange = { from: null, to: null };
+            runReport();
+        }
+        
+        function setQuickDate(period) {
+            const now = new Date();
+            let from, to;
+            
+            switch (period) {
+                case 'today':
+                    from = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                    break;
+                case 'week':
+                    // Start of week (Sunday)
+                    const startOfWeek = new Date(now);
+                    startOfWeek.setDate(now.getDate() - now.getDay());
+                    from = startOfWeek;
+                    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                    break;
+                case 'month':
+                    from = new Date(now.getFullYear(), now.getMonth(), 1);
+                    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                    break;
+                case 'shift':
+                    // Current shift
+                    const hour = now.getHours();
+                    const isDayShift = hour >= 7 && hour < 19;
+                    if (isDayShift) {
+                        from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 7, 0, 0);
+                    } else {
+                        from = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 19, 0, 0);
+                        if (hour < 7) {
+                            from.setDate(from.getDate() - 1);
+                        }
+                    }
+                    to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes(), now.getSeconds());
+                    break;
+            }
+            
+            dateFilterRange = { from, to };
+            document.getElementById('dateFrom').value = from.toISOString().split('T')[0];
+            document.getElementById('dateTo').value = to.toISOString().split('T')[0];
+            runReport();
+        }
+        
+        // Apply date filter to data
+        function filterByDateRange(data) {
+            if (!dateFilterRange.from && !dateFilterRange.to) {
+                return data;
+            }
+            
+            return data.filter(item => {
+                // Try to find a date field in the item
+                const dateFields = ['createdAt', 'date', 'timestamp', 'updatedAt'];
+                let itemDate = null;
+                
+                for (const field of dateFields) {
+                    if (item[field]) {
+                        if (item[field].toDate) {
+                            itemDate = item[field].toDate();
+                        } else if (typeof item[field] === 'string' || typeof item[field] === 'number') {
+                            itemDate = new Date(item[field]);
+                        }
+                        break;
+                    }
+                }
+                
+                if (!itemDate || isNaN(itemDate.getTime())) {
+                    return true; // Keep items without date
+                }
+                
+                const afterFrom = !dateFilterRange.from || itemDate >= dateFilterRange.from;
+                const beforeTo = !dateFilterRange.to || itemDate <= dateFilterRange.to;
+                
+                return afterFrom && beforeTo;
+            });
+        }
+
         // Add filter row
         function addFilter(filter = null) {
             const container = document.getElementById('filtersContainer');
@@ -890,6 +1011,11 @@
 
             // Query data
             let data = await queryCollection(collection, filters, sort, limit);
+
+            // Apply date range filter
+            if (dateFilterRange.from || dateFilterRange.to) {
+                data = filterByDateRange(data);
+            }
 
             // Perform joins
             if (joins.length > 0) {
