@@ -556,6 +556,27 @@
             <!-- Charts Section -->
             <div class="charts-container" id="chartsContainer" style="display: none; margin-top: 20px;">
                 <h3 style="color: var(--primary); margin-bottom: 15px;">📊 Visualizations</h3>
+                
+                <!-- Statistics Cards -->
+                <div class="stats-container" id="statsContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div class="stat-value" id="statTotalTests" style="font-size: 2rem; font-weight: bold; color: var(--primary);">0</div>
+                        <div class="stat-label" style="color: var(--text-muted); font-size: 0.9rem;">Total Tests</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div class="stat-value" id="statPassRate" style="font-size: 2rem; font-weight: bold; color: var(--success);">0%</div>
+                        <div class="stat-label" style="color: var(--text-muted); font-size: 0.9rem;">Pass Rate</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div class="stat-value" id="statAvgDensity" style="font-size: 2rem; font-weight: bold; color: #FF9800;">0.000</div>
+                        <div class="stat-label" style="color: var(--text-muted); font-size: 0.9rem;">Avg Density</div>
+                    </div>
+                    <div class="stat-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px; text-align: center;">
+                        <div class="stat-value" id="statFailCount" style="font-size: 2rem; font-weight: bold; color: var(--danger);">0</div>
+                        <div class="stat-label" style="color: var(--text-muted); font-size: 0.9rem;">Out of Range</div>
+                    </div>
+                </div>
+                
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 20px;">
                     <!-- Density Trend Chart -->
                     <div class="chart-card" style="background: var(--bg-card); padding: 20px; border-radius: 12px;">
@@ -1125,19 +1146,23 @@
                 return;
             }
             
-            // Prepare data for charts
+            // Prepare data for charts and statistics
             const densityData = [];
             const labels = [];
             let passCount = 0;
             let failCount = 0;
             let lowCount = 0;
             let highCount = 0;
+            let densitySum = 0;
+            let densityCount = 0;
             
             currentReportData.forEach((item, index) => {
                 // Get density value
                 const density = parseFloat(item.density);
                 if (!isNaN(density)) {
                     densityData.push(density);
+                    densitySum += density;
+                    densityCount++;
                     labels.push(item.createdAt ? (item.createdAt.toDate ? item.createdAt.toDate().toLocaleTimeString() : new Date(item.createdAt).toLocaleTimeString()) : `#${index + 1}`);
                     
                     // Categorize
@@ -1152,6 +1177,18 @@
                     }
                 }
             });
+            
+            // Calculate statistics
+            const totalTests = densityCount;
+            const passRate = totalTests > 0 ? Math.round((passCount / totalTests) * 100) : 0;
+            const avgDensity = densityCount > 0 ? (densitySum / densityCount).toFixed(3) : '0.000';
+            const outOfRange = lowCount + highCount;
+            
+            // Update statistics cards
+            document.getElementById('statTotalTests').textContent = totalTests;
+            document.getElementById('statPassRate').textContent = passRate + '%';
+            document.getElementById('statAvgDensity').textContent = avgDensity;
+            document.getElementById('statFailCount').textContent = outOfRange;
             
             // Destroy existing charts
             if (densityChart) { densityChart.destroy(); }
