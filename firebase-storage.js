@@ -373,19 +373,20 @@ async function addApprover(approvalId, approverName, approverRole) {
     }
     try {
         console.log('Adding approver:', { approvalId, approverName, approverRole });
-        const doc = await db.collection('shift_approvals').doc(approvalId).get();
-        if (!doc.exists) {
-            console.error('Approval document not found:', approvalId);
-            return false;
-        }
-        const data = doc.data();
-        const approvedBy = data.approvedBy || [];
-        const approvals = data.approvals || {};
-        if (!approvedBy.includes(approverName)) approvedBy.push(approverName);
-        approvals[approverName] = { role: approverRole, timestamp: new Date() };
-        const requiredApprovers = getRequiredApprovers(data.mode);
-        const allApproved = requiredApprovers.every(a => approvedBy.includes(a));
-        const result = await updateShiftApproval(approvalId, { approvedBy, approvals, status: allApproved ? 'completed' : 'pending' });
+        
+        // Build the approver data object in the format the UI expects
+        const approverData = {
+            name: approverName,
+            role: approverRole,
+            timestamp: new Date()
+        };
+        
+        // Update the shift_approvals document with the approver data
+        // Use the approverType as the key (e.g., buggySupervisor, plcOperator)
+        const updateData = {};
+        updateData[approverRole] = approverData;
+        
+        const result = await db.collection('shift_approvals').doc(approvalId).update(updateData);
         console.log('Approver added successfully:', result);
         return result;
     } catch (error) {

@@ -1297,6 +1297,12 @@
             
             closeApprovalModal();
             
+            // Reload the shift approval to get updated data
+            await loadCurrentShiftApproval();
+            
+            // Update the button states
+            updateApprovalButtons();
+            
             // Show approval message on button and disable it
             const btn = document.getElementById('btn' + currentApproverType.charAt(0).toUpperCase() + currentApproverType.slice(1));
             if (btn) {
