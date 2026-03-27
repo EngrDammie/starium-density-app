@@ -7,6 +7,8 @@
  <title>Login - Starium Rafa Quality Control Tool</title>
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+ <script src="firebase-storage.js"></script>
  <style>
  :root {
  --primary: #00BCD4;
@@ -511,19 +513,21 @@
  
  // Get user role from Firestore and redirect based on role
  try {
+ console.log('Getting role for UID:', userCredential.user.uid);
  const roleDoc = await db.collection('user_roles').doc(userCredential.user.uid).get();
  const role = roleDoc.exists ? roleDoc.data().role : 'staff';
  console.log('User role:', role);
  
  // Redirect based on role
  if (role === 'staff') {
+ console.log('Redirecting to index.html');
  window.location.href = 'index.html';
  } else {
- // manager and admin go to level9-exec
+ console.log('Redirecting to level9-exec.html');
  window.location.href = 'level9-exec.html';
  }
  } catch (e) {
- console.log('Could not fetch role, redirecting to index.html');
+ console.log('Could not fetch role, redirecting to index.html. Error:', e);
  window.location.href = 'index.html';
  }
  } catch (error) {
