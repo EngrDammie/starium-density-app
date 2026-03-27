@@ -1017,8 +1017,15 @@
 
  <div class="settings-group">
  <h3>Administration</h3>
- <div class="settings-field">
+ <div class="settings-field" id="adminLinkContainer">
  <a href="admin.html" class="btn" style="display: inline-block; text-align: center; text-decoration: none;">🔧 Open Machine Admin Panel</a>
+ </div>
+ </div>
+ 
+ <div class="settings-group" id="reportsLinkContainer">
+ <h3>Reports</h3>
+ <div class="settings-field">
+ <a href="reports.html" class="btn" style="display: inline-block; text-align: center; text-decoration: none;">📊 View Reports</a>
  </div>
  </div>
 
@@ -1039,7 +1046,7 @@
  requireAuth();
 
  // Setup user display and logout after auth check
- firebase.auth().onAuthStateChanged((user) => {
+ firebase.auth().onAuthStateChanged(async (user) => {
      if (user) {
          // User is logged in, show email and setup logout
          const userEmailEl = document.getElementById('userEmail');
@@ -1050,8 +1057,43 @@
          // Store user info in localStorage for role checking
          localStorage.setItem('userEmail', user.email);
          localStorage.setItem('userUid', user.uid);
+         
+         // Check user role from Firestore
+         try {
+             const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+             const role = roleDoc.exists ? roleDoc.data().role : 'staff';
+             localStorage.setItem('userRole', role);
+             
+             // Apply role-based UI visibility
+             applyRoleBasedUI(role);
+         } catch (e) {
+             console.log('Could not fetch user role:', e);
+             localStorage.setItem('userRole', 'staff');
+         }
      }
  });
+ 
+ // Apply role-based UI visibility
+ function applyRoleBasedUI(role) {
+     const adminLinkContainer = document.getElementById('adminLinkContainer');
+     const reportsLinkContainer = document.getElementById('reportsLinkContainer');
+     
+     // Admin sees everything
+     if (role === 'admin') {
+         if (adminLinkContainer) adminLinkContainer.style.display = 'block';
+         if (reportsLinkContainer) reportsLinkContainer.style.display = 'block';
+     }
+     // Manager sees reports but not admin
+     else if (role === 'manager') {
+         if (adminLinkContainer) adminLinkContainer.style.display = 'none';
+         if (reportsLinkContainer) reportsLinkContainer.style.display = 'block';
+     }
+     // Staff sees neither
+     else {
+         if (adminLinkContainer) adminLinkContainer.style.display = 'none';
+         if (reportsLinkContainer) reportsLinkContainer.style.display = 'none';
+     }
+ }
 
  // Logout function (if logout button exists)
  const logoutBtn = document.getElementById('logoutBtn');
