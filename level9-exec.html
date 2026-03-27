@@ -1700,6 +1700,16 @@
                 if (e.key === 'Escape') closeMachineDetailsModal(); 
             });
         });
+        
+        // Add mode switch button for admin/manager
+        const modeSwitchBtn = document.createElement('button');
+        modeSwitchBtn.id = 'modeSwitchBtn';
+        modeSwitchBtn.innerHTML = '🔄 Switch to BOT Mode';
+        modeSwitchBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #FF9800; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; z-index: 100;';
+        modeSwitchBtn.onclick = function() {
+            window.location.href = 'bot-exec.html';
+        };
+        document.body.appendChild(modeSwitchBtn);
     </script>
 </body>
 </html>

@@ -1429,6 +1429,16 @@
                 settingsBtn.style.display = config.showSettingsBtnBotExec !== false ? 'flex' : 'none';
             }
         });
+        
+        // Add mode switch button for admin/manager
+        const modeSwitchBtn = document.createElement('button');
+        modeSwitchBtn.id = 'modeSwitchBtn';
+        modeSwitchBtn.innerHTML = '🔄 Switch to Level 9';
+        modeSwitchBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #00BCD4; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; z-index: 100;';
+        modeSwitchBtn.onclick = function() {
+            window.location.href = 'level9-exec.html';
+        };
+        document.body.appendChild(modeSwitchBtn);
     </script>
 </body>
 </html>

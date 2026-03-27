@@ -508,8 +508,24 @@
  try {
  const userCredential = await auth.signInWithEmailAndPassword(email, password);
  console.log('Login successful:', userCredential.user.email);
- // Redirect to index.html on success
+ 
+ // Get user role from Firestore and redirect based on role
+ try {
+ const roleDoc = await db.collection('user_roles').doc(userCredential.user.uid).get();
+ const role = roleDoc.exists ? roleDoc.data().role : 'staff';
+ console.log('User role:', role);
+ 
+ // Redirect based on role
+ if (role === 'staff') {
  window.location.href = 'index.html';
+ } else {
+ // manager and admin go to level9-exec
+ window.location.href = 'level9-exec.html';
+ }
+ } catch (e) {
+ console.log('Could not fetch role, redirecting to index.html');
+ window.location.href = 'index.html';
+ }
  } catch (error) {
  loginBtn.disabled = false;
  loginBtn.textContent = 'Sign In';
