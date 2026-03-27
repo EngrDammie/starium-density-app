@@ -547,6 +547,35 @@
  position: relative;
  }
 
+ .shift-test-counter {
+ position: absolute;
+ bottom: 20px;
+ right: 20px;
+ background: rgba(0, 188, 212, 0.2);
+ padding: 10px 20px;
+ border-radius: 20px;
+ display: flex;
+ align-items: center;
+ gap: 10px;
+ }
+
+ .shift-test-counter .counter-label {
+ color: #888;
+ font-size: 0.85rem;
+ }
+
+ .shift-test-counter .counter-value {
+ color: #00BCD4;
+ font-size: 1.2rem;
+ font-weight: bold;
+ }
+
+ .shift-test-counter .counter-mode {
+ color: #00E676;
+ font-size: 0.85rem;
+ text-transform: uppercase;
+ }
+
  footer p { color: #666; font-size: 0.9rem; cursor: default; transition: all 0.3s ease; }
  footer:hover p { opacity: 0; }
 
@@ -605,8 +634,8 @@
  /* Sync Status */
  .sync-status {
  position: fixed;
- top: 20px;
- right: 20px;
+ top: 60px;
+ left: 20px;
  padding: 8px 15px;
  border-radius: 20px;
  font-size: 0.8rem;
@@ -1037,7 +1066,14 @@
  </div>
  </div>
 
- <footer><p>&nbsp;</p></footer>
+ <footer>
+ <p>&nbsp;</p>
+ <div class="shift-test-counter" id="shiftTestCounter" style="display: none;">
+ <span class="counter-label">Tests this shift:</span>
+ <span class="counter-value" id="shiftTestCount">0</span>
+ <span class="counter-mode" id="shiftTestMode"></span>
+ </div>
+ </footer>
 
  <script src="firebase-storage.js"></script>
  <script>
@@ -1165,6 +1201,51 @@
 
  // Initialize approval link on page load
  initApprovalLink();
+
+ // ===== SHIFT TEST COUNTER =====
+ let unsubscribeTestCount = null;
+ const counterEl = document.getElementById('shiftTestCounter');
+ const counterValueEl = document.getElementById('shiftTestCount');
+ const counterModeEl = document.getElementById('shiftTestMode');
+ 
+ function updateShiftTestCounter() {
+     const userRole = localStorage.getItem('userRole');
+     
+     // Only show for admin and staff
+     if (userRole !== 'admin' && userRole !== 'staff') {
+         counterEl.style.display = 'none';
+         return;
+     }
+     
+     counterEl.style.display = 'flex';
+     const mode = modeSelect.value;
+     const modeLabel = mode === 'level9' ? 'LEVEL 9' : 'BOT';
+     counterModeEl.textContent = modeLabel;
+     
+     // Unsubscribe from previous listener
+     if (unsubscribeTestCount) {
+         unsubscribeTestCount();
+         unsubscribeTestCount = null;
+     }
+     
+     // Get current shift approval and subscribe to tests
+     getCurrentShiftApproval(mode).then(approval => {
+         if (approval && approval.id) {
+             unsubscribeTestCount = subscribeToTestsByApprovalDoc(approval.id, (tests) => {
+                 counterValueEl.textContent = tests ? tests.length : 0;
+             });
+         }
+     }).catch(e => {
+         console.log('Could not get shift approval for counter:', e);
+         counterValueEl.textContent = '0';
+     });
+ }
+ 
+ // Update counter on mode change
+ modeSelect.addEventListener('change', updateShiftTestCounter);
+ 
+ // Initialize counter after page loads
+ setTimeout(updateShiftTestCounter, 1000);
 
  // ===== UTILITY FUNCTIONS =====
  function getCartonContent(gram) {
