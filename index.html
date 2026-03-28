@@ -1184,15 +1184,45 @@
 
  // ===== APPROVAL LINK INITIALIZATION =====
  // Initialize the link to shift_approvals document when page loads or mode changes
+ 
+ // ===== SHIFT DATE HELPER - Fixes midnight boundary issue =====
+ // For NIGHT shifts (7pm-7am), we need to use the START date of the shift, not current date
+ function getShiftDateInfo() {
+     const now = new Date();
+     const hour = now.getHours();
+     let shift, date;
+     
+     if (hour >= 7 && hour < 19) {
+         // DAY shift (7am - 6:59pm) - shift started today
+         shift = 'DAY';
+         date = getShiftDate(now);
+     } else {
+         // NIGHT shift (7pm - 6:59am)
+         shift = 'NIGHT';
+         if (hour >= 19) {
+             // After 7pm (7pm-11:59pm) - shift started TODAY
+             date = getShiftDate(now);
+         } else {
+             // Before 7am (12am-6:59am) - shift started YESTERDAY
+             const yesterday = new Date(now);
+             yesterday.setDate(yesterday.getDate() - 1);
+             date = getShiftDate(yesterday);
+         }
+     }
+     
+     return { shift, date };
+ }
+
+ function getShiftDate(date) {
+     const year = date.getFullYear();
+     const month = String(date.getMonth() + 1).padStart(2, '0');
+     const day = String(date.getDate()).padStart(2, '0');
+     return `${year}-${month}-${day}`;
+ }
+ 
  async function initApprovalLink() {
      const mode = modeSelect.value;
-     const now = new Date();
-     // Use local date (not UTC)
-     const year = now.getFullYear();
-     const month = String(now.getMonth() + 1).padStart(2, '0');
-     const day = String(now.getDate()).padStart(2, '0');
-     const date = `${year}-${month}-${day}`;
-     const shift = (now.getHours() >= 7 && now.getHours() < 19) ? 'DAY' : 'NIGHT';
+     const { shift, date } = getShiftDateInfo();
      
      try {
          const approval = await getOrCreateShiftApproval(mode, shift, date);
@@ -1234,7 +1264,8 @@
      }
      
      // Get current shift approval and subscribe to tests
-     getCurrentShiftApproval(mode).then(approval => {
+     const { shift, date } = getShiftDateInfo();
+     getOrCreateShiftApproval(mode, shift, date).then(approval => {
          if (approval && approval.id) {
              unsubscribeTestCount = subscribeToTestsByApprovalDoc(approval.id, (tests) => {
                  counterValueEl.textContent = tests ? tests.length : 0;
