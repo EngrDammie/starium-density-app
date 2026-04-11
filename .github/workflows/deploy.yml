@@ -30,7 +30,7 @@ jobs:
       - name: Create Firebase Config File
         run: |
           echo "=== Creating firebase-config.js ==="
-          cat > firebase-config.js << 'EOF'
+          cat > firebase-config.js << 'ENDOFFILE'
           window.firebaseConfig = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
             authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -39,28 +39,15 @@ jobs:
             messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
             appId: "${{ secrets.FIREBASE_APP_ID }}"
           };
-          EOF
+          ENDOFFILE
           echo "=== firebase-config.js created ==="
 
-      - name: Debug: List files and verify config
+      - name: "Debug: Verify deployment"
         run: |
-          echo "=== Current directory ==="
-          pwd
           echo "=== Files in directory ==="
           ls -la
           echo "=== firebase-config.js contents ==="
           cat firebase-config.js
-          echo "=== Checking if FIREBASE_API_KEY is set ==="
-          if [ -z "${{ secrets.FIREBASE_API_KEY }}" ]; then
-            echo "WARNING: FIREBASE_API_KEY is empty or not set!"
-          else
-            echo "FIREBASE_API_KEY is set (value hidden for security)"
-          fi
-          if [ -z "${{ secrets.FIREBASE_PROJECT_ID }}" ]; then
-            echo "WARNING: FIREBASE_PROJECT_ID is empty or not set!"
-          else
-            echo "FIREBASE_PROJECT_ID is set: ${{ secrets.FIREBASE_PROJECT_ID }}"
-          fi
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
