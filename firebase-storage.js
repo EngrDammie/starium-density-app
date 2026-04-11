@@ -1,13 +1,3 @@
-// ===== FIREBASE CONFIGURATION =====
-window.firebaseConfig = window.firebaseConfig || {
-    apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
-    authDomain: "starium-rafa-app.firebaseapp.com",
-    projectId: "starium-rafa-app",
-    storageBucket: "starium-rafa-app.firebasestorage.app",
-    messagingSenderId: "743583982928",
-    appId: "1:743583982928:web:e331aaa0b9e741a1537855"
-};
-
 if (!window.db) {
     try {
         window.app = firebase.apps.length > 0 ? firebase.app() : firebase.initializeApp(window.firebaseConfig);

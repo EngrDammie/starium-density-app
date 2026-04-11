@@ -2,571 +2,580 @@
 <html lang="en">
 
 <head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1.0">
- <title>Login - Starium Rafa Quality Control Tool</title>
- <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
- <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
- <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
- <script src="firebase-storage.js"></script>
- <style>
- :root {
- --primary: #00BCD4;
- --primary-dark: #0097A7;
- --success: #00E676;
- --danger: #F44336;
- --warning: #FF9800;
- --bg-dark: #121212;
- --bg-card: #1E1E1E;
- --text: #ffffff;
- --text-muted: #888;
- --border: #333;
- }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Starium Rafa Quality Control Tool</title>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-storage.js"></script>
+    <style>
+        :root {
+            --primary: #00BCD4;
+            --primary-dark: #0097A7;
+            --success: #00E676;
+            --danger: #F44336;
+            --warning: #FF9800;
+            --bg-dark: #121212;
+            --bg-card: #1E1E1E;
+            --text: #ffffff;
+            --text-muted: #888;
+            --border: #333;
+        }
 
- * {
- margin: 0;
- padding: 0;
- box-sizing: border-box;
- font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
- }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
- body {
- background-color: #0a0a0a;
- color: #ffffff;
- min-height: 100vh;
- display: flex;
- flex-direction: column;
- justify-content: center;
- align-items: center;
- }
+        body {
+            background-color: #0a0a0a;
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
 
- .login-container {
- background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
- padding: 40px 50px;
- border-radius: 15px;
- border: 2px solid var(--primary);
- box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
- max-width: 400px;
- width: 90%;
- animation: fadeIn 0.5s ease-out;
- }
+        .login-container {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            padding: 40px 50px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: fadeIn 0.5s ease-out;
+        }
 
- @keyframes fadeIn {
- from { opacity: 0; transform: translateY(-20px); }
- to { opacity: 1; transform: translateY(0); }
- }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
 
- h1 {
- color: var(--primary);
- font-size: 1.8rem;
- margin-bottom: 10px;
- text-transform: uppercase;
- letter-spacing: 2px;
- text-align: center;
- }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
- .subtitle {
- color: #888;
- text-align: center;
- margin-bottom: 30px;
- font-size: 0.9rem;
- }
+        h1 {
+            color: var(--primary);
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-align: center;
+        }
 
- .form-group {
- margin-bottom: 20px;
- }
+        .subtitle {
+            color: #888;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
 
- .form-group label {
- display: block;
- color: var(--primary);
- font-weight: bold;
- margin-bottom: 8px;
- font-size: 0.9rem;
- }
+        .form-group {
+            margin-bottom: 20px;
+        }
 
- .form-group input {
- width: 100%;
- padding: 12px 15px;
- background-color: #1a1a1a;
- color: #ffffff;
- border: 2px solid #333;
- border-radius: 8px;
- font-size: 1rem;
- outline: none;
- transition: all 0.3s ease;
- }
+        .form-group label {
+            display: block;
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
 
- .form-group input::placeholder {
- color: #666;
- }
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            border: 2px solid #333;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
 
- .form-group input:focus {
- border-color: var(--primary);
- box-shadow: 0 0 10px rgba(255, 107, 0, 0.3);
- }
+        .form-group input::placeholder {
+            color: #666;
+        }
 
- .login-btn {
- width: 100%;
- padding: 14px;
- background: linear-gradient(135deg, var(--primary) 0%, #e55a00 100%);
- color: #ffffff;
- border: none;
- border-radius: 8px;
- font-size: 1rem;
- font-weight: bold;
- text-transform: uppercase;
- cursor: pointer;
- transition: all 0.3s ease;
- margin-top: 10px;
- }
+        .form-group input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 10px rgba(255, 107, 0, 0.3);
+        }
 
- .login-btn:hover {
- background: linear-gradient(135deg, #ff7a1a 0%, var(--primary) 100%);
- box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
- transform: translateY(-2px);
- }
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary) 0%, #e55a00 100%);
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
 
- .login-btn:disabled {
- background: #444;
- cursor: not-allowed;
- transform: none;
- box-shadow: none;
- }
+        .login-btn:hover {
+            background: linear-gradient(135deg, #ff7a1a 0%, var(--primary) 100%);
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
+            transform: translateY(-2px);
+        }
 
- .secondary-btn {
- width: 100%;
- padding: 12px;
- background: transparent;
- color: var(--primary);
- border: 2px solid var(--primary);
- border-radius: 8px;
- font-size: 0.9rem;
- font-weight: bold;
- cursor: pointer;
- transition: all 0.3s ease;
- margin-top: 10px;
- }
+        .login-btn:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
 
- .secondary-btn:hover {
- background: var(--primary);
- color: #ffffff;
- }
+        .secondary-btn {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
 
- .error-message {
- color: #ff4444;
- background-color: rgba(255, 68, 68, 0.1);
- border: 1px solid #ff4444;
- padding: 12px;
- border-radius: 8px;
- margin-bottom: 20px;
- text-align: center;
- display: none;
- animation: shake 0.5s ease;
- }
+        .secondary-btn:hover {
+            background: var(--primary);
+            color: #ffffff;
+        }
 
- @keyframes shake {
- 0%, 100% { transform: translateX(0); }
- 25% { transform: translateX(-10px); }
- 75% { transform: translateX(10px); }
- }
+        .error-message {
+            color: #ff4444;
+            background-color: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+            animation: shake 0.5s ease;
+        }
 
- .success-message {
- color: #00c853;
- background-color: rgba(0, 200, 83, 0.1);
- border: 1px solid #00c853;
- padding: 12px;
- border-radius: 8px;
- margin-bottom: 20px;
- text-align: center;
- display: none;
- animation: fadeIn 0.5s ease;
- }
+        @keyframes shake {
 
- .back-link {
- text-align: center;
- margin-top: 20px;
- }
+            0%,
+            100% {
+                transform: translateX(0);
+            }
 
- .back-link a {
- color: #888;
- text-decoration: none;
- font-size: 0.9rem;
- transition: color 0.3s ease;
- }
+            25% {
+                transform: translateX(-10px);
+            }
 
- .back-link a:hover {
- color: var(--primary);
- }
+            75% {
+                transform: translateX(10px);
+            }
+        }
 
- .links-row {
- display: flex;
- justify-content: space-between;
- margin-top: 15px;
- }
+        .success-message {
+            color: #00c853;
+            background-color: rgba(0, 200, 83, 0.1);
+            border: 1px solid #00c853;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
 
- .links-row a {
- color: #888;
- text-decoration: none;
- font-size: 0.85rem;
- transition: color 0.3s ease;
- }
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
 
- .links-row a:hover {
- color: var(--primary);
- }
+        .back-link a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
 
- /* Modal Styles */
- .modal-overlay {
- display: none;
- position: fixed;
- top: 0;
- left: 0;
- width: 100%;
- height: 100%;
- background: rgba(0, 0, 0, 0.8);
- z-index: 1000;
- justify-content: center;
- align-items: center;
- animation: fadeIn 0.3s ease;
- }
+        .back-link a:hover {
+            color: var(--primary);
+        }
 
- .modal-overlay.active {
- display: flex;
- }
+        .links-row {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
 
- .modal {
- background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
- padding: 30px 40px;
- border-radius: 15px;
- border: 2px solid var(--primary);
- box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
- max-width: 400px;
- width: 90%;
- animation: fadeIn 0.3s ease;
- }
+        .links-row a {
+            color: #888;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.3s ease;
+        }
 
- .modal h2 {
- color: var(--primary);
- font-size: 1.4rem;
- margin-bottom: 10px;
- text-align: center;
- }
+        .links-row a:hover {
+            color: var(--primary);
+        }
 
- .modal p {
- color: #888;
- text-align: center;
- margin-bottom: 20px;
- font-size: 0.9rem;
- }
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
 
- .modal-buttons {
- display: flex;
- gap: 10px;
- margin-top: 20px;
- }
+        .modal-overlay.active {
+            display: flex;
+        }
 
- .modal-buttons button {
- flex: 1;
- padding: 12px;
- border-radius: 8px;
- font-size: 0.9rem;
- font-weight: bold;
- cursor: pointer;
- transition: all 0.3s ease;
- }
+        .modal {
+            background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+            padding: 30px 40px;
+            border-radius: 15px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 0 30px rgba(255, 107, 0, 0.3);
+            max-width: 400px;
+            width: 90%;
+            animation: fadeIn 0.3s ease;
+        }
 
- .modal-cancel {
- background: transparent;
- color: #888;
- border: 2px solid #444;
- }
+        .modal h2 {
+            color: var(--primary);
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            text-align: center;
+        }
 
- .modal-cancel:hover {
- border-color: #666;
- color: #fff;
- }
+        .modal p {
+            color: #888;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
 
- .modal-confirm {
- background: var(--primary);
- color: #fff;
- border: none;
- }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
 
- .modal-confirm:hover {
- background: #ff7a1a;
- }
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
 
- .modal-confirm:disabled {
- background: #444;
- cursor: not-allowed;
- }
- </style>
+        .modal-cancel {
+            background: transparent;
+            color: #888;
+            border: 2px solid #444;
+        }
+
+        .modal-cancel:hover {
+            border-color: #666;
+            color: #fff;
+        }
+
+        .modal-confirm {
+            background: var(--primary);
+            color: #fff;
+            border: none;
+        }
+
+        .modal-confirm:hover {
+            background: #ff7a1a;
+        }
+
+        .modal-confirm:disabled {
+            background: #444;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 
 <body>
- <div class="login-container">
- <h1>Starium Rafa</h1>
- <p class="subtitle">Quality Control Tool</p>
- 
- <div id="errorMessage" class="error-message"></div>
- <div id="successMessage" class="success-message"></div>
- 
- <form id="loginForm">
- <div class="form-group">
- <label for="email">Email Address</label>
- <input type="email" id="email" placeholder="Enter your email" required>
- </div>
- 
- <div class="form-group">
- <label for="password">Password</label>
- <input type="password" id="password" placeholder="Enter your password" required>
- </div>
- 
- <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
- </form>
- 
- <div class="links-row">
- <a href="#" id="forgotPasswordLink">Forgot Password?</a>
- <a href="change-password.html">Change Password</a>
- </div>
- 
- <div class="back-link">
- <a href="index.html">← Back to App</a>
- </div>
- </div>
+    <div class="login-container">
+        <h1>Starium Rafa</h1>
+        <p class="subtitle">Quality Control Tool</p>
 
- <!-- Forgot Password Modal -->
- <div class="modal-overlay" id="forgotPasswordModal">
- <div class="modal">
- <h2>Reset Password</h2>
- <p>Enter your email address and we'll send you a link to reset your password.</p>
- 
- <div id="modalErrorMessage" class="error-message"></div>
- <div id="modalSuccessMessage" class="success-message"></div>
- 
- <div class="form-group">
- <label for="resetEmail">Email Address</label>
- <input type="email" id="resetEmail" placeholder="Enter your registered email" required>
- </div>
- 
- <div class="modal-buttons">
- <button type="button" class="modal-cancel" id="cancelResetBtn">Cancel</button>
- <button type="button" class="modal-confirm" id="sendResetBtn">Send Reset Link</button>
- </div>
- </div>
- </div>
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
 
- <script>
- // Firebase Configuration
- const firebaseConfig = {
- apiKey: "AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk",
- authDomain: "starium-rafa-app.firebaseapp.com",
- projectId: "starium-rafa-app",
- storageBucket: "starium-rafa-app.firebasestorage.app",
- messagingSenderId: "743583982928",
- appId: "1:743583982928:web:e331aaa0b9e741a1537855"
- };
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
 
- // Initialize Firebase
- firebase.initializeApp(firebaseConfig);
- const auth = firebase.auth();
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
 
- // DOM Elements
- const loginForm = document.getElementById('loginForm');
- const emailInput = document.getElementById('email');
- const passwordInput = document.getElementById('password');
- const loginBtn = document.getElementById('loginBtn');
- const errorMessage = document.getElementById('errorMessage');
- const successMessage = document.getElementById('successMessage');
- 
- // Modal Elements
- const forgotPasswordLink = document.getElementById('forgotPasswordLink');
- const forgotPasswordModal = document.getElementById('forgotPasswordModal');
- const cancelResetBtn = document.getElementById('cancelResetBtn');
- const sendResetBtn = document.getElementById('sendResetBtn');
- const resetEmailInput = document.getElementById('resetEmail');
- const modalErrorMessage = document.getElementById('modalErrorMessage');
- const modalSuccessMessage = document.getElementById('modalSuccessMessage');
+            <button type="submit" class="login-btn" id="loginBtn">Sign In</button>
+        </form>
 
- // Show error message
- function showError(message, element = errorMessage) {
- element.textContent = message;
- element.style.display = 'block';
- }
+        <div class="links-row">
+            <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+            <a href="change-password.html">Change Password</a>
+        </div>
 
- // Hide error message
- function hideError(element = errorMessage) {
- element.style.display = 'none';
- }
+        <div class="back-link">
+            <a href="index.html">← Back to App</a>
+        </div>
+    </div>
 
- // Show success message
- function showSuccess(message, element = successMessage) {
- element.textContent = message;
- element.style.display = 'block';
- }
+    <!-- Forgot Password Modal -->
+    <div class="modal-overlay" id="forgotPasswordModal">
+        <div class="modal">
+            <h2>Reset Password</h2>
+            <p>Enter your email address and we'll send you a link to reset your password.</p>
 
- // Hide success message
- function hideSuccess(element = successMessage) {
- element.style.display = 'none';
- }
+            <div id="modalErrorMessage" class="error-message"></div>
+            <div id="modalSuccessMessage" class="success-message"></div>
 
- // Open modal
- function openModal() {
- forgotPasswordModal.classList.add('active');
- resetEmailInput.value = '';
- hideError(modalErrorMessage);
- hideSuccess(modalSuccessMessage);
- sendResetBtn.disabled = false;
- sendResetBtn.textContent = 'Send Reset Link';
- }
+            <div class="form-group">
+                <label for="resetEmail">Email Address</label>
+                <input type="email" id="resetEmail" placeholder="Enter your registered email" required>
+            </div>
 
- // Close modal
- function closeModal() {
- forgotPasswordModal.classList.remove('active');
- }
+            <div class="modal-buttons">
+                <button type="button" class="modal-cancel" id="cancelResetBtn">Cancel</button>
+                <button type="button" class="modal-confirm" id="sendResetBtn">Send Reset Link</button>
+            </div>
+        </div>
+    </div>
 
- // Handle forgot password link click
- forgotPasswordLink.addEventListener('click', (e) => {
- e.preventDefault();
- openModal();
- });
+    <script>
 
- // Handle cancel button
- cancelResetBtn.addEventListener('click', closeModal);
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
 
- // Close modal on overlay click
- forgotPasswordModal.addEventListener('click', (e) => {
- if (e.target === forgotPasswordModal) {
- closeModal();
- }
- });
+        // DOM Elements
+        const loginForm = document.getElementById('loginForm');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
 
- // Handle password reset
- sendResetBtn.addEventListener('click', async () => {
- const email = resetEmailInput.value.trim();
- 
- if (!email) {
- showError('Please enter your email address.', modalErrorMessage);
- return;
- }
- 
- sendResetBtn.disabled = true;
- sendResetBtn.textContent = 'Sending...';
- hideError(modalErrorMessage);
- hideSuccess(modalSuccessMessage);
- 
- try {
- await auth.sendPasswordResetEmail(email);
- showSuccess('Password reset link sent! Check your email for instructions.', modalSuccessMessage);
- sendResetBtn.disabled = true;
- sendResetBtn.textContent = 'Sent!';
- 
- // Close modal after 3 seconds
- setTimeout(() => {
- closeModal();
- }, 3000);
- } catch (error) {
- sendResetBtn.disabled = false;
- sendResetBtn.textContent = 'Send Reset Link';
- 
- let errorMsg = 'Failed to send reset email. Please try again.';
- 
- switch (error.code) {
- case 'auth/invalid-email':
- errorMsg = 'Invalid email address format.';
- break;
- case 'auth/user-not-found':
- errorMsg = 'No account found with this email.';
- break;
- case 'auth/too-many-requests':
- errorMsg = 'Too many requests. Please try again later.';
- break;
- case 'auth/network-request-failed':
- errorMsg = 'Network error. Please check your connection.';
- break;
- }
- 
- showError(errorMsg, modalErrorMessage);
- }
- });
+        // Modal Elements
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+        const cancelResetBtn = document.getElementById('cancelResetBtn');
+        const sendResetBtn = document.getElementById('sendResetBtn');
+        const resetEmailInput = document.getElementById('resetEmail');
+        const modalErrorMessage = document.getElementById('modalErrorMessage');
+        const modalSuccessMessage = document.getElementById('modalSuccessMessage');
 
- // Handle form submission
- loginForm.addEventListener('submit', async (e) => {
- e.preventDefault();
- hideError();
- hideSuccess();
- 
- const email = emailInput.value.trim();
- const password = passwordInput.value;
- 
- if (!email || !password) {
- showError('Please enter both email and password.');
- return;
- }
- 
- loginBtn.disabled = true;
- loginBtn.textContent = 'Signing In...';
- 
- try {
- const userCredential = await auth.signInWithEmailAndPassword(email, password);
- console.log('Login successful:', userCredential.user.email);
- 
- // Get user role from Firestore and redirect based on role
- try {
- console.log('Getting role for UID:', userCredential.user.uid);
- const roleDoc = await db.collection('user_roles').doc(userCredential.user.uid).get();
- const role = roleDoc.exists ? roleDoc.data().role : 'staff';
- console.log('User role:', role);
- 
- // Redirect based on role
- if (role === 'staff') {
- console.log('Redirecting to index.html');
- window.location.href = 'index.html';
- } else {
- console.log('Redirecting to level9-exec.html');
- window.location.href = 'level9-exec.html';
- }
- } catch (e) {
- console.log('Could not fetch role, redirecting to index.html. Error:', e);
- window.location.href = 'index.html';
- }
- } catch (error) {
- loginBtn.disabled = false;
- loginBtn.textContent = 'Sign In';
- 
- // Handle specific Firebase auth errors
- let errorMsg = 'An error occurred. Please try again.';
- 
- switch (error.code) {
- case 'auth/invalid-email':
- errorMsg = 'Invalid email address format.';
- break;
- case 'auth/user-disabled':
- errorMsg = 'This account has been disabled.';
- break;
- case 'auth/user-not-found':
- errorMsg = 'No account found with this email.';
- break;
- case 'auth/wrong-password':
- errorMsg = 'Incorrect password. Please try again.';
- break;
- case 'auth/invalid-credential':
- errorMsg = 'Invalid email or password.';
- break;
- case 'auth/too-many-requests':
- errorMsg = 'Too many failed attempts. Please try again later.';
- break;
- case 'auth/network-request-failed':
- errorMsg = 'Network error. Please check your connection.';
- break;
- default:
- errorMsg = 'Login failed. Please check your credentials.';
- }
- 
- showError(errorMsg);
- }
- });
- </script>
+        // Show error message
+        function showError(message, element = errorMessage) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Hide error message
+        function hideError(element = errorMessage) {
+            element.style.display = 'none';
+        }
+
+        // Show success message
+        function showSuccess(message, element = successMessage) {
+            element.textContent = message;
+            element.style.display = 'block';
+        }
+
+        // Hide success message
+        function hideSuccess(element = successMessage) {
+            element.style.display = 'none';
+        }
+
+        // Open modal
+        function openModal() {
+            forgotPasswordModal.classList.add('active');
+            resetEmailInput.value = '';
+            hideError(modalErrorMessage);
+            hideSuccess(modalSuccessMessage);
+            sendResetBtn.disabled = false;
+            sendResetBtn.textContent = 'Send Reset Link';
+        }
+
+        // Close modal
+        function closeModal() {
+            forgotPasswordModal.classList.remove('active');
+        }
+
+        // Handle forgot password link click
+        forgotPasswordLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            openModal();
+        });
+
+        // Handle cancel button
+        cancelResetBtn.addEventListener('click', closeModal);
+
+        // Close modal on overlay click
+        forgotPasswordModal.addEventListener('click', (e) => {
+            if (e.target === forgotPasswordModal) {
+                closeModal();
+            }
+        });
+
+        // Handle password reset
+        sendResetBtn.addEventListener('click', async () => {
+            const email = resetEmailInput.value.trim();
+
+            if (!email) {
+                showError('Please enter your email address.', modalErrorMessage);
+                return;
+            }
+
+            sendResetBtn.disabled = true;
+            sendResetBtn.textContent = 'Sending...';
+            hideError(modalErrorMessage);
+            hideSuccess(modalSuccessMessage);
+
+            try {
+                await auth.sendPasswordResetEmail(email);
+                showSuccess('Password reset link sent! Check your email for instructions.', modalSuccessMessage);
+                sendResetBtn.disabled = true;
+                sendResetBtn.textContent = 'Sent!';
+
+                // Close modal after 3 seconds
+                setTimeout(() => {
+                    closeModal();
+                }, 3000);
+            } catch (error) {
+                sendResetBtn.disabled = false;
+                sendResetBtn.textContent = 'Send Reset Link';
+
+                let errorMsg = 'Failed to send reset email. Please try again.';
+
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMsg = 'Invalid email address format.';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMsg = 'No account found with this email.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMsg = 'Too many requests. Please try again later.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMsg = 'Network error. Please check your connection.';
+                        break;
+                }
+
+                showError(errorMsg, modalErrorMessage);
+            }
+        });
+
+        // Handle form submission
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            hideSuccess();
+
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!email || !password) {
+                showError('Please enter both email and password.');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Signing In...';
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                console.log('Login successful:', userCredential.user.email);
+
+                // Get user role from Firestore and redirect based on role
+                try {
+                    console.log('Getting role for UID:', userCredential.user.uid);
+                    const roleDoc = await db.collection('user_roles').doc(userCredential.user.uid).get();
+                    const role = roleDoc.exists ? roleDoc.data().role : 'staff';
+                    console.log('User role:', role);
+
+                    // Redirect based on role
+                    if (role === 'staff') {
+                        console.log('Redirecting to index.html');
+                        window.location.href = 'index.html';
+                    } else {
+                        console.log('Redirecting to level9-exec.html');
+                        window.location.href = 'level9-exec.html';
+                    }
+                } catch (e) {
+                    console.log('Could not fetch role, redirecting to index.html. Error:', e);
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                loginBtn.disabled = false;
+                loginBtn.textContent = 'Sign In';
+
+                // Handle specific Firebase auth errors
+                let errorMsg = 'An error occurred. Please try again.';
+
+                switch (error.code) {
+                    case 'auth/invalid-email':
+                        errorMsg = 'Invalid email address format.';
+                        break;
+                    case 'auth/user-disabled':
+                        errorMsg = 'This account has been disabled.';
+                        break;
+                    case 'auth/user-not-found':
+                        errorMsg = 'No account found with this email.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMsg = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/invalid-credential':
+                        errorMsg = 'Invalid email or password.';
+                        break;
+                    case 'auth/too-many-requests':
+                        errorMsg = 'Too many failed attempts. Please try again later.';
+                        break;
+                    case 'auth/network-request-failed':
+                        errorMsg = 'Network error. Please check your connection.';
+                        break;
+                    default:
+                        errorMsg = 'Login failed. Please check your credentials.';
+                }
+
+                showError(errorMsg);
+            }
+        });
+    </script>
 </body>
 
 </html>

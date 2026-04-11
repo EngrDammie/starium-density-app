@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="firebase-storage.js"></script>
     <style>
         :root {
@@ -398,7 +399,7 @@
         }
         
         // Firebase config for REST API (needed to create users without switching session)
-        const FIREBASE_API_KEY = 'AIzaSyBO3Yrns0NibOzcM5EVUdQ62Std95ltZBk';
+        const FIREBASE_API_KEY = window.firebaseConfig?.apiKey;
         
         async function addUser() {
             const email = document.getElementById('newUserEmail').value.trim();

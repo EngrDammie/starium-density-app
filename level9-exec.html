@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
     <script src="firebase-storage.js"></script>
     <style>
         :root {
@@ -47,8 +49,15 @@
         }
 
         @keyframes slideDown {
-            from { transform: translateY(-100%); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         h1 {
@@ -344,7 +353,8 @@
 
         .data-table {
             width: 100%;
-            min-width: 600px; /* Force horizontal scroll on small screens */
+            min-width: 600px;
+            /* Force horizontal scroll on small screens */
             border-collapse: collapse;
             font-size: 0.85rem;
         }
@@ -419,8 +429,15 @@
         }
 
         @keyframes modalPop {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .modal h2 {
@@ -483,6 +500,7 @@
             margin: 15px 0;
             text-align: left;
         }
+
         .modal-info p {
             margin: 12px 0;
             font-size: 1rem;
@@ -490,10 +508,12 @@
             justify-content: space-between;
             align-items: center;
         }
+
         .modal-info span {
             color: var(--primary);
             font-weight: bold;
         }
+
         .modal-close {
             background-color: var(--primary);
             color: #121212;
@@ -506,13 +526,16 @@
             margin-top: 20px;
             transition: all 0.3s ease;
         }
+
         .modal-close:hover {
             background-color: var(--success);
             transform: scale(1.05);
         }
+
         .machine-btn {
             cursor: pointer;
         }
+
         .machine-btn:hover {
             transform: translateY(-3px);
             box-shadow: 0 8px 20px rgba(0, 188, 212, 0.4);
@@ -532,25 +555,26 @@
                 grid-template-columns: repeat(6, 1fr);
                 gap: 8px;
             }
-            
+
             .machine-btn {
                 padding: 10px 4px;
                 font-size: 0.8rem;
             }
-            
+
             .density-value {
                 font-size: 3rem;
             }
-            
+
             .approval-buttons {
                 grid-template-columns: 1fr;
             }
-            
+
             .data-table {
                 font-size: 0.75rem;
             }
-            
-            .data-table th, .data-table td {
+
+            .data-table th,
+            .data-table td {
                 padding: 8px 4px;
             }
         }
@@ -560,7 +584,7 @@
                 grid-template-columns: repeat(6, 1fr);
                 gap: 6px;
             }
-            
+
             .machine-btn {
                 padding: 8px 3px;
                 font-size: 0.75rem;
@@ -573,11 +597,11 @@
                 gap: 5px;
                 max-width: 100%;
             }
-            
+
             .machine-grid-container {
                 padding: 12px;
             }
-            
+
             .machine-btn {
                 padding: 8px 2px;
                 font-size: 0.7rem;
@@ -590,7 +614,7 @@
                 grid-template-columns: repeat(6, 1fr);
                 gap: 4px;
             }
-            
+
             .machine-btn {
                 padding: 6px 1px;
                 font-size: 0.65rem;
@@ -603,7 +627,7 @@
                 grid-template-columns: repeat(6, 1fr);
                 gap: 3px;
             }
-            
+
             .machine-btn {
                 padding: 5px 1px;
                 font-size: 0.6rem;
@@ -778,9 +802,17 @@
             font-size: 0.9rem;
         }
 
-        .settings-status.success { color: var(--success); }
-        .settings-status.error { color: var(--danger); }
-        .settings-status.loading { color: var(--warning); }
+        .settings-status.success {
+            color: var(--success);
+        }
+
+        .settings-status.error {
+            color: var(--danger);
+        }
+
+        .settings-status.loading {
+            color: var(--warning);
+        }
 
         /* Loading */
         .loading {
@@ -800,7 +832,9 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* User Auth Bar */
@@ -815,10 +849,12 @@
             background: rgba(0, 0, 0, 0.7);
             z-index: 1000;
         }
+
         .auth-bar .user-email {
             color: var(--primary);
             font-size: 0.9rem;
         }
+
         .auth-bar .logout-btn {
             background: #FF1744;
             color: #fff;
@@ -829,17 +865,19 @@
             font-size: 0.85rem;
             transition: all 0.3s ease;
         }
+
         .auth-bar .logout-btn:hover {
             background: #ff4444;
         }
     </style>
 </head>
+
 <body>
-<!-- Auth Bar -->
-<div class="auth-bar" id="authBar">
-    <span class="user-email" id="userEmail">Loading...</span>
-    <button class="logout-btn" id="logoutBtn">Logout</button>
-</div>
+    <!-- Auth Bar -->
+    <div class="auth-bar" id="authBar">
+        <span class="user-email" id="userEmail">Loading...</span>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
 
     <div class="sync-status online" id="syncStatus">🟢 Online</div>
 
@@ -887,7 +925,7 @@
     <div class="machine-grid-container">
         <div class="machine-grid-title">🏭 Machine Status</div>
         <div class="machine-grid" id="machineGrid"></div>
-        
+
         <div class="machine-remarks">
             <div class="machine-remarks-title">📝 Remarks</div>
             <div class="machine-remarks-content" id="machineRemarks">--</div>
@@ -962,13 +1000,14 @@
     <button class="settings-btn" id="settingsBtn" title="Settings">⚙️</button>
 
     <!-- Reports Button -->
-    <a href="reports.html" class="settings-btn" id="reportsBtn" title="Reports" style="text-decoration: none; bottom: 80px;">📊</a>
+    <a href="reports.html" class="settings-btn" id="reportsBtn" title="Reports"
+        style="text-decoration: none; bottom: 80px;">📊</a>
 
     <!-- Settings Modal -->
     <div class="settings-overlay" id="settingsOverlay">
         <div class="settings-modal">
             <h2>⚙️ Settings</h2>
-            
+
             <div class="settings-group">
                 <h3>Level 9 Density</h3>
                 <div class="settings-field">
@@ -1024,7 +1063,9 @@
             <div class="settings-group">
                 <h3>Administration</h3>
                 <div class="settings-field">
-                    <a href="admin.html" class="btn" style="display: inline-block; text-align: center; text-decoration: none;">🔧 Open Machine Admin Panel</a>
+                    <a href="admin.html" class="btn"
+                        style="display: inline-block; text-align: center; text-decoration: none;">🔧 Open Machine Admin
+                        Panel</a>
                 </div>
             </div>
 
@@ -1036,7 +1077,6 @@
         </div>
     </div>
 
-    <script src="firebase-storage.js"></script>
     <script>
         // ===== AUTH CHECK =====
         // Check if user is authenticated, redirect to login if not
@@ -1047,11 +1087,11 @@
             } else {
                 // User is logged in, show email and setup logout
                 document.getElementById('userEmail').textContent = user.email;
-                
+
                 // Store user info in localStorage for role checking
                 localStorage.setItem('userEmail', user.email);
                 localStorage.setItem('userUid', user.uid);
-                
+
                 // Check user role from Firestore user_roles collection
                 try {
                     const roleDoc = await db.collection('user_roles').doc(user.uid).get();
@@ -1105,11 +1145,11 @@
         async function init() {
             // Check auth before allowing access
             await requireAuth();
-            
+
             // Check role - only admin and manager can access executive views
             const userRole = localStorage.getItem('userRole');
             const user = firebase.auth().currentUser;
-            
+
             // Get role from Firestore if not in localStorage
             if (!userRole && user) {
                 try {
@@ -1128,7 +1168,7 @@
                 showAccessDenied();
                 return;
             }
-            
+
             function showAccessDenied() {
                 document.body.innerHTML = `
                     <div style="display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #121212; color: #fff; text-align: center; padding: 20px;">
@@ -1140,20 +1180,20 @@
                     </div>
                 `;
             }
-            
+
             updateDateTime();
             renderMachineGrid();
-            
+
             // First, load the current shift approval to get currentApprovalId
             await loadCurrentShiftApproval();
-            
+
             // Then load data that depends on currentApprovalId
             await Promise.all([
                 loadQCStaffInfo(),
                 loadRecentTests(),
                 loadTestsTodayCount()
             ]);
-            
+
             // Real-time listener for tests in this shift (using approvalDocId)
             if (currentApprovalId) {
                 unsubscribeLatestTest = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
@@ -1197,7 +1237,7 @@
             const dateStr = `${day}-${month}-${year}`;
             const hour = now.getHours();
             const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
-            
+
             document.getElementById('currentDate').textContent = dateStr;
             document.getElementById('currentShift').textContent = shift;
         }
@@ -1225,12 +1265,12 @@
         function updateStaffFromTest(test) {
             document.getElementById('qcStaffName').textContent = test.qcName || '--';
             document.getElementById('qcStaffTeam').textContent = test.team || '--';
-            
+
             if (test.createdAt) {
                 const date = test.createdAt.toDate ? test.createdAt.toDate() : new Date(test.createdAt);
                 document.getElementById('lastTestTime').textContent = date.toLocaleTimeString();
             }
-            
+
             // Update machine highlights with selected machines from test
             if (test.machines && Array.isArray(test.machines)) {
                 updateSelectedMachines(test.machines);
@@ -1253,7 +1293,7 @@
             const now = new Date();
             const hour = now.getHours();
             let shift, date;
-            
+
             if (hour >= 7 && hour < 19) {
                 // DAY shift (7am - 6:59pm) - shift started today
                 shift = 'DAY';
@@ -1271,7 +1311,7 @@
                     date = getShiftDate(yesterday);
                 }
             }
-            
+
             return { shift, date };
         }
 
@@ -1281,7 +1321,7 @@
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-        
+
         async function loadCurrentShiftApproval() {
             const { shift, date } = getShiftDateInfo();
 
@@ -1330,16 +1370,16 @@
             // Use approvalDocId to get tests for this specific shift only
             let tests = [];
             console.log('loadRecentTests - currentApprovalId:', currentApprovalId);
-            
+
             if (currentApprovalId) {
                 tests = await getTestsByApprovalDoc(currentApprovalId, 10);
                 console.log('loadRecentTests - tests found:', tests);
             }
-            
+
             console.log('loadRecentTests - final tests:', tests);
-            
+
             if (!tests || tests.length === 0) {
-                document.getElementById('recentDataTable').innerHTML = 
+                document.getElementById('recentDataTable').innerHTML =
                     '<div class="loading">No tests recorded for this shift yet</div>';
                 return;
             }
@@ -1374,14 +1414,14 @@
                     </thead>
                     <tbody>
                         ${tests.map(test => {
-                            const densityNum = parseFloat(test.density) || 0;
-                            const density = densityNum.toFixed(3);
-                            const status = getDensityStatus(densityNum);
-                            const time = formatTime(test.createdAt);
-                            const appearance = test.appearance === 'A' ? '✓' : test.appearance === 'U' ? '✗' : '--';
-                            const fragrance = test.fragrance === 'A' ? '✓' : test.fragrance === 'U' ? '✗' : '--';
-                            const machines = test.machines ? test.machines.join(', ') : '--';
-                            return `
+                const densityNum = parseFloat(test.density) || 0;
+                const density = densityNum.toFixed(3);
+                const status = getDensityStatus(densityNum);
+                const time = formatTime(test.createdAt);
+                const appearance = test.appearance === 'A' ? '✓' : test.appearance === 'U' ? '✗' : '--';
+                const fragrance = test.fragrance === 'A' ? '✓' : test.fragrance === 'U' ? '✗' : '--';
+                const machines = test.machines ? test.machines.join(', ') : '--';
+                return `
                                 <tr>
                                     <td>${time}</td>
                                     <td>${test.weight || '--'}g</td>
@@ -1393,7 +1433,7 @@
                                     <td>${fragrance}</td>
                                 </tr>
                             `;
-                        }).join('')}
+            }).join('')}
                     </tbody>
                 </table>
             `;
@@ -1404,30 +1444,30 @@
         function updateCurrentDensity(test) {
             lastTestData = test;
             const density = parseFloat(test.density);
-            
+
             if (isNaN(density)) return;
-            
+
             const densityEl = document.getElementById('currentDensity');
             densityEl.textContent = density.toFixed(3);
-            
+
             const status = getDensityStatus(density);
-            
+
             // Apply color to density value
             densityEl.className = `density-value ${status}`;
-            
+
             // Update status badge
             const statusEl = document.getElementById('densityStatus');
-            statusEl.textContent = status === 'normal' ? '✓ Normal' : 
-                                   status === 'low' ? '⚠ Low' : '⚠ High';
+            statusEl.textContent = status === 'normal' ? '✓ Normal' :
+                status === 'low' ? '⚠ Low' : '⚠ High';
             statusEl.className = `density-status ${status}`;
             statusEl.style.display = 'inline-block';
 
             // Update machine highlights
             updateMachineHighlights(density);
-            
+
             // Update remarks display
             updateMachineRemarks(test);
-            
+
             // Update selected machines
             updateMachineHighlights(density);
         }
@@ -1448,7 +1488,7 @@
                 const min = spec ? spec.min : m.min;
                 const max = spec ? spec.max : m.max;
                 const inRange = density >= min && density <= max;
-                
+
                 btn.classList.toggle('match', inRange);
                 btn.classList.toggle('dimmed', !inRange);
             });
@@ -1458,7 +1498,7 @@
         function updateMachineRemarks(test) {
             const remarksEl = document.getElementById('machineRemarks');
             const remarks = test?.remarks;
-            
+
             if (remarks && remarks.trim()) {
                 remarksEl.textContent = remarks;
                 remarksEl.classList.remove('empty');
@@ -1467,14 +1507,14 @@
                 remarksEl.classList.add('empty');
             }
         }
-        
+
         // Highlight selected machines from the test
         function updateSelectedMachines(selectedMachineIds) {
             const machines = getMachines();
             machines.forEach(m => {
                 const btn = document.getElementById(`machine-${m.id}`);
                 const isSelected = selectedMachineIds.includes(m.id);
-                
+
                 if (isSelected) {
                     btn.classList.add('selected');
                 } else {
@@ -1493,7 +1533,7 @@
                 qcManager: 'Quality Control Manager Approval',
                 qcSupervisor: 'Quality Control Supervisor Approval'
             };
-            
+
             document.getElementById('modalTitle').textContent = titles[approverType];
             document.getElementById('approverNameInput').value = '';
             document.getElementById('approvalModal').classList.add('active');
@@ -1512,20 +1552,20 @@
             }
 
             const result = await addApprover(currentApprovalId, name, currentApproverType);
-            
+
             if (!result) {
                 alert('Failed to save approval. Please try again.');
                 return;
             }
-            
+
             closeApprovalModal();
-            
+
             // Reload the shift approval to get updated data
             await loadCurrentShiftApproval();
-            
+
             // Update the button states
             updateApprovalButtons();
-            
+
             // Show approval message on button and disable it
             const btn = document.getElementById('btn' + currentApproverType.charAt(0).toUpperCase() + currentApproverType.slice(1));
             if (btn) {
@@ -1576,7 +1616,7 @@
             document.getElementById('settingDayShiftStart').value = config.dayShiftStart;
             document.getElementById('settingNightShiftStart').value = config.nightShiftStart;
             document.getElementById('settingShowSettingsBtnLevel9Exec').checked = config.showSettingsBtnLevel9Exec !== false;
-            
+
             settingsStatus.textContent = '';
             settingsOverlay.classList.add('active');
         }
@@ -1642,7 +1682,7 @@
         if (settingsBtnLevel9) {
             settingsBtnLevel9.style.display = configOnLoad.showSettingsBtnLevel9Exec !== false ? 'flex' : 'none';
         }
-        
+
         loadConfig().then(config => {
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
@@ -1654,10 +1694,10 @@
         function openMachineDetails(machineId) {
             const modal = document.getElementById('machineDetailsModal');
             if (!modal) return;
-            
+
             const machine = getMachineById(machineId);
             if (!machine) return;
-            
+
             const spec = getGramSpec(machine.gram);
             let cartonContent = 'N/A';
             if (spec && spec.piecesPerCarton) {
@@ -1667,11 +1707,11 @@
                     cartonContent = `${spec.piecesPerCarton} pieces`;
                 }
             }
-            
+
             const densityText = document.getElementById('currentDensity')?.textContent;
             const currentDensity = densityText ? parseFloat(densityText) : null;
             let status = 'Unknown', statusColor = '#888';
-            
+
             if (currentDensity && !isNaN(currentDensity)) {
                 const config = getConfig();
                 if (currentDensity < config.level9MinDensity) {
@@ -1684,18 +1724,18 @@
                     status = '⚠️ Out of Range'; statusColor = '#FF9800';
                 }
             }
-            
+
             document.getElementById('md-machine-id').textContent = machine.id;
             document.getElementById('md-machine-name').textContent = machine.name || 'Machine ' + machine.id;
             document.getElementById('md-line').textContent = machine.line || 'N/A';
             document.getElementById('md-gram').textContent = machine.gram + 'g';
             document.getElementById('md-range').textContent = machine.min.toFixed(3) + ' - ' + machine.max.toFixed(3) + ' g/mL';
             document.getElementById('md-carton').textContent = cartonContent;
-            
+
             const statusEl = document.getElementById('md-status');
             statusEl.textContent = status;
             statusEl.style.color = statusColor;
-            
+
             modal.classList.add('active');
         }
 
@@ -1710,34 +1750,35 @@
             grid.querySelectorAll('.machine-btn').forEach(btn => {
                 const id = parseInt(btn.textContent.trim().replace('M', ''));
                 if (!isNaN(id)) {
-                    btn.onclick = function() { openMachineDetails(id); };
+                    btn.onclick = function () { openMachineDetails(id); };
                 }
             });
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const closeBtn = document.getElementById('machineDetailsClose');
             if (closeBtn) closeBtn.onclick = closeMachineDetailsModal;
-            
+
             const modal = document.getElementById('machineDetailsModal');
             if (modal) {
-                modal.onclick = function(e) { if (e.target === modal) closeMachineDetailsModal(); };
+                modal.onclick = function (e) { if (e.target === modal) closeMachineDetailsModal(); };
             }
-            
-            document.addEventListener('keydown', function(e) { 
-                if (e.key === 'Escape') closeMachineDetailsModal(); 
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') closeMachineDetailsModal();
             });
         });
-        
+
         // Add mode switch button for admin/manager
         const modeSwitchBtn = document.createElement('button');
         modeSwitchBtn.id = 'modeSwitchBtn';
         modeSwitchBtn.innerHTML = '🔄 Switch to BOT Mode';
         modeSwitchBtn.style.cssText = 'position: fixed; bottom: 20px; right: 20px; background: #FF9800; color: #fff; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; z-index: 100;';
-        modeSwitchBtn.onclick = function() {
+        modeSwitchBtn.onclick = function () {
             window.location.href = 'bot-exec.html';
         };
         document.body.appendChild(modeSwitchBtn);
     </script>
 </body>
+
 </html>

@@ -57,26 +57,59 @@ While your Firestore rules protect the database, hiding the config is important 
 
 ## Quick Win: API Key Domain Restrictions ⭐ Do This First!
 
-This takes **2 minutes** and provides immediate protection.
+This takes **5 minutes** and provides immediate protection.
+
+### Important: You Must Use Google Cloud Console
+
+The Firebase Console no longer hosts API key settings. You must use **Google Cloud Console** instead.
 
 ### Steps
 
-1. Go to [Firebase Console](https://console.firebase.google.com/)
-2. Select project **starium-rafa-app**
-3. Click **Project Settings** (gear icon)
-4. Under "Your apps", click the **</>** web app
-5. Look for **API key** section
-6. Click **Edit** (the pencil icon)
-7. Under "Accept requests from", check: **✅ HTTP referrers (websites)**
-8. Under "Website restrictions", add:
-   ```
-   engrdammie.github.io
-   starium-density-app.firebaseapp.com
-   ```
-9. Click **Save**
+1. **Go to Google Cloud Console**:
+   - Visit: https://console.cloud.google.com/
+   - Select project: **starium-rafa-app**
+
+2. **Navigate to API Keys**:
+   - In the search bar, type "API Keys" or go to **APIs & Services** → **Credentials**
+
+3. **Find your Browser API Key**:
+   - Look for "Browser key (auto-created by Firebase)" 
+   - Click on the key name to edit it
+
+4. **Set Application Restrictions** (Critical Step!):
+   - Under "Application restrictions", select **HTTP referrers (websites)**
+
+5. **Add Website Restrictions** (Most People Miss This!):
+   - For each domain, you **must add TWO URLs**:
+     - Domain without wildcard: `yourdomain.example.com`
+     - Domain with wildcard: `yourdomain.example.com/*`
+   
+   - Add all eight for your app (including local testing):
+     ```
+     engrdammie.github.io
+     engrdammie.github.io/*
+     starium-density-app.firebaseapp.com
+     starium-density-app.firebaseapp.com/*
+     127.0.0.1
+     127.0.0.1/*
+     localhost
+     localhost/*
+     ```
+
+6. **Click Save**
+
+7. **Wait 5 minutes** for changes to propagate
 
 ### Result
-Even if someone steals your API key, they **cannot** use it on their own websites. It will only work on your domains.
+Even if someone steals your API key, they **cannot** use it on their own websites (for Auth API). 
+
+### Limitations
+- HTTP referrer restrictions **can be spoofed** by determined attackers
+- They mainly work for Firebase Auth; Firestore may not enforce them
+- This is a useful layer but not bulletproof protection
+
+### For Maximum Security
+Combine this with the GitHub Secrets approach (below) to remove the API key from your source code entirely, then add Firebase App Check for additional protection.
 
 ---
 
