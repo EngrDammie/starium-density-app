@@ -30,6 +30,9 @@ jobs:
       - name: Create Firebase Config File
         run: |
           mkdir -p dist
+          cp *.html dist/
+          cp *.js dist/
+          cp *.json dist/
           cat > dist/firebase-config.js << 'ENDOFFILE'
           window.firebaseConfig = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
@@ -48,6 +51,8 @@ jobs:
           ls -la dist/
           echo "=== firebase-config.js contents ==="
           cat dist/firebase-config.js
+          echo "=== HTML files ==="
+          ls dist/*.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
