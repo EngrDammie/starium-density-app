@@ -1061,6 +1061,28 @@
             // Network status
             window.addEventListener('online', updateNetworkStatus);
             window.addEventListener('offline', updateNetworkStatus);
+
+            // Start shift change monitor
+            startShiftMonitor();
+        }
+
+        // ===== SHIFT CHANGE AUTO-RELOAD =====
+        let shiftOnPageLoad = null;
+        let shiftMonitorInterval = null;
+
+        function startShiftMonitor() {
+            const info = getShiftDateInfo();
+            shiftOnPageLoad = info.shift;
+            console.log('[ShiftMonitor] Started. Current shift:', shiftOnPageLoad);
+
+            // Check every minute if shift has changed
+            shiftMonitorInterval = setInterval(() => {
+                const info = getShiftDateInfo();
+                if (info.shift !== shiftOnPageLoad) {
+                    console.log('[ShiftMonitor] Shift changed from', shiftOnPageLoad, 'to', info.shift, '- reloading page...');
+                    location.reload();
+                }
+            }, 60000);
         }
 
         function updateDateTime() {
