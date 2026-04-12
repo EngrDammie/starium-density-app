@@ -29,8 +29,8 @@ jobs:
 
       - name: Create Firebase Config File
         run: |
-          echo "=== Creating firebase-config.js ==="
-          cat > firebase-config.js << 'ENDOFFILE'
+          mkdir -p dist
+          cat > dist/firebase-config.js << 'ENDOFFILE'
           window.firebaseConfig = {
             apiKey: "${{ secrets.FIREBASE_API_KEY }}",
             authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -40,19 +40,19 @@ jobs:
             appId: "${{ secrets.FIREBASE_APP_ID }}"
           };
           ENDOFFILE
-          echo "=== firebase-config.js created ==="
+          echo "=== firebase-config.js created in dist/ ==="
 
       - name: "Debug: Verify deployment"
         run: |
-          echo "=== Files in directory ==="
-          ls -la
+          echo "=== Files in dist/ ==="
+          ls -la dist/
           echo "=== firebase-config.js contents ==="
-          cat firebase-config.js
+          cat dist/firebase-config.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: 'dist'
 
       - name: Deploy to GitHub Pages
         id: deployment
