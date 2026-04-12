@@ -316,7 +316,28 @@ async function saveMachine(e) {
 
 Also show displayNumber in machine table listing.
 
-#### Step 5: Test with New Machines
+#### Step 5: Handle Machine Name Updates
+
+**Name field is independent** - users can update the machine name anytime in admin.html to match the display number (e.g., "Machine 7", "M7", "Silo 7", etc.).
+
+- The `name` field doesn't affect any logic or database references
+- Historical tests don't store the machine name - they store the machine `id`
+- Changing the name doesn't break any existing data
+
+**Optional enhancement** (for future): Add auto-fill feature that suggests name based on displayNumber:
+
+```javascript
+// In admin.html - optional future enhancement
+function onDisplayNumberChange() {
+    const displayNum = document.getElementById('machineDisplayNumber').value;
+    // User can choose to auto-fill or type manually
+    // document.getElementById('machineName').value = 'Machine ' + displayNum;
+}
+```
+
+This is optional - users can manually type whatever name they want anyway.
+
+#### Step 6: Test with New Machines
 
 When user adds new machines (e.g., 4 new on Line 1A, 4 new on Line 3B):
 - They get assigned IDs (31, 32, 33, 34, 35, 36, 37, 38)
@@ -627,3 +648,19 @@ After implementation, you can test by:
 - User confirmed: Machines numbered top-to-bottom within each line
 - User confirmed: Current visual arrangement matches reality - goal is to make it dynamic
 - User wants to test by adding 4 new machines to Line 1A and Line 3B
+
+---
+
+## Implementation Status
+
+- [x] Analyze current implementation
+- [x] Document problem and requirements
+- [x] Decide on implementation approach (displayNumber system)
+- [ ] Add displayNumber field migration logic (backward compatibility)
+- [ ] Implement helper functions in firebase-storage.js
+- [ ] Update CSS for flexibility
+- [ ] Update index.html machine grid (use displayNumber)
+- [ ] Update level9-exec.html machine grid (use displayNumber)
+- [ ] Update admin.html - add displayNumber field to form and table
+- [ ] Update real-time config subscription to re-render on machine changes
+- [ ] Test with new machines, renumbering, and removal
