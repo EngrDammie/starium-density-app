@@ -171,6 +171,47 @@
             border: 1px solid var(--border); border-radius: 6px;
         }
         
+        /* Toggle Switch */
+        .toggle {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #444;
+            transition: 0.4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+        
         /* Modal */
         .modal-overlay {
             display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
@@ -216,7 +257,7 @@
     </div>
 
     <div class="container">
-        <a href="admin.html" class="back-link">← Back to Admin</a>
+        <a href="machine-management.html" class="back-link">← Back to Admin</a>
         
         <header>
             <h1>🔐 User Management</h1>
@@ -236,6 +277,26 @@
         
         <!-- Main Content -->
         <div id="mainContent">
+            <!-- Authentication Settings -->
+            <div class="add-user-section" style="margin-top: 20px;">
+                <h2>🔐 Authentication Settings</h2>
+                <div class="form-row" style="align-items: center;">
+                    <label class="toggle" style="position: relative; display: inline-block; width: 50px; height: 24px;">
+                        <input type="checkbox" id="authToggle" onchange="toggleAuth()" style="opacity: 0; width: 0; height: 0;">
+                        <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.4s; border-radius: 24px;"></span>
+                    </label>
+                    <span style="margin-left: 15px; font-size: 1.1rem;" id="authStatus">Auth is currently: DISABLED</span>
+                </div>
+                <div class="card" style="margin-top: 15px; padding: 15px; background: var(--bg-card-hover); border-radius: 8px;">
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">
+                        ℹ️ When <strong>disabled</strong>: Anyone can access the app without login.<br>
+                        When <strong>enabled</strong>: Users must log in to access the app.<br>
+                        Anyone can <strong>turn auth ON</strong>. Only admin can <strong>turn auth OFF</strong>.
+                    </p>
+                </div>
+                <div id="authMessage" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
+            </div>
+            
             <!-- Add User Section -->
             <div class="add-user-section">
                 <h2>➕ Add New User</h2>
@@ -295,6 +356,13 @@
             await requireAuth();
             
             await checkAuth();
+            
+            // Load auth state regardless of checkAuth outcome
+            try {
+                await loadAuthState();
+            } catch (e) {
+                console.log('Could not load auth state:', e);
+            }
         });
         
         async function checkAuth() {
@@ -509,6 +577,70 @@
                 localStorage.removeItem('userRole');
                 window.location.href = 'login.html';
             });
+        }
+
+        // Load initial auth state
+        async function loadAuthState() {
+            // Wait for Firestore to be ready
+            if (!window.db) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+            }
+            
+            try {
+                const authDoc = await window.db.collection('config').doc('auth_settings').get();
+                const authEnabled = authDoc.exists ? authDoc.data().authEnabled : false;
+                document.getElementById('authToggle').checked = authEnabled;
+                document.getElementById('authStatus').textContent = 
+                    'Auth is currently: ' + (authEnabled ? 'ENABLED' : 'DISABLED');
+            } catch (e) {
+                console.log('Could not load auth state:', e);
+                // Set default state
+                document.getElementById('authStatus').textContent = 'Auth is currently: DISABLED';
+            }
+        }
+
+        async function toggleAuth() {
+            const toggle = document.getElementById('authToggle');
+            const newState = toggle.checked;
+            const messageEl = document.getElementById('authMessage');
+            
+            try {
+                const doc = await window.db.collection('config').doc('auth_settings').get();
+                const currentState = doc.exists ? doc.data().authEnabled : false;
+                
+                if (!newState && currentState) {
+                    const userEmail = localStorage.getItem('userEmail');
+                    if (userEmail !== ADMIN_EMAIL) {
+                        toggle.checked = true;
+                        messageEl.style.display = 'block';
+                        messageEl.style.background = '#F44336';
+                        messageEl.style.color = '#fff';
+                        messageEl.textContent = '⚠️ Only admin (dammieoptimus@gmail.com) can disable authentication!';
+                        setTimeout(() => messageEl.style.display = 'none', 4000);
+                        return;
+                    }
+                }
+                
+                await window.db.collection('config').doc('auth_settings').set({
+                    authEnabled: newState,
+                    updatedAt: new Date()
+                });
+                
+                document.getElementById('authStatus').textContent = 
+                    'Auth is currently: ' + (newState ? 'ENABLED' : 'DISABLED');
+                
+                messageEl.style.display = 'block';
+                messageEl.style.background = newState ? '#4CAF50' : '#FF9800';
+                messageEl.style.color = '#fff';
+                messageEl.textContent = '✅ Authentication ' + (newState ? 'enabled' : 'disabled') + '!';
+                setTimeout(() => messageEl.style.display = 'none', 4000);
+            } catch (e) {
+                console.error('Error toggling auth:', e);
+                messageEl.style.display = 'block';
+                messageEl.style.background = '#F44336';
+                messageEl.style.color = '#fff';
+                messageEl.textContent = '❌ Error updating authentication settings';
+            }
         }
     </script>
 </body>

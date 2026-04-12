@@ -293,13 +293,35 @@
         }
 
         .machine-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            display: flex;
             gap: 12px;
             margin-top: 20px;
-            max-width: 600px;
+            max-width: 800px;
             margin-left: auto;
             margin-right: auto;
+            justify-content: space-between;
+        }
+
+        .machine-grid-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .machine-btn {
+            background: linear-gradient(145deg, #1E1E1E, #2d2d2d);
+            color: #ffffff;
+            border: 2px solid #00BCD4;
+            padding: 12px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+            min-height: 50px;
+            justify-self: stretch;
         }
 
         .machine-btn {
@@ -1209,7 +1231,7 @@
             <div class="settings-group">
                 <h3>Administration</h3>
                 <div class="settings-field" id="adminLinkContainer">
-                    <a href="admin.html" class="btn"
+                    <a href="machine-management.html" class="btn"
                         style="display: inline-block; text-align: center; text-decoration: none;">🔧 Open Machine Admin
                         Panel</a>
                 </div>
@@ -1849,32 +1871,53 @@
             }
 
             let html = `
- <div class="density-display">
- <div class="density-value ${densityClass}">${currentDensity}</div>
- <div class="density-label">g/mL</div>
- </div>
- <div class="machine-grid">
- `;
+  <div class="density-display">
+  <div class="density-value ${densityClass}">${currentDensity}</div>
+  <div class="density-label">g/mL</div>
+  </div>
+  <div class="machine-grid">
+  `;
 
-            const columnOrder = [26, 21, 16, 11, 6, 1, 27, 22, 17, 12, 7, 2, 28, 23, 18, 13, 8, 3, 29, 24, 19, 14, 9, 4, 30, 25, 20, 15, 10, 5];
-
-            columnOrder.forEach(id => {
-                const isMatch = matchingIds.includes(id);
-                const isSelected = selectedMachines.has(id);
-                const isOverride = overrideMachines.has(id);
-
-                let btnClass = 'machine-btn';
-                if (isMatch && isSelected) {
-                    btnClass += ' highlighted selected';
-                } else if (isMatch) {
-                    btnClass += ' highlighted';
-                } else if (isSelected || isOverride) {
-                    btnClass += ' selected override';
-                } else {
-                    btnClass += ' dimmed';
+            const displayOrder = getMachinesInDisplayOrder();
+            
+            // Group machines by line
+            const lines = ['3B', '3A', '2B', '2A', '1B', '1A'];
+            const machinesByLine = {};
+            lines.forEach(l => machinesByLine[l] = []);
+            displayOrder.forEach(m => {
+                if (machinesByLine[m.line]) {
+                    machinesByLine[m.line].push(m);
                 }
+            });
+            
+            // Render each column (line)
+            lines.forEach(lineId => {
+                html += '<div class="machine-grid-column">';
+                const lineMachines = machinesByLine[lineId] || [];
+                lineMachines.forEach(m => {
+                    const id = m.id;
+                    const displayNum = m.displayNumber;
+                    const machine = getMachineById(id);
+                    if (!machine) return;
 
-                html += `<button class="${btnClass}" data-id="${id}">M${id}</button>`;
+                    const isMatch = matchingIds.includes(id);
+                    const isSelected = selectedMachines.has(id);
+                    const isOverride = overrideMachines.has(id);
+
+                    let btnClass = 'machine-btn';
+                    if (isMatch && isSelected) {
+                        btnClass += ' highlighted selected';
+                    } else if (isMatch) {
+                        btnClass += ' highlighted';
+                    } else if (isSelected || isOverride) {
+                        btnClass += ' selected override';
+                    } else {
+                        btnClass += ' dimmed';
+                    }
+
+                    html += `<button class="${btnClass}" data-id="${id}">M${displayNum}</button>`;
+                });
+                html += '</div>';
             });
 
             html += '</div>';
@@ -1925,8 +1968,9 @@
             const machine = getMachineById(machineId);
             const line = machine ? machine.line : 'Unknown';
             const isSelected = selectedMachines.has(machineId);
+            const displayNum = machine && machine.displayNumber !== undefined ? machine.displayNumber : machineId;
 
-            document.getElementById('modal-machine-id').textContent = `M${machineId}`;
+            document.getElementById('modal-machine-id').textContent = `M${displayNum}`;
             document.getElementById('modal-line').textContent = line;
             document.getElementById('modal-gram').textContent = `${machine.gram}g`;
             document.getElementById('modal-range').textContent = `${machine.min.toFixed(3)} - ${machine.max.toFixed(3)}`;
@@ -2217,6 +2261,11 @@
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
                 settingsBtn.style.display = config.showSettingsBtnIndex !== false ? 'flex' : 'none';
+            }
+
+            // Re-render machine grid when machines change
+            if (typeof renderResults === 'function' && currentDensity) {
+                renderResults();
             }
 
             console.log('Config updated from server:', CONFIG);

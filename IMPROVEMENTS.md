@@ -219,7 +219,7 @@ async function logoutUser() {
 Create a simple `login.html` page where users enter email/password before seeing the main app
 
 #### Step 4: Protect each page
-At the top of `index.html`, `admin.html`, `level9-exec.html`, add:
+At the top of `index.html`, `machine-management.html`, `level9-exec.html`, add:
 
 ```javascript
 // Check if logged in

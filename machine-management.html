@@ -537,7 +537,6 @@
             <button class="tab-btn" data-tab="gramspecs">Gram Specifications</button>
             <button class="tab-btn" data-tab="settings">Grid Settings</button>
             <button class="tab-btn" data-tab="importexport">Import/Export</button>
-            <button class="tab-btn" data-tab="auth">Authentication</button>
         </div>
 
         <!-- Machines Panel -->
@@ -576,6 +575,7 @@
                     <thead>
                         <tr>
                             <th>ID</th>
+                            <th>Display #</th>
                             <th>Name</th>
                             <th>Line</th>
                             <th>Gram</th>
@@ -659,64 +659,27 @@
         <!-- Import/Export Panel -->
         <div class="panel" id="importexport-panel">
             <div class="panel-header">
-                <h2 class="panel-title">📥 Import / Export</h2>
+                <h2 class="panel-title">💾 Import / Export Configuration</h2>
             </div>
-
-            <div class="cards-grid">
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">Export Configuration</span>
-                    </div>
-                    <p class="help-text" style="margin-bottom: 15px;">Download current configuration as JSON for backup</p>
-                    <button class="btn" onclick="exportConfig()">📥 Download JSON</button>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <span class="card-title">Import Configuration</span>
-                    </div>
-                    <p class="help-text" style="margin-bottom: 15px;">Restore configuration from a JSON backup file</p>
-                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importConfig(event)">
-                    <button class="btn" onclick="document.getElementById('importFile').click()">📤 Upload JSON</button>
-                </div>
+            
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">📤 Export Configuration</h3>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Download all current settings as a JSON file for backup.</p>
+                <button class="btn" onclick="exportConfig()">📥 Download Backup</button>
             </div>
-
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-title">⚠️ Danger Zone</span>
-                </div>
-                <p class="help-text" style="margin-bottom: 15px;">Reset configuration to default values. This cannot be undone!</p>
-                <button class="btn btn-danger" onclick="resetConfig()">🔄 Reset to Defaults</button>
+            
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 10px;">📥 Import Configuration</h3>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">Restore settings from a previously exported backup file.</p>
+                <input type="file" id="importFile" accept=".json" style="margin-bottom: 10px;">
+                <button class="btn" onclick="importConfig()">📤 Import Backup</button>
             </div>
-        </div>
-
-        <!-- Authentication Settings Panel -->
-        <div class="panel" id="auth-panel">
-            <div class="panel-header">
-                <h2 class="panel-title">🔐 Authentication Settings</h2>
+            
+            <div class="card" style="border: 2px solid var(--danger);">
+                <h3 style="margin-bottom: 10px; color: var(--danger);">⚠️ Reset Configuration</h3>
+                <p style="color: var(--text-muted); margin-bottom: 15px;">This will restore ALL settings to factory defaults. This cannot be undone!</p>
+                <button class="btn btn-danger" onclick="resetConfig()">🗑️ Reset to Defaults</button>
             </div>
-
-            <div class="form-group" style="margin-bottom: 20px;">
-                <label class="toggle">
-                    <input type="checkbox" id="authToggle" onchange="toggleAuth()">
-                    <span class="slider"></span>
-                </label>
-                <span style="margin-left: 15px; font-size: 1.1rem;" id="authStatus">Auth is currently: DISABLED</span>
-            </div>
-
-            <div class="card" style="margin-top: 20px;">
-                <div class="card-header">
-                    <span class="card-title">ℹ️ How it works</span>
-                </div>
-                <ul style="margin-top: 10px; margin-left: 20px; color: var(--text-muted);">
-                    <li>When <strong>disabled</strong>: Anyone can access the app without login</li>
-                    <li>When <strong>enabled</strong>: Users must log in to access the app</li>
-                    <li>Anyone can <strong>turn auth ON</strong> (OFF → ON)</li>
-                    <li>Only admin (<strong>dammieoptimus@gmail.com</strong>) can <strong>turn auth OFF</strong> (ON → OFF)</li>
-                </ul>
-            </div>
-
-            <div id="authMessage" style="margin-top: 15px; padding: 10px; border-radius: 6px; display: none;"></div>
         </div>
     </div>
 
@@ -729,13 +692,21 @@
             </div>
             <form id="machineForm" onsubmit="saveMachine(event)">
                 <input type="hidden" id="machineId">
-                <div class="form-group" style="width: 100%;">
-                    <label>Machine ID</label>
-                    <input type="number" id="machineIdInput" required min="1" placeholder="e.g., 31">
+                <div class="form-row">
+                    <div class="form-group" style="width: 50%;">
+                        <label>Machine ID</label>
+                        <input type="number" id="machineIdInput" required min="1" placeholder="e.g., 31">
+                        <span class="help-text">Internal ID (never changes)</span>
+                    </div>
+                    <div class="form-group" style="width: 50%;">
+                        <label>Display Number</label>
+                        <input type="number" id="machineDisplayNumber" required min="1" placeholder="e.g., 6">
+                        <span class="help-text">Shown in UI</span>
+                    </div>
                 </div>
                 <div class="form-group" style="width: 100%;">
                     <label>Machine Name</label>
-                    <input type="text" id="machineName" required placeholder="e.g., Machine 31">
+                    <input type="text" id="machineName" required placeholder="e.g., Machine 6">
                 </div>
                 <div class="form-row">
                     <div class="form-group">
@@ -857,9 +828,7 @@
             setupTabs();
             setupNetworkStatus();
             await loadAllConfig();
-            populateLineOptions();
             renderAll();
-            await loadAuthSettingsOnly();
         }
 
         function setupTabs() {
@@ -900,6 +869,7 @@
 
         function renderAll() {
             renderMachineStats();
+            populateLineOptions();
             renderMachines();
             renderLines();
             renderGramSpecs();
@@ -938,6 +908,7 @@
             tbody.innerHTML = filtered.map(m => `
                 <tr>
                     <td>${m.id}</td>
+                    <td>${m.displayNumber !== undefined ? m.displayNumber : m.id}</td>
                     <td>${m.name}</td>
                     <td>${m.line}</td>
                     <td>${m.gram}g</td>
@@ -968,12 +939,23 @@
             document.getElementById('machineId').value = '';
             populateGramDropdown();
             document.getElementById('machineGram').disabled = false;
-            // Keep min/max disabled - they auto-fill from Gram Settings
             document.getElementById('machineMin').disabled = true;
             document.getElementById('machineMax').disabled = true;
+            
+            const maxId = Math.max(...machines.map(m => m.id), 0);
+            document.getElementById('machineIdInput').value = maxId + 1;
+            
+            const lineMachines = machines.filter(m => m.line === '1A');
+            const maxDisplay = Math.max(...lineMachines.map(m => m.displayNumber || m.id), 0);
+            document.getElementById('machineDisplayNumber').value = maxDisplay + 1;
+            
             document.getElementById('machineLine').innerHTML = productionLines.map(l => 
                 `<option value="${l.id}">${l.name} (${l.id})</option>`
             ).join('');
+            
+            // Auto-fill min/max based on default gram selection
+            onGramChange();
+            
             openModal('machineModal');
         }
 
@@ -984,16 +966,14 @@
             document.getElementById('machineModalTitle').textContent = 'Edit Machine';
             document.getElementById('machineId').value = machine.id;
             document.getElementById('machineIdInput').value = machine.id;
+            document.getElementById('machineDisplayNumber').value = machine.displayNumber !== undefined ? machine.displayNumber : machine.id;
             document.getElementById('machineName').value = machine.name;
             document.getElementById('machineLine').innerHTML = productionLines.map(l => 
                 `<option value="${l.id}" ${l.id === machine.line ? 'selected' : ''}>${l.name} (${l.id})</option>`
             ).join('');
             
-            // Gram dropdown enabled - user selects gram and min/max auto-fill
             populateGramDropdown(machine.gram);
             document.getElementById('machineGram').disabled = false;
-            
-            // Disable min/max - must be changed in Gram Settings
             document.getElementById('machineMin').disabled = true;
             document.getElementById('machineMax').disabled = true;
             
@@ -1024,15 +1004,27 @@
             e.preventDefault();
             
             const id = parseInt(document.getElementById('machineIdInput').value);
+            const displayNumber = parseInt(document.getElementById('machineDisplayNumber').value);
             const name = document.getElementById('machineName').value;
             const line = document.getElementById('machineLine').value;
             const gram = parseInt(document.getElementById('machineGram').value);
-            const min = parseFloat(document.getElementById('machineMin').value);
-            const max = parseFloat(document.getElementById('machineMax').value);
+            
+            // Get min/max from input, fallback to gramSpecs if NaN
+            let min = parseFloat(document.getElementById('machineMin').value);
+            let max = parseFloat(document.getElementById('machineMax').value);
+            
+            // If min/max are NaN, get them from gramSpecs
+            if (isNaN(min) || isNaN(max)) {
+                const spec = gramSpecs[gram];
+                if (spec) {
+                    min = spec.min;
+                    max = spec.max;
+                }
+            }
 
             const existingIndex = machines.findIndex(m => m.id === id);
             
-            const machineData = { id, name, line, gram, min, max };
+            const machineData = { id, displayNumber, name, line, gram, min, max };
             
             if (existingIndex >= 0) {
                 machines[existingIndex] = machineData;
@@ -1040,7 +1032,7 @@
                 machines.push(machineData);
             }
 
-            const success = await updateMachines(machines);
+            const success = await updateConfig({ machines });
             if (success) {
                 showToast('Machine saved successfully!');
                 closeModal('machineModal');
@@ -1054,7 +1046,7 @@
             if (!confirm(`Delete machine ${id}?`)) return;
             
             machines = machines.filter(m => m.id !== id);
-            const success = await updateMachines(machines);
+            const success = await updateConfig({ machines });
             if (success) {
                 showToast('Machine deleted');
                 renderAll();
@@ -1290,7 +1282,7 @@
                 if (!confirm('This will overwrite your current configuration. Continue?')) return;
 
                 if (data.machines) {
-                    await updateMachines(data.machines);
+                    await updateConfig({ machines: data.machines });
                 }
                 if (data.productionLines) {
                     await updateConfig({ productionLines: data.productionLines });
@@ -1431,21 +1423,6 @@
 
         // Apply role-based UI - hide admin-only sections for non-admin users
         function applyRoleBasedUI() {
-            // Hide the auth tab for non-admin users
-            const authTabBtn = document.querySelector('[data-tab="auth"]');
-            if (authTabBtn) {
-                authTabBtn.style.display = isAdmin ? '' : 'none';
-            }
-            
-            // If not admin and on auth tab, redirect to machines tab
-            if (!isAdmin) {
-                const authPanel = document.getElementById('auth-panel');
-                if (authPanel && authPanel.classList.contains('active')) {
-                    const machinesTab = document.querySelector('[data-tab="machines"]');
-                    if (machinesTab) machinesTab.click();
-                }
-            }
-            
             console.log('Role-based UI applied. isAdmin:', isAdmin);
         }
 

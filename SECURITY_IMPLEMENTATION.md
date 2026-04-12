@@ -78,7 +78,7 @@ User's Browser                    Firebase (Database)
 │  ├── "Forgot password" link                                │
 │  └── Check credentials → redirect to main app              │
 ├─────────────────────────────────────────────────────────────┤
-│  index.html, admin.html, level9-exec.html, bot-exec.html  │
+│  index.html, machine-management.html, level9-exec.html, bot-exec.html  │
 │  ├── Check if user is logged in                             │
 │  ├── Show user's name in top corner                         │
 │  ├── "Logout" button                                        │
@@ -204,7 +204,7 @@ User's Browser                    Firebase (Database)
 </html>
 ```
 
-**2. Protect all pages (`index.html`, `admin.html`, etc.)**
+**2. Protect all pages (`index.html`, `machine-management.html`, etc.)**
 
 Add this at the very top of each HTML file (before any other JavaScript):
 
@@ -315,7 +315,7 @@ function canEditSettings() {
 
 ### Frontend Role-Based UI
 
-**In admin.html - Hide settings for non-admins:**
+**In machine-management.html - Hide settings for non-admins:**
 
 ```javascript
 // In firebase-storage.js or inline script
@@ -500,7 +500,7 @@ service cloud.firestore {
 Create an "Add User" page in the admin panel:
 
 ```javascript
-// In admin.html - Add User section
+// In machine-management.html - Add User section
 
 async function createUser(email, password, role) {
     // Only admins can do this
@@ -547,7 +547,7 @@ async function createUser(email, password, role) {
 |------|---------|
 | `firebase-storage.js` | Add auth functions, role checking |
 | `index.html` | Add auth check, user display, logout button |
-| `admin.html` | Add auth check, role-based UI, admin-only sections |
+| `machine-management.html` | Add auth check, role-based UI, admin-only sections |
 | `level9-exec.html` | Add auth check, approval permission check |
 | `bot-exec.html` | Add auth check |
 | `reports.html` | Add auth check, role-based visibility |
@@ -576,7 +576,7 @@ async function createUser(email, password, role) {
 requireAuth();
 ```
 
-**admin.html:**
+**machine-management.html:**
 ```javascript
 // ADD:
 // - Check if admin before showing admin features
@@ -824,7 +824,7 @@ service cloud.firestore {
 }
 ```
 
-**Step 4: Add Toggle UI in admin.html**
+**Step 4: Add Toggle UI in machine-management.html**
 
 ```html
 <!-- Add in admin panel -->

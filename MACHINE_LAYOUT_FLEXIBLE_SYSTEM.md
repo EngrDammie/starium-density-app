@@ -6,7 +6,7 @@ The current machine layout implementation in the application is **rigid and infl
 - `index.html` (Level 9 mode)
 - `level9-exec.html`
 
-...uses hardcoded `columnOrder` arrays that don't dynamically adapt when machines are added, removed, or modified in `admin.html`.
+...uses hardcoded `columnOrder` arrays that don't dynamically adapt when machines are added, removed, or modified in `machine-management.html`.
 
 ### Goal
 Make the machine layout on display pages **automatically reflect** whatever is configured in the admin page, while preserving the current visual arrangement that matches reality.
@@ -78,7 +78,7 @@ Within each line, machines numbered TOP TO BOTTOM:
 
 1. **Dynamic Rendering**: Pages must automatically display whatever machines exist in the database
 2. **Preserve Arrangement**: The current right-to-left line order and top-to-bottom machine order must be maintained
-3. **Admin-Controlled**: All configuration happens in admin.html
+3. **Admin-Controlled**: All configuration happens in machine-management.html
 4. **No Breaking Changes**: Existing correct layout must not be disrupted
 5. **Renumberable**: Machines can be renumbered without orphaning historical data
 6. **Removable**: Machines can be removed and layout adapts automatically
@@ -149,7 +149,7 @@ Within each line, machines numbered TOP TO BOTTOM:
 
 **Cons**:
 - Requires adding new field to data structure
-- Requires updating admin.html to allow editing displayNumber
+- Requires updating machine-management.html to allow editing displayNumber
 - Requires updating display pages to show displayNumber instead of id
 
 ---
@@ -173,7 +173,7 @@ This approach adds `displayNumber` field to enable:
 1. Add `displayNumber` field to each machine
 2. Initialize `displayNumber = id` for existing machines (backward compatible)
 3. Group machines by line → sort by `displayNumber` → render grid
-4. Update admin.html to allow editing `displayNumber`
+4. Update machine-management.html to allow editing `displayNumber`
 5. Update display pages to show `displayNumber` in UI
 
 ### Implementation Steps
@@ -274,7 +274,7 @@ grid.innerHTML = displayOrder.map(m => {
 
 Also update CSS similarly.
 
-#### Step 4: Update admin.html - Add displayNumber Field
+#### Step 4: Update machine-management.html - Add displayNumber Field
 
 Add displayNumber input to machine form (add/edit modal):
 
@@ -318,7 +318,7 @@ Also show displayNumber in machine table listing.
 
 #### Step 5: Handle Machine Name Updates
 
-**Name field is independent** - users can update the machine name anytime in admin.html to match the display number (e.g., "Machine 7", "M7", "Silo 7", etc.).
+**Name field is independent** - users can update the machine name anytime in machine-management.html to match the display number (e.g., "Machine 7", "M7", "Silo 7", etc.).
 
 - The `name` field doesn't affect any logic or database references
 - Historical tests don't store the machine name - they store the machine `id`
@@ -327,7 +327,7 @@ Also show displayNumber in machine table listing.
 **Optional enhancement** (for future): Add auto-fill feature that suggests name based on displayNumber:
 
 ```javascript
-// In admin.html - optional future enhancement
+// In machine-management.html - optional future enhancement
 function onDisplayNumberChange() {
     const displayNum = document.getElementById('machineDisplayNumber').value;
     // User can choose to auto-fill or type manually
@@ -361,7 +361,7 @@ The grid naturally accommodates - each line fills left-to-right, top-to-bottom.
 Add configuration for max columns (default 6). If more machines exist, create additional rows.
 
 ### 5. Machine Removal
-When a machine is deleted in admin.html:
+When a machine is deleted in machine-management.html:
 - It no longer appears in getMachinesInDisplayOrder()
 - Grid automatically shrinks/updates
 - No orphaned data (historical tests still reference machine by id, not displayNumber)
@@ -378,7 +378,7 @@ Allow duplicate displayNumbers within a line? **Recommendation**: NO - add valid
 | `firebase-storage.js` | Add `getMachinesByLine()`, `getMachinesInDisplayOrder()` (use displayNumber for sorting) |
 | `index.html` | Replace hardcoded columnOrder with dynamic function call, show displayNumber in UI |
 | `level9-exec.html` | Same as index.html |
-| `admin.html` | Add displayNumber field to machine form and table, add validation for duplicates |
+| `machine-management.html` | Add displayNumber field to machine form and table, add validation for duplicates |
 
 ---
 
@@ -386,9 +386,9 @@ Allow duplicate displayNumbers within a line? **Recommendation**: NO - add valid
 
 1. **Do we need manual displayOrder?** - ~~Current plan uses auto-sort by ID. Is this sufficient, or do we need manual override capability?~~ **DECISION: No manual displayOrder needed. Auto-sort by ID is sufficient.**
 
-2. ~~How to handle the 4 new machines on Line 1A and 3B?~~ - **User will add machine details themselves in admin.html**
+2. ~~How to handle the 4 new machines on Line 1A and 3B?~~ - **User will add machine details themselves in machine-management.html**
 
-3. ~~Should we add validation~~ to prevent duplicate machine IDs when adding new machines? - **Add validation in admin.html save function**
+3. ~~Should we add validation~~ to prevent duplicate machine IDs when adding new machines? - **Add validation in machine-management.html save function**
 
 4. ~~Mobile responsiveness~~ - Should we add a setting to control columns on mobile vs desktop? - **Use existing machineGridColumns setting**
 
@@ -515,7 +515,7 @@ Also update CSS similarly.
 
 ### Step 5: Ensure Real-Time Updates
 
-The pages already subscribe to config changes via `subscribeToConfig()`. When machines are updated in admin.html:
+The pages already subscribe to config changes via `subscribeToConfig()`. When machines are updated in machine-management.html:
 
 1. Config is saved to Firestore
 2. `subscribeToConfig` callback fires on all open pages
@@ -602,7 +602,7 @@ function openAddMachineModal() {
 ## How It Will Work After Implementation
 
 ### Adding a Machine
-1. **User adds new machine in admin.html**:
+1. **User adds new machine in machine-management.html**:
    - Assigns unique internal `id` (e.g., 31, 32...)
    - Sets `displayNumber` (e.g., 6 for 6th machine in line)
    - Selects line (e.g., "1A")
@@ -614,7 +614,7 @@ function openAddMachineModal() {
    - Grid expands if needed
 
 ### Removing a Machine
-1. **User deletes machine in admin.html**:
+1. **User deletes machine in machine-management.html**:
    - Machine is removed from machines array in Firestore
    
 2. **Display pages**:
@@ -623,7 +623,7 @@ function openAddMachineModal() {
    - **Historical test data is preserved** - tests still reference machine by internal `id`, not displayNumber
 
 ### Renumbering Machines
-1. **User edits displayNumber in admin.html**:
+1. **User edits displayNumber in machine-management.html**:
    - Changes displayNumber from 31 to 6 (for example)
    
 2. **Display pages**:
@@ -635,10 +635,10 @@ function openAddMachineModal() {
 ## Testing Plan
 
 After implementation, you can test by:
-1. Opening admin.html and adding a test machine (e.g., ID 99, Line 1A)
+1. Opening machine-management.html and adding a test machine (e.g., ID 99, Line 1A)
 2. Opening index.html in another tab
 3. Refreshing index.html → new machine should appear at bottom of Line 1A
-4. With real-time update: change in admin.html reflects immediately in index.html without refresh
+4. With real-time update: change in machine-management.html reflects immediately in index.html without refresh
 
 ---
 
@@ -661,6 +661,6 @@ After implementation, you can test by:
 - [ ] Update CSS for flexibility
 - [ ] Update index.html machine grid (use displayNumber)
 - [ ] Update level9-exec.html machine grid (use displayNumber)
-- [ ] Update admin.html - add displayNumber field to form and table
+- [ ] Update machine-management.html - add displayNumber field to form and table
 - [ ] Update real-time config subscription to re-render on machine changes
 - [ ] Test with new machines, renumbering, and removal

@@ -315,7 +315,7 @@ modeSelect.addEventListener('change', () => {
 | `index.html` | Remove `initApprovalLink()` call on mode change |
 | `level9-exec.html` | Update to use new doc ID format |
 | `bot-exec.html` | Update to use new doc ID format |
-| `admin.html` | Update shift approval display |
+| `machine-management.html` | Update shift approval display |
 
 ---
 

@@ -212,11 +212,18 @@
         }
 
         .machine-grid {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            display: flex;
             gap: 12px;
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
+            justify-content: space-between;
+        }
+
+        .machine-grid-column {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            flex: 1;
         }
 
         .machine-btn {
@@ -230,6 +237,8 @@
             transition: all 0.3s ease;
             text-align: center;
             font-size: 0.85rem;
+            width: 100%;
+            min-height: 50px;
         }
 
         .machine-btn.match {
@@ -1063,7 +1072,7 @@
             <div class="settings-group">
                 <h3>Administration</h3>
                 <div class="settings-field">
-                    <a href="admin.html" class="btn"
+                    <a href="machine-management.html" class="btn"
                         style="display: inline-block; text-align: center; text-decoration: none;">🔧 Open Machine Admin
                         Panel</a>
                 </div>
@@ -1129,8 +1138,8 @@
         // See firebase-storage.js for configuration
         // Legacy structure: { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" }
 
-        // Column order for display (could be made dynamic in future)
-        const columnOrder = [26, 21, 16, 11, 6, 1, 27, 22, 17, 12, 7, 2, 28, 23, 18, 13, 8, 3, 29, 24, 19, 14, 9, 4, 30, 25, 20, 15, 10, 5];
+        // Column order for display - now dynamic based on database config
+        const getDisplayOrder = () => getMachinesInDisplayOrder();
 
         // State
         let currentApprovalId = null;
@@ -1267,10 +1276,33 @@
         function renderMachineGrid() {
             const grid = document.getElementById('machineGrid');
             const machines = getMachines();
-            grid.innerHTML = columnOrder.map(id => {
-                const m = getMachineById(id);
-                return m ? `<button class="machine-btn" id="machine-${m.id}">M${m.id}</button>` : '';
-            }).join('');
+            const displayOrder = getMachinesInDisplayOrder();
+            
+            // Group machines by line
+            const lines = ['3B', '3A', '2B', '2A', '1B', '1A'];
+            const machinesByLine = {};
+            lines.forEach(l => machinesByLine[l] = []);
+            displayOrder.forEach(m => {
+                if (machinesByLine[m.line]) {
+                    machinesByLine[m.line].push(m);
+                }
+            });
+            
+            // Render each column (line)
+            let html = '';
+            lines.forEach(lineId => {
+                html += '<div class="machine-grid-column">';
+                const lineMachines = machinesByLine[lineId] || [];
+                lineMachines.forEach(m => {
+                    const machine = getMachineById(m.id);
+                    if (machine) {
+                        html += `<button class="machine-btn" id="machine-${machine.id}" data-display="${m.displayNumber}">M${m.displayNumber}</button>`;
+                    }
+                });
+                html += '</div>';
+            });
+            
+            grid.innerHTML = html;
             addMachineClickHandlers();
         }
 
@@ -1709,6 +1741,13 @@
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
                 settingsBtn.style.display = config.showSettingsBtnLevel9Exec !== false ? 'flex' : 'none';
+            }
+        });
+
+        // Subscribe to config changes - re-render machine grid when machines change
+        subscribeToConfig(() => {
+            if (typeof renderMachineGrid === 'function') {
+                renderMachineGrid();
             }
         });
 

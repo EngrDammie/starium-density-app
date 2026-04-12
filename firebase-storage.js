@@ -174,6 +174,40 @@ function getMachinesByLines() {
     return lines;
 }
 
+function getMachinesByLine(lineId) {
+    const config = getConfig();
+    return (config.machines || [])
+        .filter(m => m.line === lineId)
+        .sort((a, b) => {
+            const aNum = a.displayNumber !== undefined ? a.displayNumber : a.id;
+            const bNum = b.displayNumber !== undefined ? b.displayNumber : b.id;
+            return aNum - bNum;
+        });
+}
+
+function getMachinesInDisplayOrder() {
+    const config = getConfig();
+    // Lines: 1A (rightmost) to 3B (leftmost)
+    // Reverse so 3B is column 1, 1A is column 6
+    const lines = [...(config.productionLines || [])].sort((a, b) => b.order - a.order);
+    
+    const result = [];
+    // Put ALL machines from each line together so each column = one line
+    // With grid-auto-flow: column, each column fills vertically
+    lines.forEach(line => {
+        const lineMachines = getMachinesByLine(line.id);
+        lineMachines.forEach(m => {
+            result.push({
+                id: m.id,
+                displayNumber: m.displayNumber !== undefined ? m.displayNumber : m.id,
+                line: line.id
+            });
+        });
+    });
+    
+    return result;
+}
+
 function getGramSpec(gram) {
     const config = getConfig();
     return config.gramSpecs?.[String(gram)] || null;

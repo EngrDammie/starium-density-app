@@ -21,12 +21,14 @@ A web-based quality control application for a detergent factory that records pow
 9. [Settings & Configuration](#settings--configuration)
 10. [Machine Admin Panel](#machine-admin-panel)
 11. [User Preferences](#user-preferences)
-11. [Shift Timing](#shift-timing)
-12. [Network Status Indicator](#network-status-indicator)
-13. [Configurable Constants](#configurable-constants)
-14. [Color Coding](#color-coding)
-15. [Browser Support](#browser-support)
-16. [Troubleshooting](#troubleshooting)
+12. [Shift Timing](#shift-timing)
+13. [Auto-Reload on Shift Change](#auto-reload-on-shift-change)
+14. [GitHub Actions Deployment](#github-actions-deployment)
+15. [Network Status Indicator](#network-status-indicator)
+16. [Configurable Constants](#configurable-constants)
+17. [Color Coding](#color-coding)
+18. [Browser Support](#browser-support)
+19. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -42,7 +44,42 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 
 ### Production Environment
 - **Backend:** Firebase Firestore (cloud database)
-- **Deployment:** GitHub Pages (automatic on push to main)
+- **Deployment:** GitHub Pages via GitHub Actions (automatic on push to main)
+- **Firebase Config:** Dynamically generated at deployment time via GitHub Actions secrets
+
+---
+
+## GitHub Actions Deployment
+
+The application uses GitHub Actions to automatically deploy to GitHub Pages while keeping Firebase configuration secure:
+
+### How It Works
+
+1. **Secrets Storage**: Firebase configuration (apiKey, authDomain, projectId, etc.) stored as GitHub Secrets
+2. **Workflow**: On push to main, GitHub Actions workflow:
+   - Creates `firebase-config.js` with secrets injected
+   - Uploads all files to GitHub Pages artifact
+   - Deploys to live URL
+
+### Security
+
+- **Never committed to git**: `firebase-config.js` is in `.gitignore`
+- **Secrets in GitHub**: Firebase credentials stored in GitHub repository secrets
+- **Generated at build time**: Config file created during deployment, not in source code
+
+### Configuration
+
+To update Firebase config:
+1. Go to GitHub repository → Settings → Secrets and variables → Actions
+2. Update these secrets:
+   - `FIREBASE_API_KEY`
+   - `FIREBASE_AUTH_DOMAIN`
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_STORAGE_BUCKET`
+   - `FIREBASE_MESSAGING_SENDER_ID`
+   - `FIREBASE_APP_ID`
+
+The next push to main will deploy with the new configuration.
 
 ---
 
@@ -55,7 +92,7 @@ The Starium Rafa Quality Control Tool is used in a detergent factory to:
 | `index.html` | Main QC data entry page (Level 9 + BOT modes) |
 | `level9-exec.html` | Executive view for Level 9 - monitoring & approvals |
 | `bot-exec.html` | Executive view for BOT - monitoring & approvals |
-| `admin.html` | **Machine Admin Panel** - Manage machines, lines, and settings |
+| `machine-management.html` | **Machine Admin Panel** - Manage machines, lines, and settings |
 | `firebase-storage.js` | Firestore backend logic (shared by all pages) |
 | `firestore.indexes.json` | Firestore database indexes configuration |
 
@@ -112,18 +149,19 @@ A powerful web-based admin interface for managing machines, production lines, gr
 
 **Access:** Click the ⚙️ Settings button on any page, then click "Open Machine Admin Panel"
 
-**URL:** `admin.html`
+**URL:** `machine-management.html`
 
 ---
 
 ### Features
 
 #### 1. Machine Management
-- **Add new machines** with ID, name, line, and gram setting
-- **Edit existing machines** - change name, line, or gram setting
+- **Add new machines** with ID, displayNumber, name, line, and gram setting
+- **Edit existing machines** - change name, displayNumber, line, or gram setting
 - **Delete machines** - remove machines from the system
 - **Search** - quickly find machines by name or ID
 - **Filter** - view machines by production line
+- **Auto-suggest** - next available ID and displayNumber suggested when adding
 
 #### 2. Production Lines Management
 - **Add new production lines** with custom ID, name, and display order
@@ -155,28 +193,40 @@ Instead of hardcoding machine specs in the app, all configuration is stored in F
 // Firestore: config/settings document
 {
   machines: [
-    { id: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
-    { id: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
-    // ... up to any number of machines
+    { id: 1, displayNumber: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
+    { id: 2, displayNumber: 2, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 2" },
+    // ... any number of machines, each with displayNumber
   ],
   
   productionLines: [
     { id: "1A", name: "Line 1A", order: 1 },
     { id: "1B", name: "Line 1B", order: 2 },
-    // ... any number of lines
+    { id: "2A", name: "Line 2A", order: 3 },
+    { id: "2B", name: "Line 2B", order: 4 },
+    { id: "3A", name: "Line 3A", order: 5 },
+    { id: "3B", name: "Line 3B", order: 6 }
   ],
   
   gramSpecs: {
-    "22": { min: 0.200, max: 0.310, piecesPerCarton: 162 },
-    "45": { min: 0.210, max: 0.310, piecesPerCarton: 84 },
-    "85": { min: 0.240, max: 0.300, piecesPerCarton: 52 },
-    "125": { min: 0.200, max: 0.270, piecesPerCarton: 31 },
+    "22": { min: 0.200, max: 0.310, piecesPerCarton: 162, piecesBreakdown: "27 strings * 6 pcs" },
+    "45": { min: 0.210, max: 0.310, piecesPerCarton: 84, piecesBreakdown: "14 strings * 6 pcs" },
+    "85": { min: 0.240, max: 0.300, piecesPerCarton: 52, piecesBreakdown: "8 strings * 6 pcs + 4 pcs" },
+    "125": { min: 0.200, max: 0.270, piecesPerCarton: 31, piecesBreakdown: "7 strings * 4 pcs + 3 pcs" },
     "850": { min: 0.200, max: 0.270, piecesPerCarton: 7 }
   },
   
-  machineGridColumns: 6
+  machineGridColumns: 6,
+  dayShiftStart: 7,
+  nightShiftStart: 19
 }
 ```
+
+**Key Fields:**
+- `id` - Unique internal identifier (never changes, used in database references)
+- `displayNumber` - Human-readable number shown in UI (can be changed anytime for renumbering)
+- `name` - Friendly machine name
+- `line` - Production line (1A, 1B, 2A, 2B, 3A, 3B)
+- `order` - Determines column position (1A=rightmost, 6=3B=leftmost)
 
 **Benefits:**
 - **Single source of truth** - All devices share the same configuration
@@ -194,29 +244,45 @@ Instead of hardcoding machine specs in the app, all configuration is stored in F
 3. Go to **Production Lines** tab → create the line if it doesn't exist
 4. Go to **Machines** tab → click "+ Add Machine"
 5. Enter:
-   - **Machine ID** (e.g., 31)
-   - **Machine Name** (e.g., Machine 31)
+   - **Machine ID** (e.g., 31) - Internal ID, never changes
+   - **Display Number** (e.g., 6) - Shown in UI, can be changed anytime
+   - **Machine Name** (e.g., Machine 6 or M6)
    - **Production Line** (select from dropdown)
    - **Gram Setting** (select - min/max auto-fills from Gram Settings)
 6. Click **Save**
 
-The new machine immediately appears in the main app!
+The new machine immediately appears in the display pages!
 
 ---
 
-### Workflow: Updating Density Ranges
+### Flexible Machine Layout System
 
-1. Open **Machine Admin Panel**
-2. Go to **Gram Settings** tab
-3. Edit the gram setting (e.g., 850g)
-4. Update min/max density values
-5. Click **Save**
+The application features a dynamic machine layout that adapts to reality:
 
-**Magic:** All machines using that gram setting automatically use the new ranges - no need to edit each machine!
+- **6 Production Lines** displayed as 6 vertical columns (left to right: 3B, 3A, 2B, 2A, 1B, 1A)
+- **Variable machines per line** - Each line can have any number of machines
+- **Machines grow downward** - New machines appear below existing ones in their line
+- **Real-time updates** - Changes in machine-management.html immediately reflect on display pages without refresh
+
+This flexible system ensures the app mirrors the physical factory layout exactly.
 
 ---
 
-## 30 Machines with Specifications
+### Renumbering Machines
+
+Each machine has two identifiers:
+
+| Field | Purpose | Can Change? |
+|-------|---------|--------------|
+| **id** | Internal database reference (used in test records) | Never |
+| **displayNumber** | Shown in UI (e.g., M1, M2...) | Anytime |
+| **name** | Friendly name (e.g., "Machine 1", "Silo 1") | Anytime |
+
+This allows you to renumber machines (e.g., change displayNumber from 31 to 6) without breaking historical test data, which references the internal `id`.
+
+---
+
+## 30 Machines with Specifications (Default Configuration)
 
 The factory has 30 machines organized into 3 production lines:
 
@@ -517,6 +583,22 @@ The app saves user preferences locally using browser localStorage:
 | NIGHT | 7:00 PM - 7:00 AM |
 
 The app automatically detects the current shift based on the system time.
+
+---
+
+## Auto-Reload on Shift Change
+
+Executive pages (level9-exec.html and bot-exec.html) automatically reload when a new shift begins:
+
+- **DAY shift starts at 7:00 AM** - Page reloads to create new approval record
+- **NIGHT shift starts at 7:00 PM** - Page reloads to create new approval record
+
+This ensures:
+1. New approval records are created for each shift
+2. Managers/admins always see data from the current shift
+3. No manual refresh needed when shift changes
+
+The auto-reload happens within 1 minute of the shift change (pages check every 60 seconds).
 
 ---
 

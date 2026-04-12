@@ -264,7 +264,7 @@ Files that need updating:
 - index.html
 - level9-exec.html
 - bot-exec.html
-- admin.html
+- machine-management.html
 - reports.html
 - login.html
 - user-management.html

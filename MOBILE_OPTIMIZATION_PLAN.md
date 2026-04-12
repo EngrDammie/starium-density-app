@@ -194,7 +194,7 @@ Clearly show when app works offline.
 - Bigger approval buttons
 - Stats in two columns instead of one
 
-### 4. Admin Panel (admin.html)
+### 4. Admin Panel (machine-management.html)
 
 **Problems:**
 - Tab navigation cramped
