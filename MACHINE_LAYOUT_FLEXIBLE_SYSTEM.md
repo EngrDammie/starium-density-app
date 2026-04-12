@@ -33,6 +33,23 @@ machines: [
 ]
 ```
 
+### NEW: Machine Display Number System
+
+To allow flexible renumbering without breaking historical data:
+
+```javascript
+machines: [
+    { id: 1, displayNumber: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" },
+    { id: 31, displayNumber: 6, gram: 85, min: 0.240, max: 0.300, line: "1A", name: "Machine 31" },
+    // ... all machines
+]
+```
+
+**Key concepts:**
+- `id` - Internal unique identifier (never changes once assigned). Used in database references (tests, approvals).
+- `displayNumber` - Human-readable number shown in the UI. Can be changed anytime for renumbering.
+- `name` - Optional friendly name for the machine
+
 ### Current Hardcoded Column Order (index.html & level9-exec.html)
 
 ```javascript
@@ -63,6 +80,8 @@ Within each line, machines numbered TOP TO BOTTOM:
 2. **Preserve Arrangement**: The current right-to-left line order and top-to-bottom machine order must be maintained
 3. **Admin-Controlled**: All configuration happens in admin.html
 4. **No Breaking Changes**: Existing correct layout must not be disrupted
+5. **Renumberable**: Machines can be renumbered without orphaning historical data
+6. **Removable**: Machines can be removed and layout adapts automatically
 
 ---
 
@@ -106,6 +125,35 @@ Within each line, machines numbered TOP TO BOTTOM:
 
 ---
 
+### Option C: Display Number System (NEW - Recommended for Renumbering)
+
+**Approach**: Add a `displayNumber` field separate from `id` to allow flexible renumbering.
+
+**Data Model**:
+```javascript
+{ id: 1, displayNumber: 1, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" }
+// When renumbered to be 6th machine in line 1A:
+// { id: 1, displayNumber: 6, gram: 125, min: 0.200, max: 0.270, line: "1A", name: "Machine 1" }
+```
+
+**How it works**:
+1. All machines have a unique internal `id` (never changes, used in database references)
+2. All machines have a `displayNumber` (can be changed anytime for renumbering)
+3. Display pages show `displayNumber` but internal logic uses `id` for database lookups
+4. Sort by `displayNumber` within each line for ordering
+
+**Pros**:
+- Maximum flexibility - can renumber anytime without breaking historical data
+- Can remove machines without orphaning data
+- Clean consecutive numbering possible
+
+**Cons**:
+- Requires adding new field to data structure
+- Requires updating admin.html to allow editing displayNumber
+- Requires updating display pages to show displayNumber instead of id
+
+---
+
 ### Option C: Hybrid (Auto-sort with override option)
 
 **Approach**: Default to ID-based ordering, but allow `displayOrder` override when needed.
@@ -114,37 +162,64 @@ Within each line, machines numbered TOP TO BOTTOM:
 
 ## Recommended Implementation
 
-### Approach: Dynamic Generation from Database
+### Approach: Display Number System with Dynamic Rendering
 
-Replace hardcoded `columnOrder` with dynamic generation that:
+This approach adds `displayNumber` field to enable:
+1. **Flexible renumbering** - Change display numbers anytime without breaking historical data
+2. **Machine removal** - Remove machines and layout adapts automatically
+3. **Dynamic rendering** - Grid reflects actual database state
 
-1. **Groups machines by line** using `getMachinesByLine(lineId)` 
-2. **Sorts by ID** within each line (natural top-to-bottom order)
-3. **Orders lines** by productionLine `order` field (right to left: 1A→1B→2A→2B→3A→3B)
-4. **Flattens** to create column-order array for grid display
+**Workflow:**
+1. Add `displayNumber` field to each machine
+2. Initialize `displayNumber = id` for existing machines (backward compatible)
+3. Group machines by line → sort by `displayNumber` → render grid
+4. Update admin.html to allow editing `displayNumber`
+5. Update display pages to show `displayNumber` in UI
 
 ### Implementation Steps
 
-#### Step 1: Add Helper Functions (firebase-storage.js)
+#### Step 0: Data Migration (If Needed)
+
+For existing machines without `displayNumber`, the system will default to using `id` as display number:
 
 ```javascript
-// Get machines for a specific line, sorted by ID (top to bottom)
+// In helper functions, handle missing displayNumber:
+function getMachineDisplayNumber(machine) {
+    return machine.displayNumber !== undefined ? machine.displayNumber : machine.id;
+}
+```
+
+#### Step 1: Add Helper Functions to firebase-storage.js
+
+Add functions after `getMachinesByLines()`:
+
+```javascript
+// Get machines for a specific line, sorted by displayNumber (top to bottom)
 function getMachinesByLine(lineId) {
     const config = getConfig();
-    return config.machines
+    return (config.machines || [])
         .filter(m => m.line === lineId)
-        .sort((a, b) => a.id - b.id);
+        .sort((a, b) => {
+            const aNum = a.displayNumber !== undefined ? a.displayNumber : a.id;
+            const bNum = b.displayNumber !== undefined ? b.displayNumber : b.id;
+            return aNum - bNum;
+        });
 }
 
-// Get all machines in display order (lines right-to-left, machines top-to-bottom)
+// Get all machine IDs in display order:
+// - Lines ordered by productionLine.order (1A, 1B, 2A, 2B, 3A, 3B = right to left)
+// - Within each line, machines ordered by displayNumber (ascending = top to bottom)
 function getMachinesInDisplayOrder() {
     const config = getConfig();
-    const lines = [...config.productionLines].sort((a, b) => a.order - b.order);
+    const lines = [...(config.productionLines || [])].sort((a, b) => a.order - b.order);
     
-    let result = [];
+    const result = [];
     lines.forEach(line => {
         const lineMachines = getMachinesByLine(line.id);
-        result = result.concat(lineMachines.map(m => m.id));
+        lineMachines.forEach(m => result.push({
+            id: m.id,
+            displayNumber: m.displayNumber !== undefined ? m.displayNumber : m.id
+        }));
     });
     
     return result;
@@ -153,9 +228,27 @@ function getMachinesInDisplayOrder() {
 
 #### Step 2: Update index.html
 
-Replace hardcoded:
+**Location**: Around line 1859 (where `columnOrder` is defined)
+
+**Change**:
 ```javascript
-const columnOrder = [26, 21, 16, 11, 6, 1, ...];
+// OLD (hardcoded):
+const columnOrder = [26, 21, 16, 11, 6, 1, 27, 22, 17, 12, 7, 2, 28, 23, 18, 13, 8, 3, 29, 24, 19, 14, 9, 4, 30, 25, 20, 15, 10, 5];
+
+// NEW (dynamic):
+// Get display order from config (returns array of {id, displayNumber} objects)
+const displayOrder = getMachinesInDisplayOrder();
+
+// Render machines using displayNumber for display, id for internal logic
+displayOrder.forEach(machine => {
+    const id = machine.id;
+    const displayNum = machine.displayNumber;
+    const machine = getMachineById(id);
+    if (!machine) return;
+    
+    // Show displayNumber in button, but use id for data attributes
+    html += `<button class="${btnClass}" data-id="${id}">M${displayNum}</button>`;
+});
 ```
 
 With dynamic:
@@ -167,9 +260,63 @@ Also ensure `getMachines()` is called to load config before rendering.
 
 #### Step 3: Update level9-exec.html
 
-Same change as index.html.
+**Location**: Around line 1133 (where `columnOrder` is defined)
 
-#### Step 4: Test with New Machines
+**Same changes as index.html**:
+```javascript
+// Replace hardcoded columnOrder with dynamic function
+const displayOrder = getMachinesInDisplayOrder();
+grid.innerHTML = displayOrder.map(m => {
+    const machine = getMachineById(m.id);
+    return machine ? `<button class="machine-btn" id="machine-${machine.id}" data-display="${m.displayNumber}">M${m.displayNumber}</button>` : '';
+}).join('');
+```
+
+Also update CSS similarly.
+
+#### Step 4: Update admin.html - Add displayNumber Field
+
+Add displayNumber input to machine form (add/edit modal):
+
+```html
+<!-- In machine modal -->
+<div class="form-group">
+    <label>Display Number (shown in UI)</label>
+    <input type="number" id="machineDisplayNumber" required>
+</div>
+```
+
+Add to save function:
+
+```javascript
+async function saveMachine(e) {
+    e.preventDefault();
+    
+    const id = parseInt(document.getElementById('machineIdInput').value);
+    const displayNumber = parseInt(document.getElementById('machineDisplayNumber').value);
+    const name = document.getElementById('machineName').value;
+    const line = document.getElementById('machineLine').value;
+    const gram = parseInt(document.getElementById('machineGram').value);
+    const min = parseFloat(document.getElementById('machineMin').value);
+    const max = parseFloat(document.getElementById('machineMax').value);
+
+    const machineData = { 
+        id, 
+        displayNumber,  // NEW FIELD
+        name, 
+        line, 
+        gram, 
+        min, 
+        max 
+    };
+    
+    // ... rest of save logic
+}
+```
+
+Also show displayNumber in machine table listing.
+
+#### Step 5: Test with New Machines
 
 When user adds new machines (e.g., 4 new on Line 1A, 4 new on Line 3B):
 - They get assigned IDs (31, 32, 33, 34, 35, 36, 37, 38)
@@ -183,14 +330,23 @@ When user adds new machines (e.g., 4 new on Line 1A, 4 new on Line 3B):
 ### 1. Empty Lines
 If a line has no machines, skip that line in display.
 
-### 2. Non-Sequential IDs
-If machine IDs aren't sequential within a line, sort by ID anyway - the visual order will match ID order.
+### 2. Non-Sequential IDs / displayNumbers
+If machine displayNumbers aren't sequential within a line, sort by displayNumber anyway - the visual order will match displayNumber order.
 
 ### 3. Different Number of Machines per Line
-The grid will naturally accommodate - each line fills left-to-right, top-to-bottom.
+The grid naturally accommodates - each line fills left-to-right, top-to-bottom.
 
 ### 4. Maximum Grid Columns
 Add configuration for max columns (default 6). If more machines exist, create additional rows.
+
+### 5. Machine Removal
+When a machine is deleted in admin.html:
+- It no longer appears in getMachinesInDisplayOrder()
+- Grid automatically shrinks/updates
+- No orphaned data (historical tests still reference machine by id, not displayNumber)
+
+### 6. Duplicate displayNumbers
+Allow duplicate displayNumbers within a line? **Recommendation**: NO - add validation to prevent duplicates within the same line.
 
 ---
 
@@ -198,10 +354,10 @@ Add configuration for max columns (default 6). If more machines exist, create ad
 
 | File | Changes |
 |------|---------|
-| `firebase-storage.js` | Add `getMachinesByLine()`, `getMachinesInDisplayOrder()` |
-| `index.html` | Replace hardcoded columnOrder with dynamic function call |
+| `firebase-storage.js` | Add `getMachinesByLine()`, `getMachinesInDisplayOrder()` (use displayNumber for sorting) |
+| `index.html` | Replace hardcoded columnOrder with dynamic function call, show displayNumber in UI |
 | `level9-exec.html` | Same as index.html |
-| `admin.html` | (No changes needed if using auto-sort by ID) |
+| `admin.html` | Add displayNumber field to machine form and table, add validation for duplicates |
 
 ---
 
@@ -424,93 +580,34 @@ function openAddMachineModal() {
 
 ## How It Will Work After Implementation
 
+### Adding a Machine
 1. **User adds new machine in admin.html**:
-   - Assigns ID (e.g., 31, 32...)
+   - Assigns unique internal `id` (e.g., 31, 32...)
+   - Sets `displayNumber` (e.g., 6 for 6th machine in line)
    - Selects line (e.g., "1A")
    - Saves to Firestore
 
-2. **Display pages (index.html, level9-exec.html)**:
+2. **Display pages**:
    - Call `getMachinesInDisplayOrder()`
-   - Gets all machines from config
-   - Groups by line, sorts by ID
-   - Returns ordered array: [1,2,3,4,5, 6,7,8,9,10, 11,12,13,14,15, ...]
-   - Renders grid dynamically
+   - New machine appears in its line at its displayNumber position
+   - Grid expands if needed
 
-3. **Result**:
-   - New machines appear automatically at the bottom of their line
-   - No code changes needed in display pages
-   - Layout reflects reality
+### Removing a Machine
+1. **User deletes machine in admin.html**:
+   - Machine is removed from machines array in Firestore
+   
+2. **Display pages**:
+   - Machine no longer appears in grid
+   - Grid shrinks automatically
+   - **Historical test data is preserved** - tests still reference machine by internal `id`, not displayNumber
 
----
-
-## Expected Display Order (After Implementation)
-
-```
-Lines: 1A | 1B | 2A | 2B | 3A | 3B (left to right in grid, matches right-to-left reality)
-
-Column order in grid:
-Row 1: M1(1A-top), M6(1B-top), M11(2A-top), M16(2B-top), M21(3A-top), M26(3B-top)
-Row 2: M2,         M7,         M12,         M17,         M22,         M27
-Row 3: M3,         M8,         M13,         M18,         M23,         M28
-Row 4: M4,         M9,         M14,         M19,         M24,         M29
-Row 5: M5,         M10,        M15,         M20,         M25,         M30
-Row 6: (new 1A)   -           -             -             -            (new 3B)
-Row 7: (new 1A)   -           -             -             -            (new 3B)
-...etc
-```
-
-If user adds 4 new machines to 1A (IDs 31-34) and 4 to 3B (IDs 35-38):
-- 1A will have 9 machines (M1-M5, M31-M34)
-- 3B will have 9 machines (M26-M30, M35-M38)
-- Grid expands to accommodate
-
----
-
-## Status
-
-- [x] Analyze current implementation
-- [x] Document problem and requirements
-- [x] Decide on implementation approach (auto-sort by ID)
-- [ ] Implement helper functions in firebase-storage.js
-- [ ] Update CSS for flexibility
-- [ ] Update index.html machine grid
-- [ ] Update level9-exec.html machine grid
-- [ ] Update real-time config subscription to re-render on machine changes
-- [ ] Test with new machines
-
----
-
-## Addressing Your Questions
-
-### "If I start adding machines in admin.html, will those pages automatically reflect the new machines?"
-
-**YES**, with one condition: **The display pages must be open/refreshed after you save the machines in admin.html**.
-
-Here's how it works:
-1. You add new machines in admin.html → saves to Firestore
-2. You refresh index.html or level9-exec.html → they fetch latest config from Firestore
-3. New machines appear automatically in the grid
-
-**For TRUE real-time updates** (without manual refresh), we need to update the `subscribeToConfig` callback to also re-render the machine grid when config changes. This is included in Step 5 above.
-
-### "Will you update the CSS and other things to ensure flexibility?"
-
-**YES**. The current CSS is fixed at exactly 30 machines (5 rows × 6 columns). We will:
-1. Increase `max-width` from 600px to 800px
-2. Add responsive breakpoints for more columns on wider screens
-3. Allow the grid to expand vertically as needed
-
-This ensures that even if you add 50+ machines, they will display properly without breaking the layout.
-
-### Summary of What Will Be Flexible
-
-| Component | Currently | After Changes |
-|-----------|-----------|---------------|
-| Machine order | Hardcoded array | Dynamic from database |
-| Number of machines | Fixed 30 | Any number |
-| Grid columns | Fixed 6 | 6 default, 8 on wide screens |
-| Grid width | 600px max | 800px max, auto-expand |
-| Real-time updates | No | Yes (with subscribeToConfig update) |
+### Renumbering Machines
+1. **User edits displayNumber in admin.html**:
+   - Changes displayNumber from 31 to 6 (for example)
+   
+2. **Display pages**:
+   - Machine now shows new displayNumber in UI
+   - Internal `id` unchanged - all historical data intact
 
 ---
 
