@@ -681,6 +681,91 @@ git tag -l
 
 ---
 
+## User Roles and Permissions
+
+The app has two different role systems that work together to control access:
+
+### Two Types of Roles
+
+| Role Type | Roles | What They Control |
+|----------|-------|-------------|
+| **Page Access Roles** | `admin`, `manager`, `staff` | Which pages a user can open |
+| **Approval Roles** | `buggy_supervisor`, `plc_operator`, `production_manager`, `qc_manager`, `qc_supervisor` | Which approval buttons a user can click |
+
+### Page Access Roles
+
+These roles control **which pages** a user can open when authentication is enabled:
+
+| Role | Can Access |
+|------|-----------|
+| `admin` | All pages including settings and user management |
+| `manager` | Executive views, reports, machine management |
+| `staff` | Only the main QC entry page (index.html) |
+
+### Approval Roles
+
+These roles control **which buttons** a user can click on the Executive pages:
+
+#### Level 9 Executive Page (5 buttons)
+
+| Role ID | Button Label | Who Usually Has This Role |
+|--------|------------|---------------------|
+| `buggy_supervisor` | 🔧 Buggy Supervisor | Buggy operators/supervisors |
+| `plc_operator` | ⚡ PLC Operator | PLC room operators |
+| `production_manager` | 🏭 Production Manager | Production managers |
+| `qc_manager` | ✅ QC Manager | QC managers |
+| `qc_supervisor` | 🔍 QC Supervisor | QC supervisors |
+
+#### BOT Executive Page (4 buttons)
+
+| Role ID | Button Label | Who Usually Has This Role |
+|--------|------------|---------------------|
+| `plc_operator` | ⚡ PLC Operator | PLC room operators |
+| `production_manager` | 🏭 Production Manager | Production managers |
+| `qc_manager` | ✅ QC Manager | QC managers |
+| `qc_supervisor` | 🔍 QC Supervisor | QC supervisors |
+
+### How Roles Work Together
+
+A user can have **BOTH** a page access role AND multiple approval roles:
+
+**Example: John - Senior QC Supervisor**
+```
+Page Access Role: manager     ← Can open executive pages and reports
+Approval Roles: [buggy_supervisor, plc_operator, production_manager, qc_manager, qc_supervisor]
+                    ← Can click ALL approval buttons on both pages
+```
+
+**Example: Mary - PLC Operator**
+```
+Page Access Role: manager     ← Can open executive pages
+Approval Roles: [plc_operator]
+                    ← Can ONLY click PLC Operator button
+```
+
+**Example: Peter - Junior Staff**
+```
+Page Access Role: staff     ← Can only open main QC page
+Approval Roles: []         ← Cannot click any approval button
+```
+
+### Where Roles Are Assigned
+
+Roles are assigned in the **User Management** page by an administrator:
+- Go to user-management.html
+- Find the user
+- Check the appropriate role boxes
+- Click Save
+
+### What Happens When a Userclicks an Approval Button
+
+1. User clicks an approval button (e.g., "PLC Operator")
+2. System checks: Does this user have the `plc_operator` role?
+3. **If YES:** Opens the name input dialog → User enters name → Approval saved
+4. **If NO:** Shows message: "Access Denied! You are not authorized to click this button!"
+
+---
+
 ## License
 
 © 2026 Dammie Optimus Solutions. All rights reserved.

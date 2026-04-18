@@ -913,3 +913,226 @@ if (new URLSearchParams(window.location.search).get('auth') === 'force') {
 ```
 
 Use: `index.html?auth=force` to test auth on any page
+
+---
+
+## Multi-Role System: Page Roles + Approval Roles
+
+This section explains how the app implements a two-layer role system for maximum flexibility.
+
+### The Problem We Are Solving
+
+**Before:** Each user had only ONE role (staff, manager, or admin). This meant:
+- Users couldn't click approval buttons they're authorized for
+- All managers had the same permissions
+- No way to give granular approval authority
+
+**After:** Each user has:
+1. One **Page Access Role** (controls which pages they can open)
+2. Multiple **Approval Roles** (controls which buttons they can click)
+
+### Two Types of Roles
+
+#### 1. Page Access Roles (Controls Page Access)
+
+These determine **which pages** a user can open:
+
+| Role | Pages They Can Open |
+|------|---------------------|
+| `admin` | All pages (including user management) |
+| `manager` | Executive views, reports, machine management |
+| `staff` | Only the main QC entry page |
+
+#### 2. Approval Roles (Controls Button Clicks)
+
+These determine **which approval buttons** a user can click on Executive pages:
+
+**Level 9 Executive Page:**
+| Role ID | Button |
+|---------|--------|
+| `buggy_supervisor` | 🔧 Buggy Supervisor |
+| `plc_operator` | ⚡ PLC Operator |
+| `production_manager` | 🏭 Production Manager |
+| `qc_manager` | ✅ QC Manager |
+| `qc_supervisor` | 🔍 QC Supervisor |
+
+**BOT Executive Page:**
+| Role ID | Button |
+|---------|--------|
+| `plc_operator` | ⚡ PLC Operator |
+| `production_manager` | 🏭 Production Manager |
+| `qc_manager` | ✅ QC Manager |
+| `qc_supervisor` | 🔍 QC Supervisor |
+
+### How Roles Are Stored in the Database
+
+In Firestore, user roles are stored in the `user_roles` collection:
+
+```
+Collection: user_roles
+Document: user's UID
+Fields:
+{
+  role: "manager",              ← Page access role
+  approvalRoles: [              ← Array of approval roles
+    "plc_operator",
+    "qc_manager"
+  ]
+}
+```
+
+**Key points:**
+- `role` is a single string (admin/manager/staff)
+- `approvalRoles` is an ARRAY (can have multiple values)
+
+### How to Assign Roles (User Management Page)
+
+An administrator can assign roles to users:
+
+1. Go to user-management.html
+2. Find the user
+3. Set their page access role (dropdown)
+4. Check the approval roles they should have (checkboxes)
+5. Click Save
+
+### How the App Checks Roles
+
+#### Checking Page Access (When Opening a Page)
+
+```javascript
+// In firebase-storage.js
+async function checkPageAccess() {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        window.location.href = 'login.html';
+        return;
+    }
+
+    try {
+        const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+        const userRole = roleDoc.exists ? roleDoc.data().role : 'staff';
+        localStorage.setItem('userRole', userRole);
+
+        // Check if user can access this page
+        if (userRole === 'staff' && window.location.href.includes('exec')) {
+            // Staff trying to open executive page - DENIED
+            showAccessDenied();
+        }
+    } catch (e) {
+        showAccessDenied();
+    }
+}
+```
+
+#### Checking Approval Roles (When Clicking a Button)
+
+```javascript
+// When user clicks an approval button
+async function checkApprovalAccess(buttonRole) {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert('Please log in first');
+        return;
+    }
+
+    try {
+        const roleDoc = await db.collection('user_roles').doc(user.uid).get();
+        const userData = roleDoc.exists ? roleDoc.data() : {};
+        const approvalRoles = userData.approvalRoles || [];
+
+        // Check if user has this role
+        if (approvalRoles.includes(buttonRole)) {
+            // User HAS the role - allow them
+            openApprovalModal(buttonRole);
+        } else {
+            // User does NOT have the role - deny access
+            alert('Access Denied! You are not authorized to click this button!');
+        }
+    } catch (e) {
+        alert('Access Denied! You are not authorized to click this button!');
+    }
+}
+```
+
+### Example User Configurations
+
+Here are common examples of how roles can be set up:
+
+**Example 1: Senior Supervisor (Can do everything)**
+```
+Page Access Role: manager
+Approval Roles: [buggy_supervisor, plc_operator, production_manager, qc_manager, qc_supervisor]
+```
+
+**Example 2: PLC Operator only**
+```
+Page Access Role: manager
+Approval Roles: [plc_operator]
+```
+
+**Example 3: Production Manager**
+```
+Page Access Role: manager
+Approval Roles: [production_manager]
+```
+
+**Example 4: Junior Staff (No approvals)**
+```
+Page Access Role: staff
+Approval Roles: []
+```
+
+### What Users See
+
+#### When Accessing a Page Without Permission
+
+Page: Executive View
+User: Staff member
+
+```
+┌────────────────────────────────────┐
+│  ⛔ Access Denied                   │
+│                                    │
+│  Only administrators and managers    │
+│  can access executive views.         │
+│                                    │
+│  ← Back to App                  │
+└────────────────────────────────────┘
+```
+
+#### When Clicking a Button Without Permission
+
+Page: Level 9 Executive
+User: John (has only `qc_manager` role)
+Action: Trying to click "Buggy Supervisor" button
+
+```
+Alert/Message:
+┌────────────────────────────────────┐
+│  ⚠ Access Denied!                  │
+│                                    │
+│  You are not authorized to         │
+│  click this button!              │
+│                                    │
+│         [OK]                     │
+└────────────────────────────────────┘
+```
+
+### Implementation Checklist
+
+To implement this multi-role system, these files need to be updated:
+
+| File | What to Change |
+|------|-------------|
+| `firebase-storage.js` | Add function to get user's approval roles |
+| `user-management.html` | Add checkboxes for approval roles, save as array |
+| `level9-exec.html` | Check role before opening approval modal |
+| `bot-exec.html` | Check role before opening approval modal |
+
+### Benefits of This System
+
+1. **Flexibility** - Give users exactly the permissions they need
+2. **Security** - Prevent unauthorized button clicks
+3. **Scalability** - Easy to add new approval roles
+4. **Clarity** - Clear distinction between page access and button permissions
+5. **Audit trail** - Know who approved what shift
