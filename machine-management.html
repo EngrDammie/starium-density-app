@@ -512,6 +512,60 @@
         .auth-bar .logout-btn:hover {
             background: #ff4444;
         }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            background-color: var(--bg-card);
+            border-top: 1px solid #333;
+            position: relative;
+        }
+
+        footer p {
+            color: #666;
+            font-size: 0.9rem;
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        footer:hover p {
+            opacity: 0;
+        }
+
+        footer::before {
+            content: "Starium Rafa Quality Control Tool | Machine Management";
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            color: #666;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        footer:hover::before {
+            opacity: 0;
+        }
+
+        footer::after {
+            content: "WhatsApp Dammie Optimus Solutions on 07053331253";
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            color: var(--primary);
+            font-size: 0.9rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+
+        footer:hover::after {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -1493,5 +1547,8 @@
         // Initialize on load
         window.addEventListener('load', init);
     </script>
+    <footer>
+        <p>Starium Rafa Quality Control Tool | Machine Management</p>
+    </footer>
 </body>
 </html>
