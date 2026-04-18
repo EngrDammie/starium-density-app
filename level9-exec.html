@@ -1748,7 +1748,27 @@
         }
 
         // ===== APPROVAL MODAL =====
-        function openApprovalModal(approverType) {
+        async function openApprovalModal(approverType) {
+            const roleMap = {
+                buggySupervisor: 'buggy_supervisor',
+                plcOperator: 'plc_operator',
+                productionManager: 'production_manager',
+                qcManager: 'qc_manager',
+                qcSupervisor: 'qc_supervisor'
+            };
+
+            const roleToCheck = roleMap[approverType];
+            if (!roleToCheck) {
+                alert('Invalid approval type');
+                return;
+            }
+
+            const hasRole = await checkApprovalRole(roleToCheck);
+            if (!hasRole) {
+                alert('Access Denied! You are not authorized to click this button!');
+                return;
+            }
+
             currentApproverType = approverType;
             const titles = {
                 buggySupervisor: 'Buggy Supervisor Approval',

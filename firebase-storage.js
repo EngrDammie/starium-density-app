@@ -535,3 +535,40 @@ async function requireAuth() {
         });
     });
 }
+
+async function getUserApprovalRoles() {
+    const userUid = localStorage.getItem('userUid');
+    if (!userUid) { return []; }
+
+    try {
+        const roleDoc = await db.collection('user_roles').doc(userUid).get();
+        if (roleDoc.exists) {
+            const data = roleDoc.data();
+            return data.approvalRoles || [];
+        }
+    } catch (e) {
+        console.log('Error getting approval roles:', e);
+    }
+    return [];
+}
+
+async function checkApprovalRole(roleToCheck) {
+    const userUid = localStorage.getItem('userUid');
+    if (!userUid) { return false; }
+
+    if (!await isAuthEnabled()) {
+        return true;
+    }
+
+    try {
+        const roleDoc = await db.collection('user_roles').doc(userUid).get();
+        if (roleDoc.exists) {
+            const data = roleDoc.data();
+            const approvalRoles = data.approvalRoles || [];
+            return approvalRoles.includes(roleToCheck);
+        }
+    } catch (e) {
+        console.log('Error checking approval role:', e);
+    }
+    return false;
+}
