@@ -7,6 +7,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="firebase-config.js"></script>
     <script src="firebase-storage.js"></script>
     <style>
@@ -277,6 +278,25 @@
             border-radius: 15px;
             padding: 20px;
             overflow-x: auto;
+        }
+
+        .density-trend-chart-container {
+            background: var(--bg-card);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .density-trend-chart-title {
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .density-trend-chart-canvas {
+            max-height: 200px;
         }
 
         .recent-data-title {
@@ -813,6 +833,11 @@
         </div>
     </div>
 
+    <div class="density-trend-chart-container">
+        <div class="density-trend-chart-title">📈 Density Trend (Last 10 Tests)</div>
+        <canvas id="densityTrendChart" class="density-trend-chart-canvas"></canvas>
+    </div>
+
     <div class="recent-data-panel">
         <div class="recent-data-title">📋 Tests for This Shift (Last 10)</div>
         <div id="recentDataTable">
@@ -975,6 +1000,7 @@
         let unsubscribeLatestTest = null;
         let unsubscribeShiftApproval = null;
         let unsubscribeTestsCount = null;
+        let densityTrendChart = null;
 
         // ===== INITIALIZE =====
         async function init() {
@@ -1047,6 +1073,10 @@
                 // Real-time listener for tests count for this shift
                 unsubscribeTestsCount = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
                     document.getElementById('totalTests').textContent = tests ? tests.length : 0;
+                    // Update trend chart with new data
+                    if (tests && tests.length > 0) {
+                        updateDensityTrendChart(tests);
+                    }
                 });
 
                 // Real-time listener for shift approval
@@ -1273,6 +1303,99 @@
             `;
 
             document.getElementById('recentDataTable').innerHTML = tableHtml;
+
+            // Update density trend chart
+            updateDensityTrendChart(tests);
+        }
+
+        function updateDensityTrendChart(tests) {
+            if (!tests || tests.length === 0) return;
+
+            // Sort by time (oldest first for chart)
+            const sortedTests = [...tests].sort((a, b) => {
+                const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+                const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+                return dateA - dateB;
+            });
+
+            const densityData = sortedTests.map(t => parseFloat(t.density) || 0);
+            const labels = densityData.map((_, i) => `Test ${i + 1}`);
+
+            // Calculate y-axis bounds from actual data with padding
+            const actualMin = Math.min(...densityData);
+            const actualMax = Math.max(...densityData);
+            const range = actualMax - actualMin;
+            const padding = range > 0 ? range * 0.2 : 0.02;
+            const yMin = actualMin - padding;
+            const yMax = actualMax + padding;
+
+            // Ensure min doesn't go below 0
+            const chartYMin = Math.max(0, yMin);
+            const chartYMax = yMax + (chartYMin === 0 ? padding : 0);
+
+            // Destroy existing chart if it exists
+            if (densityTrendChart) {
+                densityTrendChart.destroy();
+            }
+
+            const ctx = document.getElementById('densityTrendChart').getContext('2d');
+            densityTrendChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Density (g/mL)',
+                        data: densityData,
+                        borderColor: '#00BCD4',
+                        backgroundColor: 'rgba(0, 188, 212, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00BCD4',
+                        pointBorderColor: '#fff',
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: chartYMin,
+                            max: chartYMax,
+                            grid: { color: '#333' },
+                            ticks: {
+                                color: '#888',
+                                callback: function(value) {
+                                    return value.toFixed(3);
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Density (g/mL)',
+                                color: '#888'
+                            }
+                        },
+                        x: {
+                            grid: { color: '#333' },
+                            ticks: { color: '#888' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Density: ${context.parsed.y.toFixed(3)} g/mL`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         function updateCurrentDensity(test) {
