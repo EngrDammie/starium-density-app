@@ -1295,10 +1295,11 @@
                 // Real-time listener for tests count for this shift
                 unsubscribeTestsCount = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
                     document.getElementById('totalTests').textContent = tests ? tests.length : 0;
-                    // Update trend chart with only the latest 10 tests
+                    // Update trend chart and table with only the latest 10 tests
                     if (tests && tests.length > 0) {
                         const latest10 = tests.slice(0, 10);
                         updateDensityTrendChart(latest10);
+                        updateRecentTestsTable(latest10);
                     }
                 });
 
@@ -1523,7 +1524,16 @@
                 return dateB - dateA;
             });
 
-            // Helper to safely convert timestamp
+            renderRecentTestsTable(tests);
+        }
+
+        function renderRecentTestsTable(tests) {
+            if (!tests || tests.length === 0) {
+                document.getElementById('recentDataTable').innerHTML =
+                    '<div class="loading">No tests recorded for this shift yet</div>';
+                return;
+            }
+
             const formatTime = (timestamp) => {
                 if (!timestamp) return '--';
                 const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -1571,9 +1581,15 @@
             `;
 
             document.getElementById('recentDataTable').innerHTML = tableHtml;
+        }
 
-            // Update density trend chart
-            updateDensityTrendChart(tests);
+        function updateRecentTestsTable(tests) {
+            tests.sort((a, b) => {
+                const dateA = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate() : new Date(a.createdAt)) : new Date(0);
+                const dateB = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate() : new Date(b.createdAt)) : new Date(0);
+                return dateB - dateA;
+            });
+            renderRecentTestsTable(tests);
         }
 
         function updateDensityTrendChart(tests) {
