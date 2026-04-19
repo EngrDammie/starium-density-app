@@ -1120,9 +1120,10 @@
                 // Real-time listener for tests count for this shift
                 unsubscribeTestsCount = subscribeToTestsByApprovalDoc(currentApprovalId, (tests) => {
                     document.getElementById('totalTests').textContent = tests ? tests.length : 0;
-                    // Update trend chart with new data
+                    // Update trend chart with only the latest 10 tests
                     if (tests && tests.length > 0) {
-                        updateDensityTrendChart(tests);
+                        const latest10 = tests.slice(0, 10);
+                        updateDensityTrendChart(latest10);
                     }
                 });
 
