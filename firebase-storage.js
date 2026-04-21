@@ -223,36 +223,235 @@ function getCurrentShift() {
 
 window.isOnline = window.isOnline || navigator.onLine;
 window.onlineStatusListeners = window.onlineStatusListeners || [];
+window.failedSyncQueue = window.failedSyncQueue || [];
 
 function saveToLocalQueue(testData) {
     try {
         const queue = getLocalQueue();
-        queue.push({ ...testData, queuedAt: new Date().toISOString() });
+        const localTimestamp = new Date().toISOString();
+        queue.push({ 
+            ...testData, 
+            queuedAt: localTimestamp,
+            localCreatedAt: localTimestamp
+        });
         localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(queue));
+        window.pendingQueueCount = queue.length;
+        notifyQueueCountListeners();
+        console.log('[Offline] Queued test, queue count:', queue.length, 'Time:', localTimestamp);
         return true;
-    } catch (e) { return false; }
+    } catch (e) { 
+        console.error('[Offline] Failed to save to queue:', e);
+        return false; 
+    }
 }
 
 function getLocalQueue() {
-    try { const data = localStorage.getItem(window.OFFLINE_QUEUE_KEY); return data ? JSON.parse(data) : []; } catch (e) { return []; }
+    try { 
+        const data = localStorage.getItem(window.OFFLINE_QUEUE_KEY); 
+        return data ? JSON.parse(data) : []; 
+    } catch (e) { 
+        console.error('[Offline] Failed to read queue:', e);
+        return []; 
+    }
+}
+
+function getQueueCount() {
+    return window.pendingQueueCount || getLocalQueue().length;
 }
 
 function clearLocalQueue() {
     localStorage.removeItem(window.OFFLINE_QUEUE_KEY);
+    window.pendingQueueCount = 0;
+    notifyQueueCountListeners();
+}
+
+function saveToFailedQueue(testData, error) {
+    try {
+        const failed = getFailedQueue();
+        failed.push({ ...testData, failedAt: new Date().toISOString(), error: error.message || String(error) });
+        localStorage.setItem(window.OFFLINE_FAILED_QUEUE_KEY || 'starium_failed_queue', JSON.stringify(failed));
+    } catch (e) { console.error('[Offline] Failed to save to failed queue:', e); }
+}
+
+function getFailedQueue() {
+    try {
+        const data = localStorage.getItem(window.OFFLINE_FAILED_QUEUE_KEY || 'starium_failed_queue');
+        return data ? JSON.parse(data) : [];
+    } catch (e) { return []; }
+}
+
+function clearFailedQueue() {
+    localStorage.removeItem(window.OFFLINE_FAILED_QUEUE_KEY || 'starium_failed_queue');
 }
 
 async function syncLocalQueue() {
     const queue = getLocalQueue();
-    if (queue.length === 0) return;
-    const db = window.db;
-    for (const testData of queue) {
-        try { await db.collection('qc_tests').add({ ...testData, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); } catch (e) { console.error('Sync error:', e); }
+    if (queue.length === 0) {
+        console.log('[Sync] Queue is empty, nothing to sync');
+        return;
     }
-    clearLocalQueue();
+    
+    const db = window.db;
+    let syncedCount = 0;
+    let failedCount = 0;
+    
+    console.log('[Sync] Starting to sync', queue.length, 'items...');
+    
+    for (const testData of queue) {
+        try {
+            const localTime = testData.localCreatedAt || testData.queuedAt;
+            const timestamp = localTime ? new Date(localTime) : firebase.firestore.FieldValue.serverTimestamp();
+            
+            const docData = {
+                ...testData,
+                createdAt: timestamp,
+                syncedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                wasOfflineQueued: true
+            };
+            delete docData.queuedAt;
+            delete docData.localCreatedAt;
+            
+            await db.collection('qc_tests').add(docData);
+            syncedCount++;
+            console.log('[Sync] Synced item:', syncedCount, 'Time:', localTime);
+        } catch (e) {
+            failedCount++;
+            saveToFailedQueue(testData, e);
+            console.error('[Sync] Failed to sync item:', e);
+        }
+    }
+    
+    if (failedCount === 0) {
+        clearLocalQueue();
+        console.log('[Sync] Successfully synced all', syncedCount, 'items');
+    } else {
+        localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(getFailedQueue()));
+        clearFailedQueue();
+        console.log('[Sync] Partial success:', syncedCount, 'synced,', failedCount, 'failed');
+    }
+    
+    notifyQueueCountListeners();
 }
 
-window.addEventListener('online', () => { window.isOnline = true; notifyOnlineStatusListeners(true); syncLocalQueue(); });
-window.addEventListener('offline', () => { window.isOnline = false; notifyOnlineStatusListeners(false); });
+async function retryFailedQueue() {
+    const failed = getFailedQueue();
+    if (failed.length === 0) return;
+    
+    console.log('[Retry] Retrying', failed.length, 'failed items...');
+    
+    const db = window.db;
+    let syncedCount = 0;
+    
+    for (const testData of failed) {
+        try {
+            const localTime = testData.localCreatedAt || testData.queuedAt;
+            const timestamp = localTime ? new Date(localTime) : firebase.firestore.FieldValue.serverTimestamp();
+            
+            const docData = {
+                ...testData,
+                createdAt: timestamp,
+                syncedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                wasOfflineQueued: true,
+                wasRetry: true
+            };
+            delete docData.queuedAt;
+            delete docData.localCreatedAt;
+            delete docData.failedAt;
+            delete docData.error;
+            
+            await db.collection('qc_tests').add(docData);
+            syncedCount++;
+        } catch (e) {
+            console.error('[Retry] Failed:', e);
+        }
+    }
+    
+    if (syncedCount === failed.length) {
+        clearFailedQueue();
+        console.log('[Retry] All', syncedCount, 'items synced successfully');
+    }
+    
+    notifyQueueCountListeners();
+}
+
+window.queueCountListeners = [];
+function onQueueCountChange(callback) {
+    window.queueCountListeners.push(callback);
+    callback(getQueueCount());
+}
+function notifyQueueCountListeners() {
+    const count = getQueueCount();
+    window.queueCountListeners.forEach(cb => cb(count));
+}
+
+window.addEventListener('online', () => { 
+    window.isOnline = true; 
+    notifyOnlineStatusListeners(true); 
+    console.log('[Network] Back online, starting sync...');
+    
+    showSyncingStatus();
+    syncLocalQueue().then(() => {
+        hideSyncingStatus();
+        
+        const failed = getFailedQueue();
+        if (failed.length > 0) {
+            console.log('[Network] Retrying', failed.length, 'previously failed items...');
+            retryFailedQueue();
+        }
+    });
+});
+
+function showSyncingStatus() {
+    const statusEl = document.getElementById('syncStatus');
+    const syncIcon = document.getElementById('syncIcon');
+    const syncText = document.getElementById('syncText');
+    const queueBadge = document.getElementById('queueCount');
+    
+    if (statusEl) {
+        statusEl.className = 'sync-status syncing';
+        if (syncIcon) syncIcon.textContent = '🔄';
+        if (syncText) syncText.textContent = 'Syncing...';
+        if (queueBadge) queueBadge.classList.add('syncing');
+    }
+}
+
+function hideSyncingStatus() {
+    const statusEl = document.getElementById('syncStatus');
+    const syncIcon = document.getElementById('syncIcon');
+    const syncText = document.getElementById('syncText');
+    const queueBadge = document.getElementById('queueCount');
+    
+    if (statusEl) {
+        statusEl.className = 'sync-status online';
+        if (syncIcon) syncIcon.textContent = '🟢';
+        if (syncText) syncText.textContent = 'Online';
+        if (queueBadge) queueBadge.classList.remove('syncing');
+    }
+    
+    updateSyncStatusQueueCount();
+}
+
+function updateSyncStatusQueueCount() {
+    const queueBadge = document.getElementById('queueCount');
+    const count = getQueueCount();
+    
+    if (queueBadge) {
+        if (count > 0) {
+            queueBadge.textContent = count + ' pending';
+            queueBadge.style.display = 'inline';
+        } else {
+            queueBadge.style.display = 'none';
+        }
+    }
+}
+
+window.getQueueCount = getQueueCount;
+window.onQueueCountChange = onQueueCountChange;
+window.addEventListener('offline', () => { 
+    window.isOnline = false; 
+    notifyOnlineStatusListeners(false); 
+    console.log('[Network] Gone offline, queuing enabled');
+});
 
 function isNetworkOnline() { return window.isOnline; }
 function onOnlineStatusChange(callback) { window.onlineStatusListeners.push(callback); callback(window.isOnline); }
@@ -261,11 +460,20 @@ function notifyOnlineStatusListeners(status) { window.onlineStatusListeners.forE
 async function saveQCTest(testData) {
     const db = window.db;
     if (!db) return 'error';
-    if (!window.isOnline) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
+    
+    if (!window.isOnline) {
+        return saveToLocalQueue(testData) ? 'offline-queued' : 'error';
+    }
     try {
-        const docRef = await db.collection('qc_tests').add({ ...testData, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+        const docRef = await db.collection('qc_tests').add({ 
+            ...testData, 
+            createdAt: firebase.firestore.FieldValue.serverTimestamp() 
+        });
         return docRef.id;
-    } catch (error) { return saveToLocalQueue(testData) ? 'offline-queued' : 'error'; }
+    } catch (error) {
+        console.error('[Save] Error, queueing for later:', error);
+        return saveToLocalQueue(testData) ? 'offline-queued' : 'error';
+    }
 }
 
 async function getTestsByMode(mode) {

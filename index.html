@@ -797,6 +797,9 @@
             border-radius: 20px;
             font-size: 0.8rem;
             z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .sync-status.online {
@@ -807,6 +810,32 @@
         .sync-status.offline {
             background: rgba(244, 67, 54, 0.2);
             color: #F44336;
+        }
+
+        .sync-status.syncing {
+            background: rgba(255, 183, 77, 0.2);
+            color: #FF9800;
+            animation: syncPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes syncPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .queue-badge {
+            background: #FF9800;
+            color: #121212;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 5px;
+        }
+
+        .queue-badge.syncing {
+            background: #00BCD4;
+            color: #121212;
         }
 
         /* Settings Button */
@@ -1009,7 +1038,11 @@
         <button class="logout-btn" id="logoutBtn">Logout</button>
     </div>
 
-    <div class="sync-status online" id="syncStatus">🟢 Online</div>
+    <div class="sync-status online" id="syncStatus">
+        <span id="syncIcon">🟢</span>
+        <span id="syncText">Online</span>
+        <span id="queueCount" class="queue-badge" style="display: none;"></span>
+    </div>
 
     <header>
         <h1>Starium Rafa Quality Control Tool</h1>
@@ -2122,18 +2155,53 @@
         // Network status
         function updateNetworkStatus() {
             const statusEl = document.getElementById('syncStatus');
+            const syncIcon = document.getElementById('syncIcon');
+            const syncText = document.getElementById('syncText');
+            
             if (navigator.onLine) {
-                statusEl.textContent = '🟢 Online';
+                syncIcon.textContent = '🟢';
+                syncText.textContent = 'Online';
                 statusEl.className = 'sync-status online';
             } else {
-                statusEl.textContent = '📴 Offline';
+                syncIcon.textContent = '📴';
+                syncText.textContent = 'Offline';
                 statusEl.className = 'sync-status offline';
+            }
+            
+            if (window.getQueueCount) {
+                window.getQueueCount();
+                const queueCount = window.getQueueCount();
+                const queueBadge = document.getElementById('queueCount');
+                if (queueBadge) {
+                    if (queueCount > 0) {
+                        queueBadge.textContent = queueCount + ' pending';
+                        queueBadge.style.display = 'inline';
+                    } else {
+                        queueBadge.style.display = 'none';
+                    }
+                }
             }
         }
 
         // Listen for network changes
         window.addEventListener('online', updateNetworkStatus);
         window.addEventListener('offline', updateNetworkStatus);
+        
+        // Initialize queue count display
+        if (window.onQueueCountChange) {
+            window.onQueueCountChange((count) => {
+                const queueBadge = document.getElementById('queueCount');
+                if (queueBadge) {
+                    if (count > 0) {
+                        queueBadge.textContent = count + ' pending';
+                        queueBadge.style.display = 'inline';
+                    } else {
+                        queueBadge.style.display = 'none';
+                    }
+                }
+                console.log('[UI] Queue count updated:', count);
+            });
+        }
 
         // ===== SETTINGS FUNCTIONS =====
         let CONFIG = {
