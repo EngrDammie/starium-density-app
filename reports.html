@@ -550,7 +550,16 @@
             const reportOutput = document.getElementById('reportOutput');
             reportOutput.classList.add('active');
 
-            reportOutput.innerHTML = '<div class="loading"><div class="spinner"></div>Generating report...</div>';
+            // Show loading in table area, keep header/charts structure
+            const reportHeader = document.getElementById('reportHeader');
+            const chartsSection = document.getElementById('chartsSection');
+            const tableHead = document.getElementById('tableHead');
+            const tableBody = document.getElementById('tableBody');
+
+            reportHeader.innerHTML = '<div class="loading"><div class="spinner"></div>Loading report...</div>';
+            chartsSection.style.display = 'none';
+            tableHead.innerHTML = '';
+            tableBody.innerHTML = '<tr><td colspan="10"><div class="loading"><div class="spinner"></div>Generating report...</div></td></tr>';
 
             try {
                 // Get shift approval document
@@ -578,7 +587,10 @@
 
             } catch (error) {
                 console.error('Error generating report:', error);
-                reportOutput.innerHTML = '<div class="no-data">Error generating report. Please try again.</div>';
+                const reportHeader = document.getElementById('reportHeader');
+                const tableBody = document.getElementById('tableBody');
+                reportHeader.innerHTML = '';
+                tableBody.innerHTML = '<tr><td colspan="10" class="no-data">Error generating report. Please try again.</td></tr>';
             }
         }
 
