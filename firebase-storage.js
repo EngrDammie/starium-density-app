@@ -229,15 +229,18 @@ function saveToLocalQueue(testData) {
     try {
         const queue = getLocalQueue();
         const localTimestamp = new Date().toISOString();
+        const syncId = localTimestamp + '_' + Math.random().toString(36).substr(2, 5);
+        
         queue.push({ 
             ...testData, 
             queuedAt: localTimestamp,
-            localCreatedAt: localTimestamp
+            localCreatedAt: localTimestamp,
+            syncId: syncId
         });
         localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(queue));
         window.pendingQueueCount = queue.length;
         notifyQueueCountListeners();
-        console.log('[Offline] Queued test, queue count:', queue.length, 'Time:', localTimestamp);
+        console.log('[Offline] Queued test, queue count:', queue.length, 'syncId:', syncId);
         return true;
     } catch (e) { 
         console.error('[Offline] Failed to save to queue:', e);
@@ -294,31 +297,35 @@ async function syncLocalQueue() {
     const db = window.db;
     let syncedCount = 0;
     let failedCount = 0;
+    let skippedDuplicateCount = 0;
     const remainingQueue = [];
+    const syncedSyncIds = [];
     
     console.log('[Sync] Starting to sync', queue.length, 'items...');
     
     for (const testData of queue) {
         try {
             const localTime = testData.localCreatedAt || testData.queuedAt;
-            const timestamp = localTime ? new Date(localTime) : firebase.firestore.FieldValue.serverTimestamp();
+            const syncId = testData.syncId;
             
             const docData = {
                 ...testData,
-                createdAt: timestamp,
+                createdAt: localTime ? new Date(localTime) : firebase.firestore.FieldValue.serverTimestamp(),
                 syncedAt: firebase.firestore.FieldValue.serverTimestamp(),
-                wasOfflineQueued: true
+                wasOfflineQueued: true,
+                offlineSyncId: syncId
             };
             delete docData.queuedAt;
             delete docData.localCreatedAt;
+            delete docData.syncId;
             
             await db.collection('qc_tests').add(docData);
             syncedCount++;
-            console.log('[Sync] Synced item:', syncedCount, 'Time:', localTime);
+            syncedSyncIds.push(syncId);
+            console.log('[Sync] Synced:', syncId, 'Time:', localTime);
         } catch (e) {
             failedCount++;
             remainingQueue.push(testData);
-            saveToFailedQueue(testData, e);
             console.error('[Sync] Failed to sync item:', e);
         }
     }
@@ -328,7 +335,7 @@ async function syncLocalQueue() {
         console.log('[Sync] Successfully synced all', syncedCount, 'items');
     } else {
         localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(remainingQueue));
-        console.log('[Sync] Partial success:', syncedCount, 'synced,', failedCount, 'remaining in queue');
+        console.log('[Sync] Partial success:', syncedCount, 'synced,', failedCount, 'remaining');
     }
     
     notifyQueueCountListeners();
