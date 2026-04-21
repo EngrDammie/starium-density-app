@@ -559,7 +559,7 @@
             reportHeader.innerHTML = '<div class="loading"><div class="spinner"></div>Loading report...</div>';
             chartsSection.style.display = 'none';
             tableHead.innerHTML = '';
-            tableBody.innerHTML = '<tr><td colspan="10"><div class="loading"><div class="spinner"></div>Generating report...</div></td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="9"><div class="loading"><div class="spinner"></div>Generating report...</div></td></tr>';
 
             try {
                 // Get shift approval document
@@ -590,7 +590,7 @@
                 const reportHeader = document.getElementById('reportHeader');
                 const tableBody = document.getElementById('tableBody');
                 reportHeader.innerHTML = '';
-                tableBody.innerHTML = '<tr><td colspan="10" class="no-data">Error generating report. Please try again.</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="9" class="no-data">Error generating report. Please try again.</td></tr>';
             }
         }
 
@@ -776,7 +776,7 @@
 
             if (tests.length === 0) {
                 document.getElementById('chartsSection').style.display = 'none';
-                tbody.innerHTML = '<tr><td colspan="10" class="no-data">No tests found for this shift</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="no-data">No tests found for this shift</td></tr>';
                 return;
             }
 
@@ -793,7 +793,8 @@
                     { key: 'buggy', label: 'Buggy' },
                     { key: 'machines', label: 'Machines' },
                     { key: 'appearance', label: 'Appearance' },
-                    { key: 'fragrance', label: 'Fragrance' }
+                    { key: 'fragrance', label: 'Fragrance' },
+                    { key: 'remarks', label: 'Remarks' }
                 ];
             } else {
                 columns = [
@@ -802,7 +803,8 @@
                     { key: 'density', label: 'Density' },
                     { key: 'status', label: 'Status' },
                     { key: 'appearance', label: 'Appearance' },
-                    { key: 'flowProperty', label: 'Flow Property' }
+                    { key: 'flowProperty', label: 'Flow Property' },
+                    { key: 'remarks', label: 'Remarks' }
                 ];
             }
 
@@ -833,7 +835,8 @@
                     buggy: test.buggyNumber || '--',
                     machines: (test.machines || []).join(', '),
                     fragrance: test.fragrance === 'A' ? 'A' : (test.fragrance === 'U' ? 'U' : '--'),
-                    flowProperty: test.flowProperty === 'FF' ? 'FF' : (test.flowProperty === 'NFF' ? 'NFF' : '--')
+                    flowProperty: test.flowProperty === 'FF' ? 'FF' : (test.flowProperty === 'NFF' ? 'NFF' : '--'),
+                    remarks: test.remarks || '--'
                 };
 
                 if (mode === 'level9') {
@@ -846,6 +849,7 @@
                         <td>${rowData.machines}</td>
                         <td>${rowData.appearance}</td>
                         <td>${rowData.fragrance}</td>
+                        <td>${rowData.remarks}</td>
                     </tr>`;
                 } else {
                     return `<tr>
@@ -855,6 +859,7 @@
                         <td>${rowData.status}</td>
                         <td>${rowData.appearance}</td>
                         <td>${rowData.flowProperty}</td>
+                        <td>${rowData.remarks}</td>
                     </tr>`;
                 }
             }).join('');
