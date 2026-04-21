@@ -294,6 +294,7 @@ async function syncLocalQueue() {
     const db = window.db;
     let syncedCount = 0;
     let failedCount = 0;
+    const remainingQueue = [];
     
     console.log('[Sync] Starting to sync', queue.length, 'items...');
     
@@ -316,6 +317,7 @@ async function syncLocalQueue() {
             console.log('[Sync] Synced item:', syncedCount, 'Time:', localTime);
         } catch (e) {
             failedCount++;
+            remainingQueue.push(testData);
             saveToFailedQueue(testData, e);
             console.error('[Sync] Failed to sync item:', e);
         }
@@ -325,9 +327,8 @@ async function syncLocalQueue() {
         clearLocalQueue();
         console.log('[Sync] Successfully synced all', syncedCount, 'items');
     } else {
-        localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(getFailedQueue()));
-        clearFailedQueue();
-        console.log('[Sync] Partial success:', syncedCount, 'synced,', failedCount, 'failed');
+        localStorage.setItem(window.OFFLINE_QUEUE_KEY, JSON.stringify(remainingQueue));
+        console.log('[Sync] Partial success:', syncedCount, 'synced,', failedCount, 'remaining in queue');
     }
     
     notifyQueueCountListeners();
