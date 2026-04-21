@@ -142,7 +142,7 @@
 
         .filter-group {
             flex: 1;
-            min-width: 200px;
+            min-width: 150px;
         }
 
         .filter-group label {
@@ -288,11 +288,14 @@
         .table-container {
             background: #fff;
             border-radius: 10px;
-            overflow: hidden;
+            overflow-x: auto;
+            overflow-y: visible;
+            -webkit-overflow-scrolling: touch;
         }
 
         .data-table {
             width: 100%;
+            min-width: 600px;
             border-collapse: collapse;
             font-size: 0.85rem;
             color: #000;
@@ -496,8 +499,24 @@
 
         /* Responsive */
         @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            header {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 1.4rem;
+            }
+
             .charts-section {
                 grid-template-columns: 1fr;
+            }
+
+            .chart-container {
+                min-height: 250px;
             }
 
             .filters-row {
@@ -506,6 +525,35 @@
 
             .report-meta {
                 grid-template-columns: 1fr;
+            }
+
+            .quick-template-btn {
+                padding: 15px;
+            }
+
+            .quick-template-btn .btn-title {
+                font-size: 1.1rem;
+            }
+
+            .report-header {
+                padding: 15px;
+            }
+
+            .report-meta-item {
+                font-size: 0.85rem;
+            }
+
+            .report-title {
+                font-size: 1.2rem;
+            }
+
+            .data-table {
+                font-size: 0.75rem;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 5px;
             }
         }
     </style>
