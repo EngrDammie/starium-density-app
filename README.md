@@ -437,6 +437,51 @@ Once all required approvers have approved, the shift status changes to "complete
 
 ---
 
+## Reports
+
+The Reports page lets you generate printable reports for QC tests. Access it by clicking "Reports" from the main page or navigating to `reports.html`.
+
+### How to Use
+
+1. Click **QC Density Tests Report** button
+2. Select **Date** from the date picker
+3. Choose **Mode** (Level 9 or BOT)
+4. Choose **Shift** (DAY or NIGHT)
+5. Click **Generate Report**
+
+### Report Contents
+
+Each report includes:
+
+1. **Report Header** - Title, Mode, Shift, Date, Total Tests, QC Staff, Team
+2. **Shift Approvers** - Names of everyone who approved this shift
+3. **Density Trend Chart** - Line chart showing density over time
+4. **High/Low Distribution** - Doughnut chart showing Normal/Low/High counts
+5. **Data Table** - All test details with columns for:
+   - Time, Weight, Density, Status
+   - Buggy number (Level 9)
+   - Machines assigned (Level 9)
+   - Appearance (A = Acceptable, U = Unacceptable)
+   - Fragrance (Level 9, A/U)
+   - Flow Property (BOT, A = Free Flowing, U = Not Free Flowing)
+   - Remarks
+
+### Printing Reports
+
+To print a report:
+1. Generate the report you want
+2. Press **Ctrl+P** (or Cmd+P on Mac)
+3. Only the report prints - navigation and buttons are hidden
+
+### Responsive Design
+
+The reports page works on phones and tablets:
+- Tables scroll horizontally on small screens
+- Charts stack vertically on mobile
+- Touch-friendly controls
+
+---
+
 ## Firestore Data Structure
 
 ### Collection: `qc_tests`
