@@ -1,10 +1,30 @@
 # Starium Rafa Quality Control Tool
 
-A web-based quality control application for a detergent factory that records powder density tests, monitors production machines, and tracks shift approvals.
+A web-based quality control application for a detergent factory that records powder density tests, monitors production machines, and tracks shift approvals. The app works offline and automatically syncs when internet is restored!
 
 **Live URL:** https://engrdammie.github.io/starium-density-app/
 
 **GitHub Repository:** https://github.com/EngrDammie/starium-density-app
+
+---
+
+## Quick Start Guide
+
+### For QC Staff (Main Page)
+1. Open `index.html`
+2. Select your **Mode** (Level 9 or BOT)
+3. Select your **Team** (A, B, or C)
+4. Enter your **Name**
+5. Enter the **Powder Weight** in grams
+6. View the calculated **Density** and matching machines
+7. Click machines to assign the buggy
+8. Click **Save Test** - Done! ✓
+
+### For Supervisors/Managers (Executive Pages)
+1. Open `level9-exec.html` (for Level 9) or `bot-exec.html` (for BOT)
+2. View real-time density and machine status
+3. Click your role button and enter your name to approve the shift
+4. View recent tests in the table below
 
 ---
 
@@ -13,22 +33,24 @@ A web-based quality control application for a detergent factory that records pow
 1. [Overview](#overview)
 2. [Application Structure](#application-structure)
 3. [Two Modes of Operation](#two-modes-of-operation)
-4. [30 Machines with Specifications](#30-machines-with-specifications)
+4. [Machines with Specifications](#machines-with-specifications)
 5. [How to Use the Main Page](#how-to-use-the-main-page)
 6. [How to Use Executive Pages](#how-to-use-executive-pages)
-7. [Firestore Data Structure](#firestore-data-structure)
-8. [Offline Support](#offline-support)
-9. [Settings & Configuration](#settings--configuration)
-10. [Machine Admin Panel](#machine-admin-panel)
-11. [User Preferences](#user-preferences)
-12. [Shift Timing](#shift-timing)
-13. [Auto-Reload on Shift Change](#auto-reload-on-shift-change)
-14. [GitHub Actions Deployment](#github-actions-deployment)
-15. [Network Status Indicator](#network-status-indicator)
-16. [Configurable Constants](#configurable-constants)
-17. [Color Coding](#color-coding)
-18. [Browser Support](#browser-support)
-19. [Troubleshooting](#troubleshooting)
+7. [User Management](#user-management)
+8. [Reports](#reports)
+9. [Firestore Data Structure](#firestore-data-structure)
+10. [Offline Support - Never Lose Data!](#offline-support---never-lose-data)
+11. [Settings & Configuration](#settings--configuration)
+12. [Machine Admin Panel](#machine-admin-panel)
+13. [User Preferences](#user-preferences)
+14. [Shift Timing](#shift-timing)
+15. [Auto-Reload on Shift Change](#auto-reload-on-shift-change)
+16. [GitHub Actions Deployment](#github-actions-deployment)
+17. [Network Status Indicator](#network-status-indicator)
+18. [Configurable Constants](#configurable-constants)
+19. [Color Coding](#color-coding)
+20. [Browser Support](#browser-support)
+21. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -89,12 +111,40 @@ The next push to main will deploy with the new configuration.
 
 | File | Purpose |
 |------|---------|
-| `index.html` | Main QC data entry page (Level 9 + BOT modes) |
-| `level9-exec.html` | Executive view for Level 9 - monitoring & approvals |
-| `bot-exec.html` | Executive view for BOT - monitoring & approvals |
-| `machine-management.html` | **Machine Admin Panel** - Manage machines, lines, and settings |
+| `index.html` | Main QC data entry page (Level 9 + BOT modes) - Where QC staff record tests |
+| `level9-exec.html` | Executive view for Level 9 - Real-time monitoring & approvals |
+| `bot-exec.html` | Executive view for BOT - Real-time monitoring & approvals |
+| `machine-management.html` | **Machine Admin Panel** - Manage machines, lines, gram specs, grid settings |
+| `user-management.html` | **User Management** - Assign roles (admin, manager, staff) and approval permissions |
+| `reports.html` | **Reports** - Build custom reports and export data (CSV/JSON) |
+| `login.html` | User login page (if authentication is enabled) |
+| `change-password.html` | Password change page |
 | `firebase-storage.js` | Firestore backend logic (shared by all pages) |
+| `reports.js` | Report building and export functions |
 | `firestore.indexes.json` | Firestore database indexes configuration |
+
+### How Pages Connect
+
+```
+                        ┌─────────────────────┐
+                        │    Main QC Page    │
+                        │   (index.html)      │
+                        └──────────┬──────────┘
+                                   │
+         ┌─────────────────────────┼─────────────────────────┐
+         │                         │                         │
+         ▼                         ▼                         ▼
+┌──────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  Level 9 Exec    │    │    BOT Exec      │    │   Reports Page   │
+│ (level9-exec)    │    │   (bot-exec)     │    │   (reports.html) │
+└──────────────────┘    └──────────────────┘    └──────────────────┘
+         │
+         ▼
+┌──────────────────┐    ┌──────────────────┐
+│ Machine Admin    │    │  User Management │
+│ Panel            │    │                   │
+└──────────────────┘    └───────────────────┘
+```
 
 ---
 
@@ -282,20 +332,22 @@ This allows you to renumber machines (e.g., change displayNumber from 31 to 6) w
 
 ---
 
-## 30 Machines with Specifications (Default Configuration)
+## Machines with Specifications (Default Configuration)
 
-The factory has 30 machines organized into 3 production lines:
+The factory has machines organized into production lines. You can add more using the Machine Admin Panel!
 
 ### Line Organization
 
-| Line | Machines | Gram Settings |
-|------|----------|---------------|
+| Line | Machines (Example) | Gram Settings |
+|------|-----------------|---------------|
 | 1A | 1, 2, 3, 4, 5 | 125g, 85g |
 | 1B | 6, 7, 8, 9, 10 | 125g, 85g, 850g, 22g |
 | 2A | 11, 12, 13, 14, 15 | 85g |
 | 2B | 16, 17, 18, 19, 20 | 850g, 85g |
 | 3A | 21, 22, 23, 24, 25 | 850g, 45g |
 | 3B | 26, 27, 28, 29, 30 | 850g, 45g |
+
+*You can add machines 31, 32, 33, 34... using the Machine Admin Panel!*
 
 ### Machine Density Ranges
 
@@ -411,8 +463,12 @@ Each document represents one QC test:
   flowProperty: "FF" | "NFF",
   
   remarks: "Density too LOW (0.200 g/mL)",
-  createdAt: Timestamp,
-  syncedFromOffline: true | false
+  createdAt: Timestamp,     // ORIGINAL save time (preserved from offline!)
+  syncedAt: Timestamp,      // When it was synced to cloud
+  wasOfflineQueued: true,  // Was saved while offline
+  
+  // For tracking offline-synced items
+  // offlineSyncId: "2026-04-21T10:30:00.000Z_abc123" (unique queue ID)
 }
 ```
 
@@ -443,26 +499,71 @@ Each document represents one shift's approval status:
 
 ---
 
-## Offline Support
+## Offline Support - Never Lose Data!
+
+### The Problem
+Factories often have poor or intermittent internet. You need to record tests even when offline!
+
+### The Solution
+This app has a **smart offline system** that:
+1. **Detects when internet is lost** - No more errors or lost data
+2. **Queues data locally** - All tests are saved to your browser
+3. **Shows pending count** - See how many tests are waiting to sync
+4. **Auto-syncs when back online** - Data uploads automatically
+5. **Preserves timestamps** - Your original save time is kept!
 
 ### How It Works
 
-1. When the user is offline (no internet connection), saving queues data to localStorage
-2. User sees "📱 Saved Offline!" message
-3. When internet returns, data automatically syncs to Firestore
-4. Synced data is marked with `syncedFromOffline: true`
+| Situation | What Happens |
+|----------|------------|
+| **You save while offline** | Data saved to browser with exact timestamp. Badge shows "X pending". You see "📱 Saved Offline!" |
+| **Internet returns** | Orange "Syncing..." animation shows. Items sync one by one with original timestamps preserved |
+| **Sync fails** | Item stays in queue for retry. Failed items tracked separately |
+| **All synced** | Badge clears. Data shows in executive pages like normal |
 
-### Technical Implementation
+### Visual Indicators
 
-- Uses localStorage with key: `starium_offline_queue`
-- Listens for `online` event to trigger sync
-- Syncs one item at a time in chronological order
+The sync status shows in the top-left corner:
 
-### Limitations
+| Status | Icon | What It Means |
+|--------|------|------------|
+| **Online** | 🟢 Green | Connected to internet and database |
+| **Syncing** | 🔄 Orange (pulsing) | Uploading queued data |
+| **Offline** | 📴 Red | No internet - data is being queued |
 
-- Only saves to Firestore when online
-- Approval workflow requires internet
-- Real-time updates require internet connection
+**Queue Badge:** When offline with pending data, shows "X pending" in orange.
+
+### Timestamp Preservation
+
+When you save offline, your exact save time is stored. When you sync:
+- Original save time (`localCreatedAt`) becomes the test's `createdAt` in the database
+- A `syncedAt` timestamp shows when it was uploaded
+- `wasOfflineQueued: true` marks it as having been offline
+
+This means your test times are accurate even if you were offline for hours!
+
+### Technical Details
+
+- **Storage:** Browser localStorage key: `starium_offline_queue`
+- **Unique IDs:** Each queued item gets a `syncId` to prevent duplicates
+- **Failed queue:** Failed syncs are tracked and retried automatically
+- **Real-time:** All pages see the same pending count
+
+### What Works Offline
+
+| Feature | Works Offline? |
+|---------|--------------|
+| Recording tests | ✅ Yes - queued |
+| Saving to database | ❌ No - queued |
+| Viewing executive pages | ✅ Yes (shows cached data) |
+| Approvals | ❌ No - requires internet |
+
+### Pro Tips
+
+1. **Check the badge** - If it shows pending, your data is safe
+2. **Don't clear browser cache** - That removes the queue!
+3. **Internet returns** - Sync happens automatically
+4. **Multiple tests** - Each gets its own timestamp
 
 ---
 
@@ -604,10 +705,13 @@ The auto-reload happens within 1 minute of the shift change (pages check every 6
 
 ## Network Status Indicator
 
-All pages display online/offline status in the top-right corner:
+All pages display online/offline status in the **top-left corner** (below the auth bar):
 
 - 🟢 **Online** (green) - Connected to Firestore
 - 📴 **Offline** (red) - No internet connection
+- 🔄 **Syncing** (orange, pulsing) - Uploading queued data
+
+When data is queued offline, a badge shows the count: **"3 pending"**
 
 ---
 
