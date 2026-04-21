@@ -372,6 +372,22 @@
             to { transform: rotate(360deg); }
         }
 
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            background-color: var(--bg-card);
+            border-top: 1px solid #333;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+
+        footer p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
         /* Print Styles */
         @media print {
             body {
@@ -382,7 +398,8 @@
             .back-btn,
             .panel:first-child,
             .filters-row,
-            .generate-btn {
+            .generate-btn,
+            footer {
                 display: none !important;
             }
 
@@ -522,6 +539,10 @@
                 </table>
             </div>
         </div>
+
+        <footer>
+            <p>Starium Rafa Quality Control Tool | Reports</p>
+        </footer>
     </div>
 
     <script>
@@ -803,7 +824,7 @@
                     { key: 'density', label: 'Density' },
                     { key: 'status', label: 'Status' },
                     { key: 'appearance', label: 'Appearance' },
-                    { key: 'flowProperty', label: 'Flow Property' },
+                    { key: 'flowProperty', label: 'Flow' },
                     { key: 'remarks', label: 'Remarks' }
                 ];
             }
@@ -835,7 +856,7 @@
                     buggy: test.buggyNumber || '--',
                     machines: (test.machines || []).join(', '),
                     fragrance: test.fragrance === 'A' ? 'A' : (test.fragrance === 'U' ? 'U' : '--'),
-                    flowProperty: test.flowProperty === 'FF' ? 'FF' : (test.flowProperty === 'NFF' ? 'NFF' : '--'),
+                    flowProperty: test.flowProperty === 'FF' ? 'A' : (test.flowProperty === 'NFF' ? 'U' : '--'),
                     remarks: test.remarks || '--'
                 };
 
