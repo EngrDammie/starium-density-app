@@ -74,6 +74,7 @@
         .mode-selector label {
             color: #00BCD4;
             font-weight: bold;
+            font-size: 1.1rem;
         }
 
         .mode-selector select,
@@ -82,7 +83,7 @@
             color: #ffffff;
             border: 2px solid #00BCD4;
             padding: 10px 20px;
-            font-size: 1rem;
+            font-size: 1.1rem;
             border-radius: 5px;
             outline: none;
             transition: all 0.3s ease;
@@ -106,21 +107,18 @@
             box-shadow: 0 0 10px rgba(0, 188, 212, 0.5);
         }
 
-        /* Special glow for Mode dropdown - important field */
+        /* Special highlight for Mode dropdown - important field */
         .mode-selector select#mode {
-            border: 2px solid #00BCD4;
+            border: 3px solid #00BCD4;
             background: linear-gradient(135deg, #1E1E1E 0%, #2d2d2d 100%);
-            animation: modeGlow 2s ease-in-out infinite alternate;
+            box-shadow: 0 0 15px rgba(0, 188, 212, 0.5);
+            font-weight: bold;
+            transform: scale(1.05);
         }
 
-        @keyframes modeGlow {
-            from {
-                box-shadow: 0 0 5px rgba(0, 188, 212, 0.4), 0 0 10px rgba(0, 188, 212, 0.2);
-            }
-
-            to {
-                box-shadow: 0 0 15px rgba(0, 188, 212, 0.7), 0 0 25px rgba(0, 188, 212, 0.4), 0 0 35px rgba(0, 188, 212, 0.2);
-            }
+        .mode-selector select#mode:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.7);
         }
 
         .header-controls {
@@ -239,6 +237,7 @@
             background: linear-gradient(145deg, #1E1E1E, #252525);
             border-radius: 15px;
             border: 1px solid #333;
+            margin-top: 20px;
             margin-bottom: 20px;
         }
 
@@ -1485,6 +1484,8 @@
 
         // ===== REMARKS AUTO-FILL =====
         function updateRemarks() {
+            console.log('updateRemarks called', { buggy: buggyInput?.value, silo: siloMachineInput?.value, currentDensity });
+            
             let remarks = [];
             const isBotMode = modeSelect.value === 'bot';
             const buggy = buggyInput.value.trim();
@@ -1605,9 +1606,12 @@
             const value = siloMachineInput.value.trim();
             if (!value) return new Set();
 
+            const allMachines = getMachines();
+            const maxMachineId = allMachines ? Math.max(...allMachines.map(m => m.id)) : 30;
+            
             const numbers = value.split(',')
                 .map(s => parseInt(s.trim()))
-                .filter(n => !isNaN(n) && n >= 1 && n <= 30);
+                .filter(n => !isNaN(n) && n >= 1 && n <= maxMachineId);
             return new Set(numbers);
         }
 
@@ -1769,11 +1773,13 @@
         siloMachineInput.addEventListener('input', () => {
             syncMachinesFromInput();
             updateMachineGridSelection();
+            updateRemarks();
         });
 
         siloMachineInput.addEventListener('blur', () => {
             // Validate and clean up on blur
             syncMachinesFromInput();
+            updateRemarks();
         });
 
         modalClose.addEventListener('click', () => {
@@ -1840,8 +1846,13 @@
             currentDensity = (weight / CONFIG.LEVEL9_DIVISOR).toFixed(3);
             const density = parseFloat(currentDensity);
 
+            // Debug: check if machines are loaded
+            const allMachines = getMachines();
+            console.log('All machines count:', allMachines?.length, 'Machines:', allMachines?.map(m => m.id));
+            
             // Use config-based matching
             const matchingMachines = getMatchingMachines(density, 'level9');
+            console.log('Matching machines:', matchingMachines.map(m => m.id));
             const matchingIds = matchingMachines.map(m => m.id);
 
             // Determine density status class
@@ -1853,10 +1864,6 @@
             }
 
             let html = `
-  <div class="density-display">
-  <div class="density-value ${densityClass}">${currentDensity}</div>
-  <div class="density-label">g/mL</div>
-  </div>
   <div class="machine-grid">
   `;
 
@@ -1907,6 +1914,15 @@
             if (matchingMachines.length === 0) {
                 html += '<div class="error-message">No matching machines found for this density!</div>';
             }
+
+            // Add density display at bottom (for phone users convenience)
+            html += `
+  <div class="density-display">
+  <div class="density-label">POWDER DENSITY</div>
+  <div class="density-value ${densityClass}">${currentDensity}</div>
+  <div class="density-label">g/mL</div>
+  </div>
+  `;
 
             resultsDiv.innerHTML = html;
             updateRemarks();

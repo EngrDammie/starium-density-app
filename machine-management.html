@@ -1047,7 +1047,7 @@
         // Auto-fill min/max when gram is selected
         function onGramChange() {
             const gram = document.getElementById('machineGram').value;
-            const spec = gramSpecs[gram];
+            const spec = gramSpecs[String(gram)];
             if (spec) {
                 document.getElementById('machineMin').value = spec.min;
                 document.getElementById('machineMax').value = spec.max;
@@ -1067,9 +1067,9 @@
             let min = parseFloat(document.getElementById('machineMin').value);
             let max = parseFloat(document.getElementById('machineMax').value);
             
-            // If min/max are NaN, get them from gramSpecs
+            // If min/max are NaN, get them from gramSpecs (gramSpecs uses string keys)
             if (isNaN(min) || isNaN(max)) {
-                const spec = gramSpecs[gram];
+                const spec = gramSpecs[String(gram)];
                 if (spec) {
                     min = spec.min;
                     max = spec.max;
@@ -1235,7 +1235,7 @@
         }
 
         function editGramSpec(gram) {
-            const spec = gramSpecs[gram];
+            const spec = gramSpecs[String(gram)];
             if (!spec) return;
 
             document.getElementById('gramSpecModalTitle').textContent = 'Edit Gram Specification';
@@ -1261,10 +1261,10 @@
 
             // Remove old entry if gram changed
             if (oldGram && oldGram !== gram) {
-                delete gramSpecs[oldGram];
+                delete gramSpecs[String(oldGram)];
             }
 
-            gramSpecs[gram] = { min, max, piecesPerCarton: pieces, piecesBreakdown };
+            gramSpecs[String(gram)] = { min, max, piecesPerCarton: pieces, piecesBreakdown };
 
             const success = await updateGramSpecs(gramSpecs);
             if (success) {
@@ -1279,7 +1279,7 @@
         async function deleteGramSpec(gram) {
             if (!confirm(`Delete gram specification for ${gram}g?`)) return;
             
-            delete gramSpecs[gram];
+            delete gramSpecs[String(gram)];
             const success = await updateGramSpecs(gramSpecs);
             if (success) {
                 showToast('Gram specification deleted');
