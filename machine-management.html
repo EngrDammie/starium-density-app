@@ -879,6 +879,9 @@
             // Check auth before allowing access
             await requireAuth();
             
+            // Initialize auth UI (hide/show auth bar based on auth state)
+            initAuthUI();
+            
             setupTabs();
             setupNetworkStatus();
             await loadAllConfig();

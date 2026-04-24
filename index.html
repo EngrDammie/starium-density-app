@@ -1281,7 +1281,10 @@
         // Check if auth is enabled, if so require login
         requireAuth();
 
-        // Setup user display and logout after auth check
+        // Initialize auth UI immediately to hide/show auth bar based on auth state
+        initAuthUI();
+
+        // Setup user display and logout after auth check (only when auth is enabled)
         firebase.auth().onAuthStateChanged(async (user) => {
             if (user) {
                 // User is logged in, show email and setup logout

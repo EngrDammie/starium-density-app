@@ -1265,12 +1265,18 @@
             // Check auth before allowing access
             await requireAuth();
 
-            // Check role - only admin and manager can access executive views
+            // Initialize auth UI (hide/show auth bar based on auth state)
+            initAuthUI();
+
+            // Get role and user for access check
             const userRole = localStorage.getItem('userRole');
             const user = firebase.auth().currentUser;
-
-            // Get role from Firestore if not in localStorage
-            if (!userRole && user) {
+            
+            // Skip role check if auth is disabled
+            const authDisabled = localStorage.getItem('authDisabled') === 'true';
+            if (authDisabled) {
+                // Allow access when auth is disabled
+            } else if (!userRole && user) {
                 try {
                     const roleDoc = await db.collection('user_roles').doc(user.uid).get();
                     const role = roleDoc.exists ? roleDoc.data().role : 'staff';

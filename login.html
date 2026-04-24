@@ -436,6 +436,17 @@
 
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        
+        // Check if auth is disabled - redirect to index if so
+        db.collection('config').doc('auth_settings').get().then(doc => {
+            if (doc.exists && doc.data().authEnabled !== true) {
+                window.location.href = 'index.html';
+            }
+        }).catch(() => {
+            // If we can't read settings, auth might be disabled - redirect to index
+            window.location.href = 'index.html';
+        });
+
         const auth = firebase.auth();
 
         // DOM Elements

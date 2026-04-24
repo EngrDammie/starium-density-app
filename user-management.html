@@ -546,6 +546,9 @@
             // Check auth before allowing access
             await requireAuth();
             
+            // Initialize auth UI (hide/show auth bar and setup logout based on auth state)
+            initAuthUI();
+            
             await checkAuth();
             
             // Load auth state regardless of checkAuth outcome

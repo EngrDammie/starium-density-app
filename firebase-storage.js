@@ -723,6 +723,8 @@ function showOfflineFeedback(elementId) {
 }
 
 // ===== AUTH FUNCTIONS =====
+window.authEnabledCache = window.authEnabledCache || null;
+
 async function isAuthEnabled() {
     const db = window.db;
     if (!db) return false;
@@ -730,20 +732,25 @@ async function isAuthEnabled() {
         const doc = await db.collection('config').doc('auth_settings').get();
         if (doc.exists) return doc.data().authEnabled === true;
     } catch (e) { 
-        // If we can't read (permissions error when auth enabled but user not logged in),
-        // assume auth IS enabled (fail-safe approach for security)
         console.log('Cannot read auth settings, assuming enabled'); 
     }
-    return true;  // Default to enabled - fail-safe for security
+    return true;
+}
+
+async function isAuthDisabled() {
+    const authEnabled = await isAuthEnabled();
+    return !authEnabled;
 }
 
 async function requireAuth() {
-    const authEnabled = await isAuthEnabled();
-    if (!authEnabled) {
+    const authDisabled = await isAuthDisabled();
+    if (authDisabled) {
         localStorage.setItem('userRole', 'admin');
         localStorage.setItem('userEmail', 'development@local');
+        localStorage.setItem('authDisabled', 'true');
         return true;
     }
+    localStorage.setItem('authDisabled', 'false');
     return new Promise((resolve) => {
         firebase.auth().onAuthStateChanged((user) => {
             if (!user) { window.location.href = 'login.html'; resolve(false); }
@@ -769,12 +776,12 @@ async function getUserApprovalRoles() {
 }
 
 async function checkApprovalRole(roleToCheck) {
-    const userUid = localStorage.getItem('userUid');
-    if (!userUid) { return false; }
-
-    if (!await isAuthEnabled()) {
+    if (await isAuthDisabled()) {
         return true;
     }
+
+    const userUid = localStorage.getItem('userUid');
+    if (!userUid) { return false; }
 
     try {
         const roleDoc = await db.collection('user_roles').doc(userUid).get();
@@ -787,4 +794,36 @@ async function checkApprovalRole(roleToCheck) {
         console.log('Error checking approval role:', e);
     }
     return false;
+}
+
+// ===== AUTH UI HELPERS =====
+// Call this after DOMContentLoaded to setup auth bar based on auth state
+async function initAuthUI() {
+    const authDisabled = await isAuthDisabled();
+    const authBar = document.getElementById('authBar');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (authDisabled) {
+        if (authBar) authBar.style.display = 'none';
+        return;
+    }
+    
+    if (authBar) {
+        authBar.style.display = 'flex';
+        const userEmail = localStorage.getItem('userEmail') || 'Unknown';
+        const userEmailEl = document.getElementById('userEmail');
+        if (userEmailEl) userEmailEl.textContent = userEmail;
+        
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', () => {
+                firebase.auth().signOut().then(() => {
+                    localStorage.removeItem('userEmail');
+                    localStorage.removeItem('userUid');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('authDisabled');
+                    window.location.href = 'login.html';
+                });
+            });
+        }
+    }
 }
