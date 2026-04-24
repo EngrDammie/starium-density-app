@@ -841,7 +841,46 @@ The app has two different role systems that work together to control access:
 | **Page Access Roles** | `admin`, `manager`, `staff` | Which pages a user can open |
 | **Approval Roles** | `buggy_supervisor`, `plc_operator`, `production_manager`, `qc_manager`, `qc_supervisor` | Which approval buttons a user can click |
 
-### Page Access Roles
+### Authentication Toggle
+
+The app has a **flexible authentication system** that can be turned ON or OFF:
+
+| Auth State | Behavior |
+|-----------|----------|
+| **ENABLED** | Users must log in to access the app. Roles and permissions are enforced. |
+| **DISABLED** | Anyone can access the app without login. No authentication required. |
+
+#### How to Toggle Authentication
+
+1. Go to **User Management** page (user-management.html)
+2. Find the **Authentication Settings** section at the top
+3. Toggle the switch:
+   - **ENABLED**: Users must log in
+   - **DISABLED**: No login required - app works like authentication never existed
+
+#### When Auth is DISABLED:
+- ✅ No login page required
+- ✅ No username/password needed
+- ✅ Anyone can access any page
+- ✅ All approval buttons work for everyone
+- ✅ Executive pages accessible to all users
+
+#### When Auth is ENABLED:
+- ✅ Login required to access any page
+- ✅ Page access based on role (admin/manager/staff)
+- ✅ Approval buttons restricted by assigned approval roles
+- ✅ User Management page restricted to admins only
+
+#### Who Can Toggle Auth
+
+- **Anyone** can turn authentication **ON**
+- **Only the admin** (dammieoptimus@gmail.com) can turn authentication **OFF**
+
+This gives工厂 flexibility - they can use full authentication for strict security, or disable it for simpler day-to-day operation.
+
+---
+
+## License
 
 These roles control **which pages** a user can open when authentication is enabled:
 

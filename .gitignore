@@ -1,2 +1,5 @@
 # Firebase config (created during deployment)
 firebase-config.js
+
+# Personal access tokens
+github_repo_token.txt
