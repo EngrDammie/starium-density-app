@@ -1066,11 +1066,16 @@
 
         // ===== CONFIG =====
         const MODE = 'bot';
-        const BOT_DIVISOR = 1680;
-        const LEVEL9_DIVISOR = 1580;
-        const DENSITY_TOO_LOW = 0.200;
-        const DENSITY_TOO_HIGH = 0.240; // BOT uses BOT_NORMAL_MAX (0.240) as upper threshold
-        const BOT_NORMAL_MAX = 0.240;
+        
+        // Density status using config values
+        function getDensityStatus(density) {
+            const config = getConfig();
+            const min = config.botMinDensity;
+            const max = config.botMaxDensity;
+            if (density < min) return 'low';
+            if (density > max) return 'high';
+            return 'normal';
+        }
 
         // Machine data - now loaded from Firestore config via getMachines()
         // See firebase-storage.js for configuration
@@ -1207,13 +1212,14 @@
         }
 
         function updateDateTime() {
+            const config = getConfig();
             const now = new Date();
             const day = String(now.getDate()).padStart(2, '0');
             const month = String(now.getMonth() + 1).padStart(2, '0');
             const year = now.getFullYear();
             const dateStr = `${day}-${month}-${year}`;
             const hour = now.getHours();
-            const shift = (hour >= 7 && hour < 19) ? 'DAY' : 'NIGHT';
+            const shift = (hour >= config.dayShiftStart && hour < config.nightShiftStart) ? 'DAY' : 'NIGHT';
             
             document.getElementById('currentDate').textContent = dateStr;
             document.getElementById('currentShift').textContent = shift;
@@ -1252,22 +1258,23 @@
         // ===== SHIFT DATE HELPER - Fixes midnight boundary issue =====
         // For NIGHT shifts (7pm-7am), we need to use the START date of the shift, not current date
         function getShiftDateInfo() {
+            const config = getConfig();
             const now = new Date();
             const hour = now.getHours();
             let shift, date;
             
-            if (hour >= 7 && hour < 19) {
-                // DAY shift (7am - 6:59pm) - shift started today
+            if (hour >= config.dayShiftStart && hour < config.nightShiftStart) {
+                // DAY shift - shift started today
                 shift = 'DAY';
                 date = getShiftDate(now);
             } else {
-                // NIGHT shift (7pm - 6:59am)
+                // NIGHT shift
                 shift = 'NIGHT';
-                if (hour >= 19) {
-                    // After 7pm (7pm-11:59pm) - shift started TODAY
+                if (hour >= config.nightShiftStart) {
+                    // After shift start time (e.g., 7pm-11:59pm) - shift started TODAY
                     date = getShiftDate(now);
                 } else {
-                    // Before 7am (12am-6:59am) - shift started YESTERDAY
+                    // Before shift start time (12am-6:59am) - shift started YESTERDAY
                     const yesterday = new Date(now);
                     yesterday.setDate(yesterday.getDate() - 1);
                     date = getShiftDate(yesterday);
@@ -1543,12 +1550,6 @@
             }
         }
 
-        function getDensityStatus(density) {
-            if (density < DENSITY_TOO_LOW) return 'low';
-            if (density > DENSITY_TOO_HIGH) return 'high';
-            return 'normal';
-        }
-
         // ===== APPROVAL MODAL =====
         async function openApprovalModal(approverType) {
             const roleMap = {
@@ -1763,6 +1764,14 @@
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
                 settingsBtn.style.display = config.showSettingsBtnBotExec !== false ? 'flex' : 'none';
+            }
+        });
+        
+        // Subscribe to config changes - update density display when thresholds change
+        subscribeToConfig(() => {
+            // Re-update current density display with new config values
+            if (lastTestData) {
+                updateCurrentDensity(lastTestData);
             }
         });
         

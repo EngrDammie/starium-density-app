@@ -11,14 +11,8 @@
     <script src="firebase-config.js"></script>
     <script src="firebase-storage.js"></script>
     <style>
-        /* ===== CONFIGURABLE CONSTANTS ===== */
+        /* ===== CONFIGURABLE CONSTANTS (loaded from Firestore) ===== */
         :root {
-            --DENSITY_TOO_LOW: 0.200;
-            --DENSITY_TOO_HIGH: 0.310;
-            --LEVEL9_DIVISOR: 1580;
-            --BOT_DIVISOR: 1680;
-            --BOT_NORMAL_MAX: 0.240;
-        }
 
         * {
             margin: 0;
@@ -1390,22 +1384,23 @@
         // ===== SHIFT DATE HELPER - Fixes midnight boundary issue =====
         // For NIGHT shifts (7pm-7am), we need to use the START date of the shift, not current date
         function getShiftDateInfo() {
+            const config = getConfig();
             const now = new Date();
             const hour = now.getHours();
             let shift, date;
 
-            if (hour >= 7 && hour < 19) {
-                // DAY shift (7am - 6:59pm) - shift started today
+            if (hour >= config.dayShiftStart && hour < config.nightShiftStart) {
+                // DAY shift - shift started today
                 shift = 'DAY';
                 date = getShiftDate(now);
             } else {
-                // NIGHT shift (7pm - 6:59am)
+                // NIGHT shift
                 shift = 'NIGHT';
-                if (hour >= 19) {
-                    // After 7pm (7pm-11:59pm) - shift started TODAY
+                if (hour >= config.nightShiftStart) {
+                    // After shift start time (e.g., 7pm-11:59pm) - shift started TODAY
                     date = getShiftDate(now);
                 } else {
-                    // Before 7am (12am-6:59am) - shift started YESTERDAY
+                    // Before shift start time (12am-6:59am) - shift started YESTERDAY
                     const yesterday = new Date(now);
                     yesterday.setDate(yesterday.getDate() - 1);
                     date = getShiftDate(yesterday);
@@ -1507,11 +1502,13 @@
         }
 
         function isDensityTooLow(density) {
-            return density < CONFIG.DENSITY_TOO_LOW;
+            const config = getConfig();
+            return density < config.level9MinDensity;
         }
 
         function isDensityTooHigh(density) {
-            return density > CONFIG.DENSITY_TOO_HIGH;
+            const config = getConfig();
+            return density > config.level9MaxDensity;
         }
 
         function isDensityOutOfRange(density) {
@@ -1539,15 +1536,16 @@
             // Density-related remarks
             if (currentDensity !== null) {
                 const density = parseFloat(currentDensity);
+                const config = getConfig();
                 if (isDensityTooLow(density)) {
                     remarks.push(`Density too LOW (${currentDensity} g/mL)`);
                 } else if (isBotMode) {
-                    // BOT mode uses BOT_NORMAL_MAX (0.240) as upper limit
-                    if (density > CONFIG.BOT_NORMAL_MAX) {
+                    // BOT mode uses botMaxDensity as upper limit
+                    if (density > config.botMaxDensity) {
                         remarks.push(`Density too HIGH (${currentDensity} g/mL)`);
                     }
                 } else {
-                    // Level 9 mode uses DENSITY_TOO_HIGH (0.310)
+                    // Level 9 mode uses level9MaxDensity
                     if (isDensityTooHigh(density)) {
                         remarks.push(`Density too HIGH (${currentDensity} g/mL)`);
                     }
@@ -1716,8 +1714,9 @@
 
         // ===== SHIFT AUTO-UPDATE =====
         function updateShift() {
+            const config = getConfig();
             const currentHour = new Date().getHours();
-            if (currentHour >= 7 && currentHour < 19) {
+            if (currentHour >= config.dayShiftStart && currentHour < config.nightShiftStart) {
                 shiftSelect.value = 'DAY';
             } else {
                 shiftSelect.value = 'NIGHT';
@@ -1879,7 +1878,8 @@
         }
 
         function calculateLevel9(weight) {
-            currentDensity = (weight / CONFIG.LEVEL9_DIVISOR).toFixed(3);
+            const config = getConfig();
+            currentDensity = (weight / config.level9Divisor).toFixed(3);
             const density = parseFloat(currentDensity);
 
             // Debug: check if machines are loaded
@@ -1970,14 +1970,15 @@
         }
 
         function calculateBOT(weight) {
-            currentDensity = (weight / CONFIG.BOT_DIVISOR).toFixed(3);
+            const config = getConfig();
+            currentDensity = (weight / config.botDivisor).toFixed(3);
             const density = parseFloat(currentDensity);
 
             let statusClass, statusText;
-            if (density < CONFIG.DENSITY_TOO_LOW) {
+            if (density < config.botMinDensity) {
                 statusClass = 'too-low';
                 statusText = 'TOO LOW';
-            } else if (density > CONFIG.BOT_NORMAL_MAX) {
+            } else if (density > config.botMaxDensity) {
                 statusClass = 'too-high';
                 statusText = 'TOO HIGH';
             } else {
@@ -2207,13 +2208,7 @@
         }
 
         // ===== SETTINGS FUNCTIONS =====
-        let CONFIG = {
-            DENSITY_TOO_LOW: 0.200,
-            DENSITY_TOO_HIGH: 0.310,
-            LEVEL9_DIVISOR: 1580,
-            BOT_DIVISOR: 1680,
-            BOT_NORMAL_MAX: 0.240
-        };
+        // Config is now loaded from Firestore via getConfig() - see firebase-storage.js
 
         const settingsBtn = document.getElementById('settingsBtn');
         const settingsOverlay = document.getElementById('settingsOverlay');
@@ -2277,13 +2272,6 @@
             const success = await updateConfig(newConfig);
 
             if (success) {
-                // Update local CONFIG
-                CONFIG.DENSITY_TOO_LOW = newConfig.level9MinDensity;
-                CONFIG.DENSITY_TOO_HIGH = newConfig.level9MaxDensity;
-                CONFIG.LEVEL9_DIVISOR = newConfig.level9Divisor;
-                CONFIG.BOT_DIVISOR = newConfig.botDivisor;
-                CONFIG.BOT_NORMAL_MAX = newConfig.botMaxDensity;
-
                 settingsStatus.textContent = 'Saved!';
                 settingsStatus.className = 'settings-status success';
                 setTimeout(closeSettings, 1000);
@@ -2303,29 +2291,17 @@
 
         // Load config on startup
         loadConfig().then(config => {
-            CONFIG.DENSITY_TOO_LOW = config.level9MinDensity;
-            CONFIG.DENSITY_TOO_HIGH = config.level9MaxDensity;
-            CONFIG.LEVEL9_DIVISOR = config.level9Divisor;
-            CONFIG.BOT_DIVISOR = config.botDivisor;
-            CONFIG.BOT_NORMAL_MAX = config.botMaxDensity;
-
             // Show/hide settings button based on config
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
                 settingsBtn.style.display = config.showSettingsBtnIndex !== false ? 'flex' : 'none';
             }
 
-            console.log('Config loaded:', CONFIG);
+            console.log('Config loaded:', config);
         });
 
         // Subscribe to config changes
         subscribeToConfig((config) => {
-            CONFIG.DENSITY_TOO_LOW = config.level9MinDensity;
-            CONFIG.DENSITY_TOO_HIGH = config.level9MaxDensity;
-            CONFIG.LEVEL9_DIVISOR = config.level9Divisor;
-            CONFIG.BOT_DIVISOR = config.botDivisor;
-            CONFIG.BOT_NORMAL_MAX = config.botMaxDensity;
-
             // Show/hide settings button based on config
             const settingsBtn = document.getElementById('settingsBtn');
             if (settingsBtn) {
@@ -2337,7 +2313,7 @@
                 renderResults();
             }
 
-            console.log('Config updated from server:', CONFIG);
+            console.log('Config updated from server:', config);
         });
     </script>
 </body>

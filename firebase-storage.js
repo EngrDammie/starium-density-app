@@ -583,22 +583,23 @@ function subscribeToShiftApproval(approvalId, callback) {
 // ===== SHIFT DATE HELPER - Fixes midnight boundary issue =====
 // For NIGHT shifts (7pm-7am), we need to use the START date of the shift, not current date
 function getShiftDateInfo() {
+    const config = getConfig();
     const now = new Date();
     const hour = now.getHours();
     let shift, date;
     
-    if (hour >= 7 && hour < 19) {
-        // DAY shift (7am - 6:59pm) - shift started today
+    if (hour >= config.dayShiftStart && hour < config.nightShiftStart) {
+        // DAY shift - shift started today
         shift = 'DAY';
         date = getShiftDate(now);
     } else {
-        // NIGHT shift (7pm - 6:59am)
+        // NIGHT shift
         shift = 'NIGHT';
-        if (hour >= 19) {
-            // After 7pm (7pm-11:59pm) - shift started TODAY
+        if (hour >= config.nightShiftStart) {
+            // After shift start time (e.g., 7pm-11:59pm) - shift started TODAY
             date = getShiftDate(now);
         } else {
-            // Before 7am (12am-6:59am) - shift started YESTERDAY
+            // Before shift start time (12am-6:59am) - shift started YESTERDAY
             const yesterday = new Date(now);
             yesterday.setDate(yesterday.getDate() - 1);
             date = getShiftDate(yesterday);

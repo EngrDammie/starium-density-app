@@ -614,9 +614,19 @@ This means your test times are accurate even if you were offline for hours!
 
 ## Settings & Configuration
 
-The app includes a Settings dialog that allows users to view and modify configuration values. All settings are stored in Firestore and automatically synced across all devices and browser tabs in real-time.
+The app includes a Settings dialog that allows users to view and modify configuration values. All settings are:
+- **Stored in Firestore** - Single source of truth
+- **Realtime sync** - Changes propagate instantly to all devices/tabs
+- **No hardcoded values** - All pages read from Firestore config via `getConfig()`
 
 > **Advanced Configuration:** For managing machines, production lines, gram specifications, and grid settings, use the **Machine Admin Panel** (accessible from Settings → Open Machine Admin Panel).
+
+### How It Works
+
+1. **Settings modal** loads current values from `getConfig()` (reads from `window.appConfig`)
+2. **Save** → `updateConfig()` writes to Firestore `config/settings` document
+3. **Realtime listeners** (`subscribeToConfig()`) fire instantly across all pages
+4. **All calculations** (density status, shift times) use config values - no hardcoded constants
 
 ### Accessing Settings
 
