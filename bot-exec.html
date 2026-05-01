@@ -1136,6 +1136,11 @@
                 `;
             }
             
+            // WAIT for config to load from Firestore before proceeding
+            // This ensures getShiftDateInfo() uses the correct shift times
+            await loadConfig();
+            console.log('[Init] Config loaded:', getConfig());
+            
             updateDateTime();
             
             // First, load the current shift approval to get currentApprovalId
