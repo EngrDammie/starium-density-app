@@ -1026,44 +1026,6 @@
     </div>
 
     <script>
-        // ===== AUTH CHECK =====
-        // Check if user is authenticated, redirect to login if not
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) {
-                // No user logged in, redirect to login
-                window.location.href = 'login.html';
-            } else {
-                // User is logged in, show email and setup logout
-                document.getElementById('userEmail').textContent = user.email;
-                
-                // Store user info in localStorage for role checking
-                localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('userUid', user.uid);
-                
-                // Check user role from Firestore user_roles collection
-                try {
-                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
-                    const role = roleDoc.exists ? roleDoc.data().role : 'staff';
-                    localStorage.setItem('userRole', role);
-                    console.log('✅ User logged in:', user.email, '| Role:', role);
-                } catch (e) {
-                    console.log('Could not fetch user role:', e);
-                    localStorage.setItem('userRole', 'staff');
-                }
-            }
-        });
-
-        // Logout function
-        document.getElementById('logoutBtn').addEventListener('click', () => {
-            firebase.auth().signOut().then(() => {
-                localStorage.removeItem('userEmail');
-                localStorage.removeItem('userRole');
-                window.location.href = 'login.html';
-            }).catch((error) => {
-                console.error('Logout error:', error);
-            });
-        });
-
         // ===== CONFIG =====
         const MODE = 'bot';
         

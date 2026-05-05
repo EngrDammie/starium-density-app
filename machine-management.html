@@ -1417,41 +1417,17 @@
         let currentUserRole = 'user';
         let isAdmin = false;
 
-        // Check if user is authenticated, redirect to login if not
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (!user) {
-                // No user logged in, redirect to login
+        // Logout function
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            firebase.auth().signOut().then(() => {
+                localStorage.removeItem('userEmail');
+                localStorage.removeItem('userRole');
+                localStorage.removeItem('userUid');
+                localStorage.removeItem('authDisabled');
                 window.location.href = 'login.html';
-            } else {
-                // User is logged in, show email and setup logout
-                document.getElementById('userEmail').textContent = user.email;
-                
-                // Store user info in localStorage for role checking
-                localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('userUid', user.uid);
-                
-                // Check user role from Firestore user_roles collection
-                try {
-                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
-                    currentUserRole = roleDoc.exists ? roleDoc.data().role : 'staff';
-                    isAdmin = currentUserRole === 'admin';
-                } catch (e) {
-                    console.log('Could not fetch user role from Firestore:', e);
-                    currentUserRole = 'staff';
-                    isAdmin = false;
-                }
-                localStorage.setItem('userRole', currentUserRole);
-                console.log('✅ User logged in:', user.email, '| Role:', currentUserRole, '| isAdmin:', isAdmin);
-                
-                // Block non-admins from accessing admin page
-                if (!isAdmin) {
-                    showAccessDenied();
-                    return;
-                }
-                
-                // Apply role-based UI after init is called
-                setTimeout(() => applyRoleBasedUI(), 100);
-            }
+            }).catch((error) => {
+                console.error('Logout error:', error);
+            });
         });
         
         // Show access denied message

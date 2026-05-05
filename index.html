@@ -1277,36 +1277,7 @@
 
         // Initialize auth UI immediately to hide/show auth bar based on auth state
         initAuthUI();
-
-        // Setup user display and logout after auth check (only when auth is enabled)
-        firebase.auth().onAuthStateChanged(async (user) => {
-            if (user) {
-                // User is logged in, show email and setup logout
-                const userEmailEl = document.getElementById('userEmail');
-                if (userEmailEl) {
-                    userEmailEl.textContent = user.email;
-                }
-
-                // Store user info in localStorage for role checking
-                localStorage.setItem('userEmail', user.email);
-                localStorage.setItem('userUid', user.uid);
-
-                // Check user role from Firestore
-                try {
-                    const roleDoc = await db.collection('user_roles').doc(user.uid).get();
-                    const role = roleDoc.exists ? roleDoc.data().role : 'staff';
-                    localStorage.setItem('userRole', role);
-                    console.log('✅ User logged in:', user.email, '| Role:', role);
-
-                    // Apply role-based UI visibility
-                    applyRoleBasedUI(role);
-                } catch (e) {
-                    console.log('Could not fetch user role:', e);
-                    localStorage.setItem('userRole', 'staff');
-                }
-            }
-        });
-
+        
         // Apply role-based UI visibility
         function applyRoleBasedUI(role) {
             const adminLinkContainer = document.getElementById('adminLinkContainer');
@@ -1327,21 +1298,6 @@
                 if (adminLinkContainer) adminLinkContainer.style.display = 'none';
                 if (reportsLinkContainer) reportsLinkContainer.style.display = 'none';
             }
-        }
-
-        // Logout function (if logout button exists)
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                firebase.auth().signOut().then(() => {
-                    localStorage.removeItem('userEmail');
-                    localStorage.removeItem('userRole');
-                    localStorage.removeItem('userUid');
-                    window.location.href = 'login.html';
-                }).catch((error) => {
-                    console.error('Logout error:', error);
-                });
-            });
         }
 
         // CONFIG is loaded from Firestore - see settings section below
